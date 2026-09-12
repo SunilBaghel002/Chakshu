@@ -264,3 +264,50 @@ def normalise_bbox(
         area_px=clamped_area,
         order_used=order_used,
     )
+
+
+def apply_class_nms(
+    proposals: list[tuple[PixelBox, float, str, str, str]],
+    iou_threshold: float = 0.50,
+) -> tuple[list[tuple[PixelBox, float, str, str, str]], list[tuple[str, str, str]]]:
+    """Apply class-aware non-maximum suppression across proposals.
+
+    Args:
+        proposals: List of (box, score, canonical_label, raw_label, reason).
+        iou_threshold: IoU overlap threshold above which candidate is suppressed.
+
+    Returns:
+        Tuple of (surviving_proposals, list of (raw_label, reason, detail) for suppressed).
+    """
+    survivors: list[tuple[PixelBox, float, str, str, str]] = []
+    rejections: list[tuple[str, str, str]] = []
+
+    by_class: dict[str, list[tuple[PixelBox, float, str, str, str]]] = {}
+    for prop in proposals:
+        by_class.setdefault(prop[2], []).append(prop)
+
+    for _, class_props in by_class.items():
+        class_props.sort(key=lambda item: item[1], reverse=True)
+        kept: list[tuple[PixelBox, float, str, str, str]] = []
+
+        for candidate in class_props:
+            cand_box = candidate[0]
+            suppressed = False
+            for active in kept:
+                iou = calculate_iou(cand_box, active[0])
+                if iou > iou_threshold:
+                    suppressed = True
+                    rejections.append(
+                        (
+                            candidate[3],
+                            "nms_duplicate",
+                            f"Suppressed by box with score {active[1]:.2f} (IoU={iou:.2f})",
+                        )
+                    )
+                    break
+            if not suppressed:
+                kept.append(candidate)
+
+        survivors.extend(kept)
+
+    return survivors, rejections
