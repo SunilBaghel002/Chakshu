@@ -68,3 +68,7 @@ INTENT_MATCH_THRESHOLD: float = 0.72
 # --- Image Processing Limits ---
 # Longest edge px threshold before downscaling for Gemini (PRD 2 §6.3 step 1)
 MAX_IMAGE_EDGE_PX: int = 1568
+
+# --- Image Registration Tolerance (PRD 6 §9, Kuglin & Hines 1975) ---
+# Maximum shift magnitude in pixels permitted between temporal observation pairs
+MAX_REGISTRATION_SHIFT_PX: float = 2.0

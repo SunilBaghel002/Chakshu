@@ -37,10 +37,12 @@ Phase 1 — Data in. Tasks 1.1–1.3 complete.
 - [x] 1.1 Scene acquisition: `scripts/download_scenes.py` against AWS Earth Search STAC (Sentinel-2 L2A); B02, B03, B04, B08, B11, SCL; SHA-256 checksums recorded; synthetic offline generator — 2026-09-12 — verified: live STAC query 100 scenes + offline synthetic scenes generated
 - [x] 1.2 Demo site dramatic change confirmation: Jewar Airport (farmland NDVI 0.816 -> airport infrastructure NDBI 0.313) and Bhadla Solar Park (desert sand -> high contrast dark photovoltaic grids) — 2026-09-12 — verified: ΔNDVI = -0.744, ΔNDBI = +0.936
 - [x] 1.3 Pure domain spectral indices: `domain/indices.py`, NDVI, NDWI, NDBI, NDSI with nodata masking and 10000.0 scale factor, classify_land_cover — 2026-09-12 — verified: `test_indices.py` (12 tests pass)
+- [x] 1.4 Phase-correlation registration: `domain/align.py` 2D Fourier phase correlation, Hann windowing, sub-pixel quadratic peak interpolation, 2.0 px tolerance check — 2026-09-12 — verified: `test_align.py` (6 tests pass)
+- [x] 1.5 Spatial tiling & ingestion: `services/ingest.py` SCL cloud scoring, 256x256 Web Mercator tiling, tile spectral index means, 2-98% percentile stretch RGB rendering, DB persistence with offline fallback — 2026-09-12 — verified: `test_ingest.py` (5 tests pass)
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- Phase 1: 1.4 `domain/align.py` and 1.5 `services/ingest.py` — Ingest & registration pipeline — Sunil
+- Phase 1: 1.6 `jobs`, 1.7 `aoi`/`scenes`, 1.8 `tiles` API endpoints — Sunil
 
 ## E. Blocked / needs human decision
 <!-- blocker — since — tried — the specific question that unblocks it -->
@@ -89,6 +91,7 @@ Phase 1 — Data in. Tasks 1.1–1.3 complete.
 | 2026-09-12 | PowerShell make.ps1 companion to Makefile | Makefile only | Native execution support on Windows without mingw/msys dependency |
 
 ## K. Next actions
-1. 1.4 `domain/align.py`: phase-correlation shift estimate + tolerance check
-2. 1.5 `services/ingest.py`: reproject to UTM, tile 256x256, cloud-score from SCL
-3. 1.6 `/api/v1/jobs` polling + BackgroundTasks wiring
+1. 1.6 `/api/v1/jobs` polling + BackgroundTasks wiring
+2. 1.7 `api/aoi.py`, `api/scenes.py`
+3. 1.8 `api/tiles.py`: raster -> PNG tile server for imagery and masks
+4. 1.9 Frontend: `MapPane` with imagery overlay, `SwipeCompare`, `Timeline`
