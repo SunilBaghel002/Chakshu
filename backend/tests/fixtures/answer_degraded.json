@@ -1,0 +1,49 @@
+{
+  "answer_id": "ans_8841a2b3c4d5_deg",
+  "question": "What changes took place in 3 years in this area?",
+  "question_normalised": "what changes took place in 3 years in this area",
+  "intent": {
+    "id": "aoi_change_summary",
+    "score": 0.91,
+    "matched_by": "embedding"
+  },
+  "slots": {
+    "window_years": 3,
+    "window_source": "parsed_from_question",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1"
+  },
+  "tier": "degraded",
+  "degraded": true,
+  "text": "Over the last three years, 6 construction changes totalling 18.43 ha were verified.",
+  "text_template": "Over the last three years, {f1} construction changes totalling {f2} were verified.",
+  "confidence": 0.84,
+  "confidence_parts": {
+    "data_completeness": 0.81,
+    "detector_agreement": 0.9,
+    "suppression_cleanliness": 0.88,
+    "temporal_coverage": 0.74,
+    "classification_margin": 0.86
+  },
+  "measurements": {
+    "bundle_id": "mb_2210a3b4",
+    "facts": [
+      { "fact_id": "f1", "kind": "count", "value": 6, "unit": "changes", "type": "construction" },
+      { "fact_id": "f2", "kind": "area", "value": 184320.5, "unit": "m2", "label": "18.43 ha", "type": "construction" }
+    ]
+  },
+  "highlights": {
+    "change_object_ids": ["8f2c1a4e-5e32-4d1f-82a1-9491b2c45e82"],
+    "detection_ids": [],
+    "focus_bbox_4326": [77.71, 28.09, 77.81, 28.19]
+  },
+  "sources": [
+    { "kind": "scene", "id": "S2B_43RCU_20240609_0_L2A", "checksum": "9c2e..." }
+  ],
+  "models_used": [
+    { "name": "gemini-2.0-flash", "role": "phrasing", "verified": false }
+  ],
+  "capability_notice": "Prose phrasing contained unverified numbers; degraded to deterministic template.",
+  "trace_url": "/api/v1/ask/ans_8841a2b3c4d5_deg/trace",
+  "report_url": "/api/v1/ask/ans_8841a2b3c4d5_deg/report.json",
+  "generated_at": "2026-09-12T09:16:41Z"
+}

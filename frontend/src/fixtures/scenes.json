@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S2A_43RCU_20240118_0_L2A",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "acquired_at": "2024-01-18",
+    "cloud_cover_pct": 4.2,
+    "usable": true,
+    "unusable_reason": null,
+    "cog_path": "data/scenes/S2A_43RCU_20240118_0_L2A.tif",
+    "checksum_sha256": "a3f1b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
+    "sensor": "sentinel-2-l2a",
+    "gsd_m": 10.0
+  },
+  {
+    "id": "S2B_43RCU_20240609_0_L2A",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "acquired_at": "2024-06-09",
+    "cloud_cover_pct": 2.8,
+    "usable": true,
+    "unusable_reason": null,
+    "cog_path": "data/scenes/S2B_43RCU_20240609_0_L2A.tif",
+    "checksum_sha256": "9c2eb2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
+    "sensor": "sentinel-2-l2a",
+    "gsd_m": 10.0
+  },
+  {
+    "id": "S2B_43RCU_20240714_0_L2A",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "acquired_at": "2024-07-14",
+    "cloud_cover_pct": 84.5,
+    "usable": false,
+    "unusable_reason": "monsoon cloud cover > 20%",
+    "cog_path": "data/scenes/S2B_43RCU_20240714_0_L2A.tif",
+    "checksum_sha256": "8d3cb2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
+    "sensor": "sentinel-2-l2a",
+    "gsd_m": 10.0
+  },
+  {
+    "id": "S2A_43RCU_20240818_0_L2A",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "acquired_at": "2024-08-18",
+    "cloud_cover_pct": 76.1,
+    "usable": false,
+    "unusable_reason": "monsoon cloud cover > 20%",
+    "cog_path": "data/scenes/S2A_43RCU_20240818_0_L2A.tif",
+    "checksum_sha256": "7a2eb2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
+    "sensor": "sentinel-2-l2a",
+    "gsd_m": 10.0
+  },
+  {
+    "id": "S2B_43RCU_20260803_0_L2A",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "acquired_at": "2026-08-03",
+    "cloud_cover_pct": 3.1,
+    "usable": true,
+    "unusable_reason": null,
+    "cog_path": "data/scenes/S2B_43RCU_20260803_0_L2A.tif",
+    "checksum_sha256": "1e4fb2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
+    "sensor": "sentinel-2-l2a",
+    "gsd_m": 10.0
+  }
+]

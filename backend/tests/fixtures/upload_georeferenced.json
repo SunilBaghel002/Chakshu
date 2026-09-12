@@ -1,0 +1,123 @@
+{
+  "upload": {
+    "id": "c4a91b2c-88df-4a11-9a72-f192b3c4d5e6",
+    "filename": "jewar_2026_crop.tif",
+    "title": "Jewar Airport Runway Crop 2026",
+    "status": "GEOREFERENCED",
+    "width_px": 2048,
+    "height_px": 2048,
+    "band_count": 6,
+    "bands": ["blue", "green", "red", "rededge1", "nir", "swir16"],
+    "bands_identified_by": "sentinel2_filename_convention",
+    "crs_epsg": 32643,
+    "bounds_4326": [77.71, 28.09, 77.81, 28.19],
+    "gsd_m": 10.0,
+    "gsd_source": "metadata",
+    "acquired_at": "2026-08-03",
+    "acquired_source": "metadata",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "aoi_name": "Jewar Airport",
+    "capability_tier": "T3_MEDIUM",
+    "capabilities": {
+      "object_classes": ["building_cluster", "ship_large", "storage_tank", "road"],
+      "landcover_classes": ["built", "water", "vegetation", "bare", "crop", "snow"],
+      "area_measurements": true,
+      "temporal_analysis": true
+    },
+    "capability_notice": null,
+    "checksum_sha256": "7e1b99a823c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
+    "overview_url": "/api/v1/uploads/c4a91b2c-88df-4a11-9a72-f192b3c4d5e6/overview.jpg",
+    "created_at": "2026-09-12T09:14:22Z"
+  },
+  "detections": [
+    {
+      "id": "d1f0a2b3-c4d5-4e6f-a7b8-c9d0e1f2a3b4",
+      "track": "landcover_index",
+      "label": "water",
+      "label_raw": null,
+      "kind": "polygon",
+      "geom_px": {
+        "type": "Polygon",
+        "coordinates": [
+          [[100, 100], [200, 100], [200, 200], [100, 200], [100, 100]]
+        ]
+      },
+      "geom_4326": {
+        "type": "Polygon",
+        "coordinates": [
+          [[77.72, 28.1], [77.73, 28.1], [77.73, 28.11], [77.72, 28.11], [77.72, 28.1]]
+        ]
+      },
+      "area_px": 48210.0,
+      "area_m2": 4821000.0,
+      "area_label": "482.1 ha",
+      "score": 0.94,
+      "score_source": "deterministic",
+      "verified": true,
+      "verifier_note": null
+    },
+    {
+      "id": "a83c1d2e-3f4a-5b6c-7d8e-9f0a1b2c3d4e",
+      "track": "object_model",
+      "label": "building_cluster",
+      "label_raw": "terminal building complex",
+      "kind": "box",
+      "geom_px": {
+        "type": "Polygon",
+        "coordinates": [
+          [[412, 880], [1104, 880], [1104, 1240], [412, 1240], [412, 880]]
+        ]
+      },
+      "geom_4326": {
+        "type": "Polygon",
+        "coordinates": [
+          [[77.74, 28.12], [77.76, 28.12], [77.76, 28.14], [77.74, 28.14], [77.74, 28.12]]
+        ]
+      },
+      "area_px": 250048.0,
+      "area_m2": 25004800.0,
+      "area_label": "2500.5 ha",
+      "score": 0.87,
+      "score_source": "model",
+      "verified": false,
+      "verifier_note": "model-identified; not verified against ground truth"
+    }
+  ],
+  "coverage": {
+    "source_track": "landcover_index",
+    "total_px": 4194304,
+    "by_class": [
+      { "label": "crop", "px": 1902110, "pct": 45.35, "area_m2": 190211000.0 },
+      { "label": "built", "px": 1140220, "pct": 27.18, "area_m2": 114022000.0 },
+      { "label": "bare", "px": 621004, "pct": 14.81, "area_m2": 62100400.0 },
+      { "label": "water", "px": 48210, "pct": 1.15, "area_m2": 4821000.0 },
+      { "label": "vegetation", "px": 402300, "pct": 9.59, "area_m2": 40230000.0 },
+      { "label": "unclassified", "px": 80460, "pct": 1.92, "area_m2": 8046000.0 }
+    ],
+    "sum_check_pct": 100.0
+  },
+  "counts": {
+    "by_label": { "building_cluster": 3, "road": 7, "storage_tank": 2, "water": 1 },
+    "total_object_detections": 12,
+    "total_landcover_detections": 6,
+    "source": "SELECT count(*) FROM detection GROUP BY label"
+  },
+  "rejections": {
+    "count": 9,
+    "by_reason": {
+      "label_not_permitted_at_tier": 5,
+      "score_below_threshold": 2,
+      "bbox_out_of_range": 1,
+      "nms_duplicate": 1
+    },
+    "detail": [
+      {
+        "label_raw": "car",
+        "reason": "label_not_permitted_at_tier",
+        "detail": "'vehicle' is not detectable at 10 m GSD (tier T3_MEDIUM)"
+      }
+    ]
+  },
+  "job_id": "j_9912a3b4c5d6",
+  "trace_id": "t_4471e2f3a4b5"
+}
