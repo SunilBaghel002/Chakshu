@@ -25,7 +25,11 @@ def main() -> int:
     )
     entry2 = create_audit_entry(
         prev_hash=entry1["entry_hash"],
-        content={"action": "confirm", "entity_type": "change_object", "entity_id": "c8f2a1b0"},
+        content={
+            "action": "confirm",
+            "entity_type": "change_object",
+            "entity_id": "c8f2a1b0",
+        },
         recorded_at="2026-09-12T01:00:00Z",
         decision_id=2,
     )
@@ -46,7 +50,9 @@ def main() -> int:
     ]
     tamper_detected, _ = verify_audit_chain(tampered_chain)
     if tamper_detected:
-        print("FAILED: Tamper detection failed to flag modified content!", file=sys.stderr)
+        print(
+            "FAILED: Tamper detection failed to flag modified content!", file=sys.stderr
+        )
         return 1
 
     print("SUCCESS: Audit hash chain verified. Tamper detection verified.")

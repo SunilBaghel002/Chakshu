@@ -54,19 +54,24 @@ def check_domain_purity() -> list[str]:
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     root_mod = alias.name.split(".")[0]
-                    if root_mod in DISALLOWED_DOMAIN_IMPORTS or alias.name in DISALLOWED_DOMAIN_IMPORTS:
+                    if (
+                        root_mod in DISALLOWED_DOMAIN_IMPORTS
+                        or alias.name in DISALLOWED_DOMAIN_IMPORTS
+                    ):
                         violations.append(
                             f"Domain purity violation in {py_file.name}:{node.lineno}: "
                             f"Disallowed import '{alias.name}' in pure domain layer."
                         )
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    root_mod = node.module.split(".")[0]
-                    if root_mod in DISALLOWED_DOMAIN_IMPORTS or node.module in DISALLOWED_DOMAIN_IMPORTS:
-                        violations.append(
-                            f"Domain purity violation in {py_file.name}:{node.lineno}: "
-                            f"Disallowed import from '{node.module}' in pure domain layer."
-                        )
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                root_mod = node.module.split(".")[0]
+                if (
+                    root_mod in DISALLOWED_DOMAIN_IMPORTS
+                    or node.module in DISALLOWED_DOMAIN_IMPORTS
+                ):
+                    violations.append(
+                        f"Domain purity violation in {py_file.name}:{node.lineno}: "
+                        f"Disallowed import from '{node.module}' in pure domain layer."
+                    )
 
     return violations
 
@@ -135,12 +140,17 @@ def main() -> int:
     all_errors = domain_errors + frontend_errors + size_errors
 
     if all_errors:
-        print(f"\nFAILED: Found {len(all_errors)} architecture violations:\n", file=sys.stderr)
+        print(
+            f"\nFAILED: Found {len(all_errors)} architecture violations:\n",
+            file=sys.stderr,
+        )
         for err in all_errors:
             print(f"  ❌ {err}", file=sys.stderr)
         return 1
 
-    print("SUCCESS: Architecture purity checks passed cleanly (domain pure, fetch isolated, line limits respected).")
+    print(
+        "SUCCESS: Architecture purity checks passed cleanly (domain pure, fetch isolated, line limits respected)."
+    )
     return 0
 
 

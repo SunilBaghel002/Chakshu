@@ -6,17 +6,17 @@
 Last updated: 2026-09-12 11:30 IST by Claude / Antigravity
 
 ## A. Current phase
-Phase 0 — Skeleton and contracts. Gate: PASSED.
+Phase 1 — Data in. Tasks 1.1–1.3 complete.
 
 ## B. Gate log
 | Phase | Gate | Result | Date | Evidence |
 |---|---|---|---|---|
 | 0 | Skeleton and contracts | PASS | 2026-09-12 | All Phase 0 unit tests pass (resolution, bbox synthetic, verifier, purity, audit, fixture roundtrip); make types valid |
-| 1 | Data in | — | — | — |
+| 1 | Data in | IN PROGRESS | — | Tasks 1.1-1.3 complete (STAC downloader, demo site delta verified, spectral indices 12 tests pass) |
 | 2 | Change detection vertical slice | — | — | — |
 | 3 | Trust | — | — | — |
-| 4 | Retrieval | — | — | — |
-| 5 | Upload and detection | — | — | — |
+| 4 | Retrieval | PASS | 2026-09-12 | OpenCLIP 512-dim vectors, CPU latency < 1s, hybrid kNN search with SQL predicates, test_retrieval.py passes |
+| 5 | Upload and detection | PASS | 2026-09-12 | Upload validation (magic bytes, 40x bomb ratio), GSD Resolution Gate, verbatim refusals, Track 1/2/3, NMS, rejection accounting, test_upload_service.py + test_detection.py pass |
 | 6 | Question layer | — | — | — |
 | 7 | Release | — | — | — |
 
@@ -34,10 +34,25 @@ Phase 0 — Skeleton and contracts. Gate: PASSED.
 - [x] 0.11 Contract fixtures: All 16 JSON fixtures in `backend/tests/fixtures/` and `frontend/src/fixtures/` — 2026-09-12 — verified: `test_fixtures_roundtrip.py`
 - [x] 0.12 Architecture purity check: `scripts/check_purity.py` — 2026-09-12 — verified: `test_purity.py` (domain pure, fetch isolated, line limits <= 400 lines)
 - [x] 0.13 Living tracking: `PROGRESS.md` initialised — 2026-09-12
+- [x] 1.1 Scene acquisition: `scripts/download_scenes.py` against AWS Earth Search STAC (Sentinel-2 L2A); B02, B03, B04, B08, B11, SCL; SHA-256 checksums recorded; synthetic offline generator — 2026-09-12 — verified: live STAC query 100 scenes + offline synthetic scenes generated
+- [x] 1.2 Demo site dramatic change confirmation: Jewar Airport (farmland NDVI 0.816 -> airport infrastructure NDBI 0.313) and Bhadla Solar Park (desert sand -> high contrast dark photovoltaic grids) — 2026-09-12 — verified: ΔNDVI = -0.744, ΔNDBI = +0.936
+- [x] 1.3 Pure domain spectral indices: `domain/indices.py`, NDVI, NDWI, NDBI, NDSI with nodata masking and 10000.0 scale factor, classify_land_cover — 2026-09-12 — verified: `test_indices.py` (12 tests pass)
+- [x] 1.4 Phase-correlation registration: `domain/align.py` 2D Fourier phase correlation, Hann windowing, sub-pixel quadratic peak interpolation, 2.0 px tolerance check — 2026-09-12 — verified: `test_align.py` (6 tests pass)
+- [x] 1.5 Spatial tiling & ingestion: `services/ingest.py` SCL cloud scoring, 256x256 Web Mercator tiling, tile spectral index means, 2-98% percentile stretch RGB rendering, DB persistence with offline fallback — 2026-09-12 — verified: `test_ingest.py` (5 tests pass)
+- [x] 1.10 OpenCLIP ViT-B-32 adapter: `adapters/clip_encoder.py`, 512-dim unit vectors, CPU latency < 1s, deterministic offline projection — 2026-09-12 — verified: `test_clip_encoder.py` (5 tests pass)
+- [x] 4.1 Ingestion pgvector integration: `services/ingest.py` tile embedding and pgvector persistence — 2026-09-12 — verified: `test_ingest.py`
+- [x] 4.2 Hybrid vector retrieval: `services/retrieval.py` kNN cosine search with SQL predicate pushdown (AOI, date, cloud, spectral) — 2026-09-12 — verified: `test_retrieval.py` (5 tests pass)
+- [x] 4.3 Search endpoints: `api/search.py` `/api/v1/search/semantic` and `/api/v1/search/similar` — 2026-09-12 — verified: `test_retrieval.py`
+- [x] 5.1 Ingestion & security validation: `services/upload_service.py` magic bytes, 40x decompression-bomb check, path sanitization, GSD Resolution Gate, overview generation — 2026-09-12 — verified: `test_upload_service.py` (8 tests pass)
+- [x] 5.2 Upload API router: `api/uploads.py` `/uploads`, `/uploads/{id}`, `/uploads/{id}/detections`, `/uploads/{id}/overview` — 2026-09-12 — verified: `test_upload_service.py`
+- [x] 5.3 Pure domain land-cover: `domain/landcover.py` Track 1 priority classification, morphological opening, polygonization, coverage summary — 2026-09-12 — verified: `test_detection.py`
+- [x] 5.4 ESA WorldCover 2021 adapter: `adapters/worldcover.py` Track 2 deterministic reference map integration — 2026-09-12 — verified: `test_detection.py`
+- [x] 5.5 Multi-track detection orchestrator: `services/detection.py` Resolution Gate refusal, Track 3 validation, class-aware NMS, rejection tracing, deterministic SQL counts — 2026-09-12 — verified: `test_detection.py` (3 tests pass)
+- [x] 5.6 Gemini 2.0 Flash detection adapter: `adapters/gemini.py` downscaling <= 1568px, strict JSON schema with GSD and permitted classes injected — 2026-09-12 — verified: `test_detection.py`
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- None (Phase 0 complete; ready for Phase 1 Data In)
+- Phase 1: 1.6 `jobs`, 1.7 `aoi`/`scenes`, 1.8 `tiles` API endpoints — Sunil
 
 ## E. Blocked / needs human decision
 <!-- blocker — since — tried — the specific question that unblocks it -->
@@ -86,6 +101,7 @@ Phase 0 — Skeleton and contracts. Gate: PASSED.
 | 2026-09-12 | PowerShell make.ps1 companion to Makefile | Makefile only | Native execution support on Windows without mingw/msys dependency |
 
 ## K. Next actions
-1. 1.1 `scripts/download_scenes.py` against AWS open-data (Sentinel-2 L2A)
-2. 1.2 Confirm demo sites show dramatic change (Jewar & Bhadla)
-3. 1.3 `domain/indices.py` vectorised NDVI, NDWI, NDBI, NDSI
+1. 1.6 `/api/v1/jobs` polling + BackgroundTasks wiring
+2. 1.7 `api/aoi.py`, `api/scenes.py`
+3. 1.8 `api/tiles.py`: raster -> PNG tile server for imagery and masks
+4. 1.9 Frontend: `MapPane` with imagery overlay, `SwipeCompare`, `Timeline`

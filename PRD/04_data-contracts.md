@@ -28,88 +28,102 @@
 
 ```python
 class ChangeType(str, Enum):
-    CONSTRUCTION      = "construction"        # new built structure
-    DEMOLITION        = "demolition"          # built structure removed
-    CLEARANCE         = "clearance"           # vegetation removed
-    VEGETATION_GAIN   = "vegetation_gain"     # afforestation, regrowth, new crop
-    WATER_GAIN        = "water_gain"          # inundation, reservoir filling
-    WATER_LOSS        = "water_loss"          # drying, recession
-    ROAD              = "road"                # new linear transport feature
-    EXPANSION         = "expansion"           # existing object grew
-    CONTRACTION       = "contraction"         # existing object shrank
-    OTHER             = "other"               # real change, type not determinable
+    CONSTRUCTION = "construction"  # new built structure
+    DEMOLITION = "demolition"  # built structure removed
+    CLEARANCE = "clearance"  # vegetation removed
+    VEGETATION_GAIN = "vegetation_gain"  # afforestation, regrowth, new crop
+    WATER_GAIN = "water_gain"  # inundation, reservoir filling
+    WATER_LOSS = "water_loss"  # drying, recession
+    ROAD = "road"  # new linear transport feature
+    EXPANSION = "expansion"  # existing object grew
+    CONTRACTION = "contraction"  # existing object shrank
+    OTHER = "other"  # real change, type not determinable
+
 
 class DetectionTrack(str, Enum):
-    OBJECT_MODEL            = "object_model"
-    LANDCOVER_INDEX         = "landcover_index"
-    LANDCOVER_WORLDCOVER    = "landcover_worldcover"
+    OBJECT_MODEL = "object_model"
+    LANDCOVER_INDEX = "landcover_index"
+    LANDCOVER_WORLDCOVER = "landcover_worldcover"
+
 
 class DetectionKind(str, Enum):
-    BOX     = "box"
+    BOX = "box"
     POLYGON = "polygon"
 
+
 class ObjectClass(str, Enum):
-    BUILDING        = "building"
-    BUILDING_CLUSTER= "building_cluster"
-    VEHICLE         = "vehicle"
-    AIRCRAFT        = "aircraft"
-    SHIP            = "ship"
-    SHIP_LARGE      = "ship_large"
-    STORAGE_TANK    = "storage_tank"
-    SWIMMING_POOL   = "swimming_pool"
-    TOWER           = "tower"
-    CONTAINER       = "container"
-    ROAD            = "road"
+    BUILDING = "building"
+    BUILDING_CLUSTER = "building_cluster"
+    VEHICLE = "vehicle"
+    AIRCRAFT = "aircraft"
+    SHIP = "ship"
+    SHIP_LARGE = "ship_large"
+    STORAGE_TANK = "storage_tank"
+    SWIMMING_POOL = "swimming_pool"
+    TOWER = "tower"
+    CONTAINER = "container"
+    ROAD = "road"
+
 
 class LandCoverClass(str, Enum):
-    BUILT         = "built"
-    WATER         = "water"
-    VEGETATION    = "vegetation"
-    BARE          = "bare"
-    CROP          = "crop"
-    SNOW          = "snow"
-    UNCLASSIFIED  = "unclassified"
+    BUILT = "built"
+    WATER = "water"
+    VEGETATION = "vegetation"
+    BARE = "bare"
+    CROP = "crop"
+    SNOW = "snow"
+    UNCLASSIFIED = "unclassified"
+
 
 class CapabilityTier(str, Enum):
-    T1_VERY_HIGH = "T1_VERY_HIGH"   # <= 1 m
-    T2_HIGH      = "T2_HIGH"        # <= 5 m
-    T3_MEDIUM    = "T3_MEDIUM"      # <= 15 m  (Sentinel-2)
-    T4_COARSE    = "T4_COARSE"      # > 15 m
-    T0_UNKNOWN   = "T0_UNKNOWN"     # no trustworthy GSD
+    T1_VERY_HIGH = "T1_VERY_HIGH"  # <= 1 m
+    T2_HIGH = "T2_HIGH"  # <= 5 m
+    T3_MEDIUM = "T3_MEDIUM"  # <= 15 m  (Sentinel-2)
+    T4_COARSE = "T4_COARSE"  # > 15 m
+    T0_UNKNOWN = "T0_UNKNOWN"  # no trustworthy GSD
+
 
 class UploadStatus(str, Enum):
     GEOREFERENCED = "GEOREFERENCED"
-    VISUAL_ONLY   = "VISUAL_ONLY"
-    REJECTED      = "REJECTED"
+    VISUAL_ONLY = "VISUAL_ONLY"
+    REJECTED = "REJECTED"
+
 
 class ProvenanceSource(str, Enum):
-    METADATA       = "metadata"
-    USER_DECLARED  = "user_declared"
-    ASSUMED        = "assumed"
-    DERIVED        = "derived"
+    METADATA = "metadata"
+    USER_DECLARED = "user_declared"
+    ASSUMED = "assumed"
+    DERIVED = "derived"
+
 
 class SuppressionReason(str, Enum):
-    MIN_SIZE          = "min_size"
-    CLOUD             = "cloud"
-    CLOUD_SHADOW      = "cloud_shadow"
-    REGISTRATION      = "registration"
-    SEASONAL          = "seasonal"
-    ILLUMINATION      = "illumination"
-    SNOW_COVER        = "snow_cover"
-    LOW_CONFIDENCE    = "low_confidence"
+    MIN_SIZE = "min_size"
+    CLOUD = "cloud"
+    CLOUD_SHADOW = "cloud_shadow"
+    REGISTRATION = "registration"
+    SEASONAL = "seasonal"
+    ILLUMINATION = "illumination"
+    SNOW_COVER = "snow_cover"
+    LOW_CONFIDENCE = "low_confidence"
+
 
 class DecisionStatus(str, Enum):
-    PENDING   = "pending"
+    PENDING = "pending"
     CONFIRMED = "confirmed"
-    REJECTED  = "rejected"
+    REJECTED = "rejected"
+
 
 class AnswerTier(str, Enum):
-    TEMPLATE  = "template"    # Tier 1 only
-    POLISHED  = "polished"    # Tier 2, verifier PASS
-    DEGRADED  = "degraded"    # Tier 2 attempted, verifier FAIL, fell back
+    TEMPLATE = "template"  # Tier 1 only
+    POLISHED = "polished"  # Tier 2, verifier PASS
+    DEGRADED = "degraded"  # Tier 2 attempted, verifier FAIL, fell back
+
 
 class JobState(str, Enum):
-    QUEUED = "queued"; RUNNING = "running"; SUCCEEDED = "succeeded"; FAILED = "failed"
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
 ```
 
 ---

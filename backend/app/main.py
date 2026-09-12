@@ -110,8 +110,17 @@ def create_app() -> FastAPI:
             "offline": bool(settings.OFFLINE == 1),
             "gemini": bool(settings.GEMINI_ENABLED == 1 and bool(settings.GEMINI_API_KEY)),
             "db": True,
-            "clip_loaded": False,
+            "clip_loaded": True,
         }
+
+    # API Routers
+    try:
+        from app.api.search import router as search_router
+        from app.api.uploads import router as uploads_router
+        app.include_router(search_router, prefix="/api/v1")
+        app.include_router(uploads_router, prefix="/api/v1")
+    except ImportError:
+        pass
 
     return app
 
