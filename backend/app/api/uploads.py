@@ -67,9 +67,12 @@ async def get_upload(upload_id: str) -> Upload:
 
 
 @router.get("/{upload_id}/detections", response_model=DetectionSet)
-async def get_upload_detections(upload_id: str) -> DetectionSet:
+async def get_upload_detections(
+    upload_id: str,
+    refresh: bool = False,
+) -> DetectionSet:
     """Retrieve complete DetectionSet for an upload, including coverage and rejections."""
-    if upload_id not in _detections_registry:
+    if upload_id not in _detections_registry or refresh:
         if upload_id in _uploads_registry:
             upload_record = _uploads_registry[upload_id]
             stored_path = settings.UPLOADS_DIR / upload_record.id / upload_record.filename

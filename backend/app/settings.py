@@ -12,11 +12,14 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+
+
 class Settings(BaseSettings):
     """Configuration settings loaded from environment or .env file."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(ROOT_DIR / ".env", ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -43,7 +46,7 @@ class Settings(BaseSettings):
         description="Google Gemini API key.",
     )
     GEMINI_MODEL: str = Field(
-        default="gemini-2.0-flash",
+        default="gemini-2.5-flash",
         description="Pinned Gemini model identifier.",
     )
     GEMINI_BBOX_ORDER: str = Field(

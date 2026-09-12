@@ -105,13 +105,24 @@ class GeminiDetectionAdapter:
         scaled_img, _ = self.downscale_image(img)
         prompt = self._build_prompt(permitted_classes, gsd_m, capability_tier)
 
-        try:
-            response = self._client.generate_content([prompt, scaled_img])
-            raw_text = response.text.strip()
-            return self._parse_json_response(raw_text)
-        except Exception as exc:
-            log.warning("Gemini object detection call failed: %s", exc)
-            return []
+        candidate_models = [self.model_name]
+        for fallback in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-3.6-flash"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+
+        for model_id in candidate_models:
+            try:
+                import google.generativeai as genai  # type: ignore[import-untyped]
+
+                client = genai.GenerativeModel(model_id)
+                response = client.generate_content([prompt, scaled_img])
+                raw_text = response.text.strip()
+                return self._parse_json_response(raw_text)
+            except Exception as exc:
+                log.warning("Gemini model %s detection call failed: %s", model_id, exc)
+                continue
+
+        return []
 
     def _build_prompt(
         self,
