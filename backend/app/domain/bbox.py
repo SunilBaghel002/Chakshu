@@ -266,6 +266,10 @@ def normalise_bbox(
     )
 
 
+# Alias supporting alternate spelling (PRD 5 §B3)
+normalize_box = normalise_bbox
+
+
 def apply_class_nms(
     proposals: list[tuple[PixelBox, float, str, str, str]],
     iou_threshold: float = 0.50,

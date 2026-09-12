@@ -158,6 +158,9 @@ class UploadService:
         try:
             pil_img = Image.open(io.BytesIO(file_bytes))
             w, h = pil_img.size
+            if w > 10000 or h > 10000:
+                log.warning("Image dimensions (%dx%d) exceed 10000x10000 limit", w, h)
+                raise FileUnreadableError("Image dimensions exceed the 10,000×10,000 pixel limit.")
             bands = ["red", "green", "blue"] if pil_img.mode in ("RGB", "RGBA") else ["gray"]
             band_count = len(bands)
         except Exception as exc:

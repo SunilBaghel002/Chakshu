@@ -103,3 +103,28 @@ async def search_similar(
         count=len(results),
         results=[r.to_dict() for r in results],
     )
+
+
+@router.get("/similar", response_model=SearchResponse)
+async def get_search_similar(
+    tile_id: str,
+    max_cloud_pct: float | None = 20.0,
+    limit: int = 12,
+) -> SearchResponse:
+    """Find visually similar tiles via GET query parameter tile_id (Task 4.3)."""
+    filters = RetrievalFilter(max_cloud_pct=max_cloud_pct, limit=limit)
+    parts = tile_id.rsplit("_", 2)
+    if len(parts) == 3:
+        scene_id, x, y = parts[0], parts[1], parts[2]
+        png_path = retrieval_service.tiles_dir / scene_id / f"{x}_{y}.png"
+        if png_path.exists():
+            results = retrieval_service.search_similar(png_path, filters=filters)
+        else:
+            results = []
+    else:
+        results = []
+    return SearchResponse(
+        query=f"tile:{tile_id}",
+        count=len(results),
+        results=[r.to_dict() for r in results],
+    )
