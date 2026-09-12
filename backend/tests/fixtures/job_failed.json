@@ -1,0 +1,12 @@
+{
+  "job_id": "j_8811b2c3d4e5",
+  "state": "failed",
+  "progress": 0.2,
+  "result": null,
+  "error": {
+    "code": "FILE_UNREADABLE",
+    "message": "I couldn't read this file — it may be corrupt or use a compression I don't support. Try re-exporting it as an uncompressed GeoTIFF.",
+    "details": { "source": "rasterio.open" },
+    "trace_id": "t_job_fail"
+  }
+}

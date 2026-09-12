@@ -1,0 +1,38 @@
+[
+  {
+    "id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "name": "Noida International Airport, Jewar",
+    "geom": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [77.72, 28.1],
+          [77.8, 28.1],
+          [77.8, 28.16],
+          [77.72, 28.16],
+          [77.72, 28.1]
+        ]
+      ]
+    },
+    "utm_epsg": 32643,
+    "created_at": "2026-09-12T00:00:00Z"
+  },
+  {
+    "id": "f4e2c1d0-99b8-47a6-bc54-123456789abc",
+    "name": "Bhadla Solar Park, Rajasthan",
+    "geom": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [71.85, 27.5],
+          [72.0, 27.5],
+          [72.0, 27.65],
+          [71.85, 27.65],
+          [71.85, 27.5]
+        ]
+      ]
+    },
+    "utm_epsg": 32643,
+    "created_at": "2026-09-12T00:00:00Z"
+  }
+]

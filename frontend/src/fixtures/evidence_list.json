@@ -1,0 +1,99 @@
+[
+  {
+    "change_object_id": "8f2c1a4e-5e32-4d1f-82a1-9491b2c45e82",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "change_type": "construction",
+    "status": "pending",
+    "measurement": {
+      "area_m2": 18432.5,
+      "area_label": "1.84 ha",
+      "perimeter_m": 561.2,
+      "centroid": [77.7612, 28.1305],
+      "bbox_4326": [77.758, 28.1281, 77.7649, 28.133],
+      "utm_epsg": 32643,
+      "geom_4326": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.758, 28.1281],
+            [77.7649, 28.1281],
+            [77.7649, 28.133],
+            [77.758, 28.133],
+            [77.758, 28.1281]
+          ]
+        ]
+      },
+      "measured_by": "ST_Area on vectorised mask, UTM 43N",
+      "kind": "MEASURED"
+    },
+    "classification": {
+      "change_type": "construction",
+      "rule_trace": [
+        { "rule": "d_ndbi_rise", "field": "d_ndbi", "value": 0.21, "threshold": 0.1, "fired": true },
+        { "rule": "d_ndvi_fall", "field": "d_ndvi", "value": -0.34, "threshold": -0.15, "fired": true }
+      ],
+      "alternatives": [],
+      "kind": "INFERRED"
+    },
+    "temporal": {
+      "first_supported": "2024-06-09",
+      "last_seen": "2026-08-03",
+      "onset_interval": { "start": "2024-01-18", "end": "2024-06-09", "days": 143 },
+      "onset_gaps": [],
+      "persistence_k": 3,
+      "area_series": [{ "date": "2024-06-09", "area_m2": 4210.0 }],
+      "trend": "expanding",
+      "kind": "MEASURED"
+    },
+    "confidence": {
+      "overall": 0.86,
+      "parts": {
+        "detector_agreement": 0.9,
+        "image_quality": 0.82,
+        "registration": 0.95,
+        "classification_margin": 0.78,
+        "temporal_persistence": 0.88
+      },
+      "method": "geometric_mean",
+      "calibrated": true,
+      "calibration_ece": 0.043,
+      "calibration_n": 147,
+      "kind": "INFERRED"
+    },
+    "suppression_context": {
+      "candidates_generated": 318,
+      "candidates_suppressed": 312,
+      "candidates_retained": 6,
+      "by_reason": { "seasonal": 188, "cloud_shadow": 94, "registration": 30 }
+    },
+    "sources": {
+      "before": {
+        "scene_id": "S2A_43RCU_20240118_0_L2A",
+        "acquired_at": "2024-01-18",
+        "checksum_sha256": "a3f1...",
+        "cloud_cover_pct": 4.2,
+        "sensor": "sentinel-2-l2a"
+      },
+      "after": {
+        "scene_id": "S2B_43RCU_20240609_0_L2A",
+        "acquired_at": "2024-06-09",
+        "checksum_sha256": "9c2e...",
+        "cloud_cover_pct": 2.8,
+        "sensor": "sentinel-2-l2a"
+      },
+      "mask_path": "data/masks/8f2c1a4e.png",
+      "triptych_urls": {
+        "before": "/api/v1/tiles/evidence/8f2c1a4e/before.png",
+        "mask": "/api/v1/tiles/evidence/8f2c1a4e/mask.png",
+        "after": "/api/v1/tiles/evidence/8f2c1a4e/after.png"
+      }
+    },
+    "models_used": [
+      { "name": "index-cva-otsu", "version": "1.0.0", "role": "primary_detector", "licence": "internal", "enabled": true }
+    ],
+    "processing_history": [
+      { "step": 1, "op": "detect", "detail": "index-CVA + Otsu threshold 0.184" }
+    ],
+    "analyst": { "note": null, "decided_at": null, "actor": null }
+  }
+]

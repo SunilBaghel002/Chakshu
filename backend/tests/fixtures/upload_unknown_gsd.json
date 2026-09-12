@@ -1,0 +1,47 @@
+{
+  "upload": {
+    "id": "u_unknown_gsd_001",
+    "filename": "uncalibrated_aerial.jpg",
+    "title": "Uncalibrated Aerial Photo",
+    "status": "VISUAL_ONLY",
+    "width_px": 1600,
+    "height_px": 1200,
+    "band_count": 3,
+    "bands": ["red", "green", "blue"],
+    "bands_identified_by": "rgb_heuristic",
+    "crs_epsg": null,
+    "bounds_4326": null,
+    "gsd_m": null,
+    "gsd_source": null,
+    "acquired_at": null,
+    "acquired_source": null,
+    "aoi_id": null,
+    "aoi_name": null,
+    "capability_tier": "T0_UNKNOWN",
+    "capabilities": {
+      "object_classes": [],
+      "landcover_classes": [],
+      "area_measurements": false,
+      "temporal_analysis": false
+    },
+    "capability_notice": "I don't know this image's resolution. I'll describe it qualitatively. Tell me the ground sample distance in metres and I can identify specific objects and measure their sizes.",
+    "checksum_sha256": "5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+    "overview_url": "/api/v1/uploads/u_unknown_gsd_001/overview.jpg",
+    "created_at": "2026-09-12T10:15:00Z"
+  },
+  "detections": [],
+  "coverage": null,
+  "counts": {
+    "by_label": {},
+    "total_object_detections": 0,
+    "total_landcover_detections": 0,
+    "source": "SELECT count(*) FROM detection GROUP BY label"
+  },
+  "rejections": {
+    "count": 0,
+    "by_reason": {},
+    "detail": []
+  },
+  "job_id": null,
+  "trace_id": "t_unknown_gsd"
+}

@@ -1,0 +1,32 @@
+{
+  "answer_id": "ans_unsupported_001",
+  "question": "What is the capital of France?",
+  "question_normalised": "what is the capital of france",
+  "intent": {
+    "id": "unsupported",
+    "score": 0.12,
+    "matched_by": "fallback"
+  },
+  "slots": {},
+  "tier": "template",
+  "degraded": false,
+  "text": "I can't answer that from the data I have. I can tell you about changes in this area, counts and sizes of what's detected, when a change started, or show you a class on the map. Try one of those.",
+  "text_template": "I can't answer that from the data I have. I can tell you about changes in this area, counts and sizes of what's detected, when a change started, or show you a class on the map. Try one of those.",
+  "confidence": 0.0,
+  "confidence_parts": {},
+  "measurements": {
+    "bundle_id": "mb_empty",
+    "facts": []
+  },
+  "highlights": {
+    "change_object_ids": [],
+    "detection_ids": [],
+    "focus_bbox_4326": null
+  },
+  "sources": [],
+  "models_used": [],
+  "capability_notice": "Query falls outside geospatial and satellite understanding scope.",
+  "trace_url": "/api/v1/ask/ans_unsupported_001/trace",
+  "report_url": "/api/v1/ask/ans_unsupported_001/report.json",
+  "generated_at": "2026-09-12T09:16:42Z"
+}

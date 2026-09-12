@@ -1,0 +1,28 @@
+{
+  "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+  "candidates_generated": 318,
+  "candidates_suppressed": 312,
+  "candidates_retained": 6,
+  "by_reason": {
+    "seasonal": 188,
+    "cloud_shadow": 94,
+    "registration": 30,
+    "min_size": 0,
+    "cloud": 0,
+    "illumination": 0,
+    "snow_cover": 0,
+    "low_confidence": 0
+  },
+  "sample_reasons": [
+    {
+      "candidate_id": "cand_9102",
+      "reason": "seasonal",
+      "detail": "Vegetation index swing consistent with pre/post monsoon cyclic variation."
+    },
+    {
+      "candidate_id": "cand_9103",
+      "reason": "cloud_shadow",
+      "detail": "Dark patch co-located with cloud mask projection vector."
+    }
+  ]
+}
