@@ -367,28 +367,55 @@ Everything about detection depends on this. Compute it once at upload, store it,
 # domain/resolution.py  — pure function, no I/O
 
 CAPABILITY_TIERS = {
-    "T1_VERY_HIGH": {"max_gsd_m": 1.0,
-        "object_classes": ["building","vehicle","aircraft","ship","storage_tank",
-                           "swimming_pool","tower","container","road"],
-        "landcover_classes": ["built","water","vegetation","bare","crop","snow"],
-        "area_measurements": True},
-    "T2_HIGH":      {"max_gsd_m": 5.0,
-        "object_classes": ["building","ship","aircraft","storage_tank","tower","road"],
-        "landcover_classes": ["built","water","vegetation","bare","crop","snow"],
-        "area_measurements": True},
-    "T3_MEDIUM":    {"max_gsd_m": 15.0,     # Sentinel-2 lands here
-        "object_classes": ["building_cluster","ship_large","storage_tank","road"],
-        "landcover_classes": ["built","water","vegetation","bare","crop","snow"],
-        "area_measurements": True},
-    "T4_COARSE":    {"max_gsd_m": float("inf"),
+    "T1_VERY_HIGH": {
+        "max_gsd_m": 1.0,
+        "object_classes": [
+            "building",
+            "vehicle",
+            "aircraft",
+            "ship",
+            "storage_tank",
+            "swimming_pool",
+            "tower",
+            "container",
+            "road",
+        ],
+        "landcover_classes": ["built", "water", "vegetation", "bare", "crop", "snow"],
+        "area_measurements": True,
+    },
+    "T2_HIGH": {
+        "max_gsd_m": 5.0,
+        "object_classes": [
+            "building",
+            "ship",
+            "aircraft",
+            "storage_tank",
+            "tower",
+            "road",
+        ],
+        "landcover_classes": ["built", "water", "vegetation", "bare", "crop", "snow"],
+        "area_measurements": True,
+    },
+    "T3_MEDIUM": {
+        "max_gsd_m": 15.0,  # Sentinel-2 lands here
+        "object_classes": ["building_cluster", "ship_large", "storage_tank", "road"],
+        "landcover_classes": ["built", "water", "vegetation", "bare", "crop", "snow"],
+        "area_measurements": True,
+    },
+    "T4_COARSE": {
+        "max_gsd_m": float("inf"),
         "object_classes": [],
-        "landcover_classes": ["built","water","vegetation","bare","crop","snow"],
-        "area_measurements": True},
-    "T0_UNKNOWN":   {"max_gsd_m": None,
+        "landcover_classes": ["built", "water", "vegetation", "bare", "crop", "snow"],
+        "area_measurements": True,
+    },
+    "T0_UNKNOWN": {
+        "max_gsd_m": None,
         "object_classes": [],
         "landcover_classes": [],
-        "area_measurements": False},
+        "area_measurements": False,
+    },
 }
+
 
 def resolve_tier(gsd_m: float | None, gsd_source: str | None) -> str: ...
 def permitted_labels(tier: str) -> tuple[set[str], set[str]]: ...

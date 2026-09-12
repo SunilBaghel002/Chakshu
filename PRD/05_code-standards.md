@@ -72,6 +72,7 @@ warn_unreachable = true
 
 ```python
 import logging
+
 log = logging.getLogger(__name__)
 ```
 
@@ -143,12 +144,23 @@ These are enforced by ruff (`C901` complexity) and by review, not silently ignor
 
 ```python
 class ChakshuError(Exception):
-    code: str; http_status: int; user_message: str
+    code: str
+    http_status: int
+    user_message: str
+
 
 class ResolutionInsufficient(ChakshuError): ...
+
+
 class NotGeoreferenced(ChakshuError): ...
+
+
 class FileUnreadable(ChakshuError): ...
+
+
 class NoUsableScenes(ChakshuError): ...
+
+
 class OfflineError(ChakshuError): ...
 ```
 

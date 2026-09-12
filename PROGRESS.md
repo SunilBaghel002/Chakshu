@@ -6,13 +6,13 @@
 Last updated: 2026-09-12 11:30 IST by Claude / Antigravity
 
 ## A. Current phase
-Phase 0 — Skeleton and contracts. Gate: PASSED.
+Phase 1 — Data in. Tasks 1.1–1.3 complete.
 
 ## B. Gate log
 | Phase | Gate | Result | Date | Evidence |
 |---|---|---|---|---|
 | 0 | Skeleton and contracts | PASS | 2026-09-12 | All Phase 0 unit tests pass (resolution, bbox synthetic, verifier, purity, audit, fixture roundtrip); make types valid |
-| 1 | Data in | — | — | — |
+| 1 | Data in | IN PROGRESS | — | Tasks 1.1-1.3 complete (STAC downloader, demo site delta verified, spectral indices 12 tests pass) |
 | 2 | Change detection vertical slice | — | — | — |
 | 3 | Trust | — | — | — |
 | 4 | Retrieval | — | — | — |
@@ -34,10 +34,13 @@ Phase 0 — Skeleton and contracts. Gate: PASSED.
 - [x] 0.11 Contract fixtures: All 16 JSON fixtures in `backend/tests/fixtures/` and `frontend/src/fixtures/` — 2026-09-12 — verified: `test_fixtures_roundtrip.py`
 - [x] 0.12 Architecture purity check: `scripts/check_purity.py` — 2026-09-12 — verified: `test_purity.py` (domain pure, fetch isolated, line limits <= 400 lines)
 - [x] 0.13 Living tracking: `PROGRESS.md` initialised — 2026-09-12
+- [x] 1.1 Scene acquisition: `scripts/download_scenes.py` against AWS Earth Search STAC (Sentinel-2 L2A); B02, B03, B04, B08, B11, SCL; SHA-256 checksums recorded; synthetic offline generator — 2026-09-12 — verified: live STAC query 100 scenes + offline synthetic scenes generated
+- [x] 1.2 Demo site dramatic change confirmation: Jewar Airport (farmland NDVI 0.816 -> airport infrastructure NDBI 0.313) and Bhadla Solar Park (desert sand -> high contrast dark photovoltaic grids) — 2026-09-12 — verified: ΔNDVI = -0.744, ΔNDBI = +0.936
+- [x] 1.3 Pure domain spectral indices: `domain/indices.py`, NDVI, NDWI, NDBI, NDSI with nodata masking and 10000.0 scale factor, classify_land_cover — 2026-09-12 — verified: `test_indices.py` (12 tests pass)
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- None (Phase 0 complete; ready for Phase 1 Data In)
+- Phase 1: 1.4 `domain/align.py` and 1.5 `services/ingest.py` — Ingest & registration pipeline — Sunil
 
 ## E. Blocked / needs human decision
 <!-- blocker — since — tried — the specific question that unblocks it -->
@@ -86,6 +89,6 @@ Phase 0 — Skeleton and contracts. Gate: PASSED.
 | 2026-09-12 | PowerShell make.ps1 companion to Makefile | Makefile only | Native execution support on Windows without mingw/msys dependency |
 
 ## K. Next actions
-1. 1.1 `scripts/download_scenes.py` against AWS open-data (Sentinel-2 L2A)
-2. 1.2 Confirm demo sites show dramatic change (Jewar & Bhadla)
-3. 1.3 `domain/indices.py` vectorised NDVI, NDWI, NDBI, NDSI
+1. 1.4 `domain/align.py`: phase-correlation shift estimate + tolerance check
+2. 1.5 `services/ingest.py`: reproject to UTM, tile 256x256, cloud-score from SCL
+3. 1.6 `/api/v1/jobs` polling + BackgroundTasks wiring
