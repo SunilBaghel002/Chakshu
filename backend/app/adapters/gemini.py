@@ -47,7 +47,7 @@ class GeminiDetectionAdapter:
         try:
             import google.generativeai as genai  # type: ignore[import-untyped]
 
-            genai.configure(api_key=self.api_key)
+            genai.configure(api_key=self.api_key, transport="rest")
             self._client = genai.GenerativeModel(self.model_name)
             log.info("Initialized Gemini client with model %s", self.model_name)
         except Exception as exc:
@@ -106,7 +106,7 @@ class GeminiDetectionAdapter:
         prompt = self._build_prompt(permitted_classes, gsd_m, capability_tier)
 
         candidate_models = [self.model_name]
-        for fallback in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-3.6-flash"]:
+        for fallback in ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash"]:
             if fallback not in candidate_models:
                 candidate_models.append(fallback)
 

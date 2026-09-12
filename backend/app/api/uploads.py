@@ -44,8 +44,11 @@ async def upload_image(
         user_acquired_at=acquired_at,
     )
 
-    # Store in memory registry
+    # Store in memory registry and persist metadata
     _uploads_registry[upload_record.id] = upload_record
+    meta_path = settings.UPLOADS_DIR / upload_record.id / "metadata.json"
+    with open(meta_path, "w") as f:
+        f.write(upload_record.model_dump_json(indent=2))
 
     # Run detection pipeline
     stored_path = settings.UPLOADS_DIR / upload_record.id / upload_record.filename
@@ -54,6 +57,9 @@ async def upload_image(
         image_path=stored_path,
     )
     _detections_registry[upload_record.id] = detection_set
+    det_path = settings.UPLOADS_DIR / upload_record.id / "detections.json"
+    with open(det_path, "w") as f:
+        f.write(detection_set.model_dump_json(indent=2))
 
     return upload_record
 
@@ -62,7 +68,14 @@ async def upload_image(
 async def get_upload(upload_id: str) -> Upload:
     """Retrieve metadata, GSD tier, and permissions for an uploaded image."""
     if upload_id not in _uploads_registry:
-        raise NotFoundError(f"Upload with ID {upload_id} not found.")
+        meta_file = settings.UPLOADS_DIR / upload_id / "metadata.json"
+        if meta_file.exists():
+            import json
+
+            with open(meta_file, "r") as f:
+                _uploads_registry[upload_id] = Upload(**json.load(f))
+        else:
+            raise NotFoundError(f"Upload with ID {upload_id} not found.")
     return _uploads_registry[upload_id]
 
 
@@ -72,6 +85,22 @@ async def get_upload_detections(
     refresh: bool = False,
 ) -> DetectionSet:
     """Retrieve complete DetectionSet for an upload, including coverage and rejections."""
+    import json
+
+    # Ensure upload record exists in registry
+    if upload_id not in _uploads_registry:
+        meta_file = settings.UPLOADS_DIR / upload_id / "metadata.json"
+        if meta_file.exists():
+            with open(meta_file, "r") as f:
+                _uploads_registry[upload_id] = Upload(**json.load(f))
+
+    # Load cached detection from disk if not refreshing
+    if not refresh and upload_id not in _detections_registry:
+        det_file = settings.UPLOADS_DIR / upload_id / "detections.json"
+        if det_file.exists():
+            with open(det_file, "r") as f:
+                _detections_registry[upload_id] = DetectionSet(**json.load(f))
+
     if upload_id not in _detections_registry or refresh:
         if upload_id in _uploads_registry:
             upload_record = _uploads_registry[upload_id]
@@ -81,6 +110,9 @@ async def get_upload_detections(
                 image_path=stored_path,
             )
             _detections_registry[upload_id] = detection_set
+            det_file = settings.UPLOADS_DIR / upload_id / "detections.json"
+            with open(det_file, "w") as f:
+                f.write(detection_set.model_dump_json(indent=2))
             return detection_set
         raise NotFoundError(f"Detection set for upload {upload_id} not found.")
     return _detections_registry[upload_id]

@@ -46,7 +46,7 @@ class Settings(BaseSettings):
         description="Google Gemini API key.",
     )
     GEMINI_MODEL: str = Field(
-        default="gemini-2.5-flash",
+        default="gemini-3.6-flash",
         description="Pinned Gemini model identifier.",
     )
     GEMINI_BBOX_ORDER: str = Field(
