@@ -17,8 +17,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.exceptions import ChakshuError
-from app.settings import settings
+try:
+    from app.exceptions import ChakshuError
+    from app.settings import settings
+except ImportError:
+    from .exceptions import ChakshuError
+    from .settings import settings
 
 log = logging.getLogger(__name__)
 
