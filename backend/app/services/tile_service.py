@@ -49,7 +49,9 @@ class TileService:
         """Retrieve 256x256 PNG true-color tile for a given scene and coordinates."""
         scene_dir = self.tiles_dir / scene_id
         if not scene_dir.exists():
-            # Check if any scene directory matches or has synthetic data
+            # Check if synthetic demo scene
+            if "SYNTH" in scene_id:
+                return generate_fallback_rgb_tile(scene_id)
             raise NotFoundError(f"Scene tiles directory for '{scene_id}' not found.")
 
         # 1. Look for direct coordinate match (x_y.png or z_x_y.png)

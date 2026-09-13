@@ -1,11 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import type { Evidence, DetectionSet } from '../lib/types';
 import { PALETTE, getClassColor } from '../lib/palette';
 import { SwipeCompare } from './SwipeCompare';
+import { MapCursorInspector } from './MapCursorInspector';
 import { Layers, ZoomIn, ZoomOut, Compass } from 'lucide-react';
 
 interface MapPaneProps {
+  selectedAoiId?: string;
   aoiCoords: [number, number]; // [lat, lng]
   aoiName: string;
   evidenceList: Evidence[];
@@ -25,6 +27,7 @@ interface MapPaneProps {
 }
 
 export const MapPane: React.FC<MapPaneProps> = ({
+  selectedAoiId,
   aoiCoords,
   aoiName,
   evidenceList,
@@ -46,15 +49,15 @@ export const MapPane: React.FC<MapPaneProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const geojsonLayerRef = useRef<L.GeoJSON | null>(null);
   const detectionsLayerRef = useRef<L.LayerGroup | null>(null);
-  const afterTilePaneRef = useRef<HTMLDivElement | null>(null);
+  const prevAoiIdRef = useRef<string | null>(null);
 
-  // Initialize Leaflet Map
+  const [showAllPolygons, setShowAllPolygons] = useState<boolean>(false);
+  const [cursorPos, setCursorPos] = useState<{ lat: number; lng: number; x: number; y: number } | null>(null);
+  const [hoveredEvidence, setHoveredEvidence] = useState<Evidence | null>(null);
+
+  // Initialize Leaflet Map once on mount
   useEffect(() => {
-    if (!mapContainerRef.current) return;
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView(aoiCoords, 14);
-      return;
-    }
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
       center: aoiCoords,
@@ -63,23 +66,53 @@ export const MapPane: React.FC<MapPaneProps> = ({
       attributionControl: false,
     });
 
-    // Dark Tactical / Satellite Basemap (Esri World Imagery + CartoDB fallback)
+    // Pane 1 (Custom 'beforePane'): Pre-construction agricultural baseline calibration
+    const beforePane = map.createPane('beforePane');
+    beforePane.style.zIndex = '200';
+    beforePane.style.filter = 'saturate(1.35) contrast(1.08) hue-rotate(-8deg)';
+
     const esriSatellite = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      { maxZoom: 18, opacity: 0.95 }
+      { maxZoom: 18, pane: 'beforePane', opacity: 0.98 }
     );
     esriSatellite.addTo(map);
 
-    // Labels overlay
+    // Pane 2 (Custom 'afterPane'): Construction phase imagery clipped by slider
+    const afterPane = map.createPane('afterPane');
+    afterPane.style.zIndex = '450';
+    afterPane.style.filter = 'saturate(0.92) contrast(1.15) brightness(1.02)';
+
+    const afterTileLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 18, pane: 'afterPane', opacity: 1 }
+    );
+    afterTileLayer.addTo(map);
+
+    // Labels overlay on top
     const cartoLabels = L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
       { maxZoom: 18, opacity: 0.6 }
     );
     cartoLabels.addTo(map);
 
-    mapInstanceRef.current = map;
+    // Track cursor movement for interactive change inspection
+    map.on('mousemove', (e: L.LeafletMouseEvent) => {
+      setCursorPos({
+        lat: e.latlng.lat,
+        lng: e.latlng.lng,
+        x: e.containerPoint.x,
+        y: e.containerPoint.y,
+      });
+    });
 
-    // Ensure map tiles fill the container smoothly
+    map.on('mouseout', () => {
+      setCursorPos(null);
+      setHoveredEvidence(null);
+    });
+
+    mapInstanceRef.current = map;
+    prevAoiIdRef.current = selectedAoiId ?? null;
+
     setTimeout(() => {
       map.invalidateSize();
     }, 150);
@@ -92,14 +125,33 @@ export const MapPane: React.FC<MapPaneProps> = ({
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, [aoiCoords]);
+  }, []);
 
-  // Recenter map when AOI changes
+  // Update afterPane clipPath dynamically based on sliderPos and isSwipeActive
   useEffect(() => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo(aoiCoords, 14, { duration: 1.2 });
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const pane = map.getPane('afterPane');
+    if (pane) {
+      if (isSwipeActive) {
+        pane.style.display = 'block';
+        pane.style.clipPath = `polygon(${sliderPos}% 0, 100% 0, 100% 100%, ${sliderPos}% 100%)`;
+      } else {
+        pane.style.display = 'none';
+      }
     }
-  }, [aoiCoords]);
+  }, [sliderPos, isSwipeActive]);
+
+  // Recenter map ONLY when AOI genuinely changes (prevents snapping on slider/pan)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !selectedAoiId) return;
+    if (prevAoiIdRef.current && prevAoiIdRef.current !== selectedAoiId) {
+      prevAoiIdRef.current = selectedAoiId;
+      mapInstanceRef.current.flyTo(aoiCoords, 14, { duration: 1.2 });
+    } else if (!prevAoiIdRef.current) {
+      prevAoiIdRef.current = selectedAoiId;
+    }
+  }, [selectedAoiId, aoiCoords]);
 
   // Render Vector Change Polygons
   useEffect(() => {
@@ -112,38 +164,58 @@ export const MapPane: React.FC<MapPaneProps> = ({
     }
 
     const layerGroup = L.geoJSON(undefined, {
+      pane: 'afterPane', // Only visible on newer photo side and wiped by split slider!
       style: (feature) => {
         const id = feature?.properties?.change_object_id;
         const isSelected = id === selectedEvidenceId;
         const changeType = feature?.properties?.change_type || 'construction';
         const color = getClassColor(changeType);
 
+        if (!showAllPolygons && !isSelected) {
+          return {
+            color: 'transparent',
+            weight: 0,
+            fillOpacity: 0,
+          };
+        }
+
         return {
-          color: isSelected ? '#818CF8' : color,
-          weight: isSelected ? 3.5 : 2,
-          opacity: 1,
+          color: isSelected ? '#A5B4FC' : color,
+          weight: isSelected ? 3 : 1.5,
+          opacity: 0.85,
           fillColor: color,
-          fillOpacity: isSelected ? 0.55 : 0.35,
-          dashArray: undefined,
+          fillOpacity: isSelected ? 0.35 : 0.12,
+          dashArray: isSelected ? undefined : '5, 5',
         };
       },
       onEachFeature: (feature, layer) => {
         const props = feature.properties;
-        const areaLabel = props.area_label || '1.84 ha';
-        const changeType = props.change_type || 'construction';
+        const matched = evidenceList.find((e) => e.change_object_id === props.change_object_id);
 
-        // Hover tooltip
-        layer.bindTooltip(
-          `<div class="font-mono text-xs p-1">
-            <span class="font-bold uppercase text-amber-300">${changeType}</span><br/>
-            <span class="text-white font-semibold">${areaLabel}</span> (ST_Area)
-          </div>`,
-          { sticky: true, className: 'leaflet-tactical-tooltip' }
-        );
+        layer.on('mouseover', () => {
+          if (matched) setHoveredEvidence(matched);
+          (layer as L.Path).setStyle({
+            weight: 3,
+            color: '#38BDF8',
+            fillOpacity: 0.4,
+            dashArray: undefined,
+          });
+        });
+
+        layer.on('mouseout', () => {
+          setHoveredEvidence(null);
+          const isSelected = props.change_object_id === selectedEvidenceId;
+          const color = getClassColor(props.change_type || 'construction');
+          (layer as L.Path).setStyle({
+            color: isSelected ? '#A5B4FC' : (showAllPolygons ? color : 'transparent'),
+            weight: isSelected ? 3 : (showAllPolygons ? 1.5 : 0),
+            fillOpacity: isSelected ? 0.35 : (showAllPolygons ? 0.12 : 0),
+            dashArray: isSelected ? undefined : '5, 5',
+          });
+        });
 
         // Click to select & open drawer
         layer.on('click', () => {
-          const matched = evidenceList.find((e) => e.change_object_id === props.change_object_id);
           if (matched) {
             onSelectEvidence(matched);
           }
@@ -169,9 +241,9 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
     layerGroup.addTo(map);
     geojsonLayerRef.current = layerGroup;
-  }, [evidenceList, selectedEvidenceId, onSelectEvidence]);
+  }, [evidenceList, selectedEvidenceId, onSelectEvidence, showAllPolygons]);
 
-  // Render Object Detection Bounding Boxes (Track 1/2 solid vs Track 3 dashed)
+  // Render Object Detection Bounding Boxes (only when showAllPolygons is active)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -181,7 +253,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
       detectionsLayerRef.current = null;
     }
 
-    if (!detectionSet || !detectionSet.detections.length) return;
+    if (!showAllPolygons || !detectionSet || !detectionSet.detections.length) return;
 
     const group = L.layerGroup();
 
@@ -191,58 +263,27 @@ export const MapPane: React.FC<MapPaneProps> = ({
       const color = getClassColor(det.label);
 
       const boxLayer = L.geoJSON(det.geom_4326 as any, {
+        pane: 'afterPane',
         style: {
           color,
-          weight: 2,
-          // Track 3 vision model boxes dashed [6, 4] per PRD 9 §6.6
-          dashArray: isTrack3 ? '6, 4' : undefined,
+          weight: 1.5,
+          dashArray: isTrack3 ? '6, 4' : '4, 4',
           fillColor: color,
-          fillOpacity: isTrack3 ? 0.12 : 0.3,
+          fillOpacity: 0.08,
         },
       });
-
-      // Label Chip Marker at top-left of box
-      const coords = (det.geom_4326 as any).coordinates?.[0]?.[0];
-      if (coords && coords.length >= 2) {
-        const marker = L.marker([coords[1], coords[0]], {
-          icon: L.divIcon({
-            className: 'custom-det-chip',
-            html: `<div style="background: rgba(17, 24, 39, 0.92); border: 1px solid ${color}; color: #F9FAFB; font-size: 10px; font-family: monospace; padding: 2px 4px; border-radius: 3px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
-              ${det.label} · ${det.score.toFixed(2)}
-            </div>`,
-            iconSize: [80, 20],
-            iconAnchor: [0, 24],
-          }),
-        });
-        group.addLayer(marker);
-      }
 
       group.addLayer(boxLayer);
     });
 
     group.addTo(map);
     detectionsLayerRef.current = group;
-  }, [detectionSet]);
+  }, [detectionSet, showAllPolygons]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-[#070A10]">
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
-
-      {/* Swipe Comparison Layer Overlay (Visual Split Simulation) */}
-      {isSwipeActive && (
-        <div
-          ref={afterTilePaneRef}
-          className="absolute inset-0 pointer-events-none z-[300]"
-          style={{
-            clipPath: `polygon(${sliderPos}% 0, 100% 0, 100% 100%, ${sliderPos}% 100%)`,
-            borderLeft: '2px solid rgba(99, 102, 241, 0.9)',
-          }}
-        >
-          {/* Subtle contrast highlight simulating 2026 expansion date */}
-          <div className="w-full h-full bg-indigo-950/10 backdrop-contrast-125 pointer-events-none" />
-        </div>
-      )}
 
       {/* Swipe Controller Handles */}
       <SwipeCompare
@@ -258,16 +299,26 @@ export const MapPane: React.FC<MapPaneProps> = ({
         onSwapDates={onSwapDates}
       />
 
+      {/* Interactive Cursor Change Inspector */}
+      <MapCursorInspector
+        cursorPos={cursorPos}
+        hoveredEvidence={hoveredEvidence}
+        beforeDate={beforeDate}
+        afterDate={afterDate}
+        showAllPolygons={showAllPolygons}
+        onToggleShowAll={() => setShowAllPolygons(!showAllPolygons)}
+      />
+
       {/* Floating Bottom Date Watermarks */}
       {isSwipeActive && (
         <>
           <div className="absolute bottom-4 left-4 z-[350] pointer-events-none bg-[#0B0F19]/85 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-mono backdrop-blur-md text-amber-300 font-semibold shadow-2xl flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span>BEFORE: {beforeDate} (Old Baseline)</span>
+            <span>BEFORE: {beforeDate} (Pre-construction Farmland)</span>
           </div>
 
           <div className="absolute bottom-4 right-4 z-[350] pointer-events-none bg-[#0B0F19]/85 border border-indigo-500/40 px-3 py-1.5 rounded-lg text-xs font-mono backdrop-blur-md text-indigo-300 font-semibold shadow-2xl flex items-center gap-1.5">
-            <span>AFTER: {afterDate} (Newest Photo)</span>
+            <span>AFTER: {afterDate} (Construction Phase)</span>
             <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
           </div>
         </>

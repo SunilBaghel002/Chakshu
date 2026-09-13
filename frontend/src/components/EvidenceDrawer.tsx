@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Evidence } from '../lib/types';
 import { COPY } from '../lib/copy';
+import { EvidenceTriptych } from './EvidenceTriptych';
 
 interface EvidenceDrawerProps {
   evidence: Evidence | null;
@@ -151,44 +152,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
             </div>
 
             {/* Before / Mask / After Visual Thumbnails */}
-            <div>
-              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 mb-2">
-                <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                Satellite Verification Photos
-              </span>
-
-              <div className="grid grid-cols-3 gap-2">
-                {/* Before Thumbnail */}
-                <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center">
-                  <div className="w-full h-20 rounded bg-gradient-to-br from-amber-950/40 to-slate-900 flex items-center justify-center border border-slate-700/60 overflow-hidden relative">
-                    <span className="text-[10px] font-mono text-amber-300/80 font-bold uppercase">Before</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400 block mt-1.5">
-                    {sources.before.acquired_at}
-                  </span>
-                </div>
-
-                {/* Mask Thumbnail */}
-                <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center">
-                  <div className="w-full h-20 rounded bg-gradient-to-br from-slate-950 to-indigo-950/60 flex items-center justify-center border border-indigo-500/40 overflow-hidden relative">
-                    <div className="w-8 h-8 rounded bg-indigo-500/40 border-2 border-indigo-400" />
-                  </div>
-                  <span className="text-[10px] font-mono text-indigo-300 block mt-1.5">
-                    Detected Shape
-                  </span>
-                </div>
-
-                {/* After Thumbnail */}
-                <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center">
-                  <div className="w-full h-20 rounded bg-gradient-to-br from-orange-950/40 to-slate-900 flex items-center justify-center border border-orange-500/40 overflow-hidden relative">
-                    <span className="text-[10px] font-mono text-orange-400/90 font-bold uppercase">After</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400 block mt-1.5">
-                    {sources.after.acquired_at}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <EvidenceTriptych sources={sources} />
 
             {/* Confidence Analysis */}
             <div className="bg-[#0F172A] border border-[#1F2937] p-3.5 rounded-xl space-y-2.5">

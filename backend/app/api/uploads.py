@@ -55,6 +55,7 @@ async def upload_image(
     detection_set = detection_service.run_detection_pipeline(
         upload=upload_record,
         image_path=stored_path,
+        mode="reconcile",
     )
     _detections_registry[upload_record.id] = detection_set
     det_path = settings.UPLOADS_DIR / upload_record.id / "detections.json"
@@ -82,6 +83,7 @@ async def get_upload(upload_id: str) -> Upload:
 @router.get("/{upload_id}/detections", response_model=DetectionSet)
 async def get_upload_detections(
     upload_id: str,
+    mode: str | None = None,
     refresh: bool = False,
 ) -> DetectionSet:
     """Retrieve complete DetectionSet for an upload, including coverage and rejections."""
@@ -94,28 +96,39 @@ async def get_upload_detections(
             with open(meta_file, "r") as f:
                 _uploads_registry[upload_id] = Upload(**json.load(f))
 
+    upload_record = _uploads_registry.get(upload_id)
+    if not upload_record:
+        raise NotFoundError(f"Detection set for upload {upload_id} not found.")
+
+    has_track1 = bool(upload_record.capabilities.landcover_classes)
+    effective_mode = mode.lower() if mode else ("reconcile" if has_track1 else "analyze")
+
+    if not refresh and upload_id in _detections_registry:
+        cached = _detections_registry[upload_id]
+        if cached.mode and cached.mode.lower() == effective_mode:
+            return cached
+
     # Load cached detection from disk if not refreshing
-    if not refresh and upload_id not in _detections_registry:
+    if not refresh:
         det_file = settings.UPLOADS_DIR / upload_id / "detections.json"
         if det_file.exists():
             with open(det_file, "r") as f:
-                _detections_registry[upload_id] = DetectionSet(**json.load(f))
+                cached_set = DetectionSet(**json.load(f))
+                if cached_set.mode and cached_set.mode.lower() == effective_mode:
+                    _detections_registry[upload_id] = cached_set
+                    return cached_set
 
-    if upload_id not in _detections_registry or refresh:
-        if upload_id in _uploads_registry:
-            upload_record = _uploads_registry[upload_id]
-            stored_path = settings.UPLOADS_DIR / upload_record.id / upload_record.filename
-            detection_set = detection_service.run_detection_pipeline(
-                upload=upload_record,
-                image_path=stored_path,
-            )
-            _detections_registry[upload_id] = detection_set
-            det_file = settings.UPLOADS_DIR / upload_id / "detections.json"
-            with open(det_file, "w") as f:
-                f.write(detection_set.model_dump_json(indent=2))
-            return detection_set
-        raise NotFoundError(f"Detection set for upload {upload_id} not found.")
-    return _detections_registry[upload_id]
+    stored_path = settings.UPLOADS_DIR / upload_record.id / upload_record.filename
+    detection_set = detection_service.run_detection_pipeline(
+        upload=upload_record,
+        image_path=stored_path,
+        mode=effective_mode,
+    )
+    _detections_registry[upload_id] = detection_set
+    det_file = settings.UPLOADS_DIR / upload_id / "detections.json"
+    with open(det_file, "w") as f:
+        f.write(detection_set.model_dump_json(indent=2))
+    return detection_set
 
 
 @router.get("/{upload_id}/overview")

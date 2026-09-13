@@ -2,13 +2,27 @@
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.services.tile_service import generate_fallback_rgb_tile, tile_service
 
 client = TestClient(create_app())
 
 PNG_MAGIC_BYTES = b"\x89PNG\r\n\x1a\n"
+
+
+@pytest.fixture(autouse=True)
+def ensure_synthetic_scene_tile() -> None:
+    """Ensure baseline synthetic tile directory exists for unit testing."""
+    scene_dir = tile_service.tiles_dir / "S2A_JEWAR_20210315_SYNTH"
+    scene_dir.mkdir(parents=True, exist_ok=True)
+    target_tile = scene_dir / "0_0.png"
+    if not target_tile.exists():
+        target_tile.write_bytes(generate_fallback_rgb_tile("S2A_JEWAR_20210315_SYNTH"))
+
+
 
 
 def test_get_imagery_tile() -> None:
