@@ -165,58 +165,62 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
       </div>
 
       {/* Timeline Range Scrubber & Scene Dots */}
-      <div className="relative w-full flex flex-col justify-center px-2 py-1">
-        {/* Continuous Range Slider for effortless dragging */}
-        <input
-          type="range"
-          min={0}
-          max={Math.max(0, sortedScenes.length - 1)}
-          value={currentAfterIndex >= 0 ? currentAfterIndex : 0}
-          onChange={(e) => {
-            const idx = Number(e.target.value);
-            const target = sortedScenes[idx];
-            if (target) {
-              if (targetDateMode === 'before') {
-                onSelectBeforeDate(target.acquired_at);
-              } else {
-                onSelectAfterDate(target.acquired_at);
+      <div className="relative w-full flex flex-col justify-center px-1">
+        {/* Continuous Range Slider for dragging */}
+        <div className="w-full flex items-center h-4 mb-0.5">
+          <input
+            type="range"
+            min={0}
+            max={Math.max(0, sortedScenes.length - 1)}
+            value={currentAfterIndex >= 0 ? currentAfterIndex : 0}
+            onChange={(e) => {
+              const idx = Number(e.target.value);
+              const target = sortedScenes[idx];
+              if (target) {
+                if (targetDateMode === 'before') {
+                  onSelectBeforeDate(target.acquired_at);
+                } else {
+                  onSelectAfterDate(target.acquired_at);
+                }
               }
-            }
-          }}
-          className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer transition-all z-10"
-          title="Drag slider left or right to scrub through satellite history"
-        />
+            }}
+            className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer transition-all"
+            title="Drag slider left or right to scrub through satellite history"
+          />
+        </div>
 
-        {/* Dots along timeline */}
-        <div className="relative w-full flex items-center justify-between -mt-2 pointer-events-none">
+        {/* Dots along timeline with generous w-6 h-6 click hit targets */}
+        <div className="relative w-full flex items-center justify-between h-6">
           {displayedScenes.map((scene) => {
             const isBefore = scene.acquired_at === beforeDate;
             const isAfter = scene.acquired_at === afterDate;
 
             return (
-              <div
+              <button
+                type="button"
                 key={scene.id}
-                className="relative group cursor-pointer py-1 pointer-events-auto"
+                className="relative group w-6 h-6 flex items-center justify-center p-0 cursor-pointer bg-transparent border-none focus:outline-none"
                 onClick={() => handleSceneClick(scene)}
                 onMouseEnter={() => setHoveredScene(scene)}
                 onMouseLeave={() => setHoveredScene(null)}
+                title={`${scene.acquired_at} · ${scene.usable ? 'Clear Pass' : 'Cloudy / Monsoon'}`}
               >
                 {/* Visual Dot */}
-                <div
-                  className={`transition-all duration-150 rounded-full ${
+                <span
+                  className={`transition-all duration-150 rounded-full block pointer-events-none ${
                     isAfter
-                      ? 'w-4 h-4 bg-indigo-500 border-2 border-white ring-4 ring-indigo-500/50 shadow-lg scale-125'
+                      ? 'w-4 h-4 bg-indigo-500 border-2 border-white ring-4 ring-indigo-500/50 shadow-lg scale-110'
                       : isBefore
                       ? 'w-3.5 h-3.5 bg-amber-400 border-2 border-white ring-2 ring-amber-400/50'
                       : scene.usable
-                      ? 'w-1.5 h-1.5 bg-emerald-400 hover:scale-150 hover:bg-emerald-300'
-                      : 'w-1.5 h-1.5 border border-rose-400 bg-[#0F172A] hover:scale-150'
+                      ? 'w-2 h-2 bg-emerald-400 group-hover:scale-150 group-hover:bg-emerald-300'
+                      : 'w-2 h-2 bg-rose-500/80 ring-1 ring-rose-400/60 group-hover:scale-150'
                   }`}
                 />
 
                 {/* Tooltip on Hover */}
                 {hoveredScene?.id === scene.id && (
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-48 bg-[#111827] border border-slate-700 text-slate-200 p-2.5 rounded-lg shadow-2xl z-50 text-[11px] font-mono pointer-events-none">
+                  <div className="absolute bottom-7 left-1/2 -translate-x-1/2 w-48 bg-[#111827] border border-slate-700 text-slate-200 p-2.5 rounded-lg shadow-2xl z-50 text-[11px] font-mono pointer-events-none text-left">
                     <div className="font-bold text-white flex items-center justify-between">
                       <span>{scene.acquired_at}</span>
                       <span
@@ -224,7 +228,7 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
                           scene.usable ? 'text-emerald-400 bg-emerald-950' : 'text-rose-300 bg-rose-950'
                         }`}
                       >
-                        {scene.usable ? 'CLEAR PASS' : 'CLOUDY'}
+                        {scene.usable ? 'CLEAR PASS' : '☁️ CLOUDY'}
                       </span>
                     </div>
                     <div className="text-slate-400 mt-1">
@@ -241,7 +245,7 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>

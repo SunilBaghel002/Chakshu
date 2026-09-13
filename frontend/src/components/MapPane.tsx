@@ -6,6 +6,7 @@ import { SwipeCompare } from './SwipeCompare';
 import { Layers, ZoomIn, ZoomOut, Compass } from 'lucide-react';
 
 interface MapPaneProps {
+  selectedAoiId?: string;
   aoiCoords: [number, number]; // [lat, lng]
   aoiName: string;
   evidenceList: Evidence[];
@@ -25,6 +26,7 @@ interface MapPaneProps {
 }
 
 export const MapPane: React.FC<MapPaneProps> = ({
+  selectedAoiId,
   aoiCoords,
   aoiName,
   evidenceList,
@@ -46,15 +48,11 @@ export const MapPane: React.FC<MapPaneProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const geojsonLayerRef = useRef<L.GeoJSON | null>(null);
   const detectionsLayerRef = useRef<L.LayerGroup | null>(null);
-  const afterTilePaneRef = useRef<HTMLDivElement | null>(null);
+  const prevAoiIdRef = useRef<string | null>(null);
 
-  // Initialize Leaflet Map
+  // Initialize Leaflet Map once on mount
   useEffect(() => {
-    if (!mapContainerRef.current) return;
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView(aoiCoords, 14);
-      return;
-    }
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
       center: aoiCoords,
@@ -63,14 +61,24 @@ export const MapPane: React.FC<MapPaneProps> = ({
       attributionControl: false,
     });
 
-    // Dark Tactical / Satellite Basemap (Esri World Imagery + CartoDB fallback)
+    // Pane 1 (Default): Before Satellite Layer
     const esriSatellite = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       { maxZoom: 18, opacity: 0.95 }
     );
     esriSatellite.addTo(map);
 
-    // Labels overlay
+    // Pane 2 (Custom 'afterPane'): After Satellite Layer clipped by slider
+    const afterPane = map.createPane('afterPane');
+    afterPane.style.zIndex = '450';
+
+    const afterTileLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 18, pane: 'afterPane', opacity: 1 }
+    );
+    afterTileLayer.addTo(map);
+
+    // Labels overlay on top
     const cartoLabels = L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
       { maxZoom: 18, opacity: 0.6 }
@@ -78,8 +86,8 @@ export const MapPane: React.FC<MapPaneProps> = ({
     cartoLabels.addTo(map);
 
     mapInstanceRef.current = map;
+    prevAoiIdRef.current = selectedAoiId ?? null;
 
-    // Ensure map tiles fill the container smoothly
     setTimeout(() => {
       map.invalidateSize();
     }, 150);
@@ -92,14 +100,33 @@ export const MapPane: React.FC<MapPaneProps> = ({
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, [aoiCoords]);
+  }, []);
 
-  // Recenter map when AOI changes
+  // Update afterPane clipPath dynamically based on sliderPos and isSwipeActive
   useEffect(() => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo(aoiCoords, 14, { duration: 1.2 });
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const pane = map.getPane('afterPane');
+    if (pane) {
+      if (isSwipeActive) {
+        pane.style.display = 'block';
+        pane.style.clipPath = `polygon(${sliderPos}% 0, 100% 0, 100% 100%, ${sliderPos}% 100%)`;
+      } else {
+        pane.style.display = 'none';
+      }
     }
-  }, [aoiCoords]);
+  }, [sliderPos, isSwipeActive]);
+
+  // Recenter map ONLY when AOI genuinely changes (prevents snapping on slider/pan)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !selectedAoiId) return;
+    if (prevAoiIdRef.current && prevAoiIdRef.current !== selectedAoiId) {
+      prevAoiIdRef.current = selectedAoiId;
+      mapInstanceRef.current.flyTo(aoiCoords, 14, { duration: 1.2 });
+    } else if (!prevAoiIdRef.current) {
+      prevAoiIdRef.current = selectedAoiId;
+    }
+  }, [selectedAoiId, aoiCoords]);
 
   // Render Vector Change Polygons
   useEffect(() => {
@@ -228,21 +255,6 @@ export const MapPane: React.FC<MapPaneProps> = ({
     <div className="relative w-full h-full overflow-hidden bg-[#070A10]">
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
-
-      {/* Swipe Comparison Layer Overlay (Visual Split Simulation) */}
-      {isSwipeActive && (
-        <div
-          ref={afterTilePaneRef}
-          className="absolute inset-0 pointer-events-none z-[300]"
-          style={{
-            clipPath: `polygon(${sliderPos}% 0, 100% 0, 100% 100%, ${sliderPos}% 100%)`,
-            borderLeft: '2px solid rgba(99, 102, 241, 0.9)',
-          }}
-        >
-          {/* Subtle contrast highlight simulating 2026 expansion date */}
-          <div className="w-full h-full bg-indigo-950/10 backdrop-contrast-125 pointer-events-none" />
-        </div>
-      )}
 
       {/* Swipe Controller Handles */}
       <SwipeCompare

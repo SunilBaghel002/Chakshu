@@ -145,8 +145,9 @@ export const App: React.FC = () => {
 
   const currentAoi = aois.find((a) => a.id === selectedAoiId);
   // Centroids: Jewar Airport [28.1305, 77.7612], Bhadla Solar Park [27.53, 71.91]
-  const aoiCoords: [number, number] =
-    currentAoi?.name.includes('Bhadla') ? [27.53, 71.91] : [28.1305, 77.7612];
+  const aoiCoords = useMemo<[number, number]>(() => {
+    return currentAoi?.name.includes('Bhadla') ? [27.53, 71.91] : [28.1305, 77.7612];
+  }, [selectedAoiId, currentAoi?.name]);
 
   const availableDates = Array.from(new Set(scenes.map((s) => s.acquired_at))).sort();
 
@@ -280,6 +281,7 @@ export const App: React.FC = () => {
         <main className="flex-1 flex flex-col relative overflow-hidden bg-[#070A10]">
           <div className="flex-1 relative overflow-hidden">
             <MapPane
+              selectedAoiId={selectedAoiId}
               aoiCoords={aoiCoords}
               aoiName={currentAoi?.name ?? 'Jewar Airport'}
               evidenceList={visibleEvidenceList}
