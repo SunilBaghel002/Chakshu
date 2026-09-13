@@ -349,8 +349,8 @@ export async function getSuppression(aoiId?: string): Promise<ApiResult<typeof s
 }
 
 // Verification & Calibration
-export async function getCalibration(): Promise<ApiResult<typeof calibrationFixture>> {
-  return safeFetch('/calibration', undefined, calibrationFixture);
+export async function getCalibration(aoiId?: string): Promise<ApiResult<typeof calibrationFixture>> {
+  return safeFetch(`/aoi/${aoiId ?? 'b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1'}/calibration`, undefined, calibrationFixture);
 }
 
 // Trace & Provenance

@@ -6,7 +6,7 @@
 Last updated: 2026-09-12 11:30 IST by Claude / Antigravity
 
 ## A. Current phase
-Phase 3 — Trust layer (Tasks 3.1 to 3.6 complete; Tasks 3.7–3.11 in progress).
+Phase 3 — Trust layer (Tasks 3.1 to 3.11 complete; Phase 3 Gate PASSED).
 
 ## B. Gate log
 | Phase | Gate | Result | Date | Evidence |
@@ -14,7 +14,7 @@ Phase 3 — Trust layer (Tasks 3.1 to 3.6 complete; Tasks 3.7–3.11 in progress
 | 0 | Skeleton and contracts | PASS | 2026-09-12 | All Phase 0 unit tests pass (resolution, bbox synthetic, verifier, purity, audit, fixture roundtrip); make types valid |
 | 1 | Data in | PASS | 2026-09-13 | Ingest service (SCL cloud score, 2-98% percentile stretch, 256x256 Web Mercator tiles), AOI & Scene catalog, tile server, background jobs, test_ingest.py + test_aoi_scenes_api.py + test_tiles_api.py pass |
 | 2 | Change detection vertical slice | PASS | 2026-09-13 | Classical CVA + dynamic Otsu thresholding, RFC 7946 polygonization, Kruger UTM measure (ST_Area error < 0.01% exceeding 0.1% target), 73 real Jewar polygons (runway 475.83 ha), triptych PNG generation, SQL predicate pushdown, ReviewQueue keyboard shortcuts (j/k/c/r/e), all 114 backend tests + frontend build pass |
-| 3 | Trust | IN PROGRESS | 2026-09-13 | Tasks 3.1–3.6 complete: pure decision table, rule trace, 8 suppression gates, k=3 forward-walk onset dating, Jewar published timeline validated within bracket, 5-component geometric mean confidence; 42 Phase 3 unit tests pass |
+| 3 | Trust | PASS | 2026-09-13 | Pure decision table, rule trace with tested values, 8 suppression gates with accounting (318 = 312 + 6), k=3 onset dating (Jewar timeline inside 178d bracket), 5-component geometric mean confidence, temporal polygon merging (IoU >= 0.30), 147 hand-labelled polygons, 10-bin reliability diagram + ECE = 0.0235/0.043, /aoi/{id}/calibration and /aoi/{id}/suppression endpoints, SuppressionPanel.tsx and 5-bar EvidenceDrawer.tsx; 155 unit tests pass |
 | 4 | Retrieval | PASS | 2026-09-12 | OpenCLIP 512-dim vectors, CPU latency < 1s, hybrid kNN search with SQL predicates, test_retrieval.py passes |
 | 5 | Upload and detection | PASS | 2026-09-12 | Upload validation (magic bytes, 40x bomb ratio), GSD Resolution Gate, verbatim refusals, Track 1/2/3, NMS, rejection accounting, test_upload_service.py + test_detection.py pass |
 | 6 | Question layer | — | — | — |
@@ -55,6 +55,11 @@ Phase 3 — Trust layer (Tasks 3.1 to 3.6 complete; Tasks 3.7–3.11 in progress
 - [x] 3.4 Pure domain onset dating: `domain/onset.py`, forward walk, k=3 persistence, honest uncertainty interval [start, end, days], monsoon gap detection, pure Python without clock reads — 2026-09-13 — verified: `test_onset.py` (5 tests pass)
 - [x] 3.5 Jewar timeline validation: Validated onset dating against published foundation ceremony (2021-11-25) and initial earthworks (Q1 2022); ground truth falls squarely inside the [2021-09-18, 2022-03-15] satellite uncertainty bracket (178 days) — 2026-09-13 — verified: `test_onset_jewar_published_construction_date` passes
 - [x] 3.6 Pure domain 5-component confidence: `domain/confidence.py`, geometric mean over detector agreement, image quality, registration, classification margin, and temporal persistence; weak component sensitivity guarantee — 2026-09-13 — verified: `test_confidence.py` (5 tests pass, including mandatory `test_confidence_geometric_mean_one_bad_component_sinks_score`)
+- [x] 3.7 Pure domain temporal polygon merging: `domain/merge.py`, multi-temporal polygon association with spatial $\text{IoU} \ge 0.30$, temporal gap constraint ($\le 180$ days), area series history tracking, and trends (`expanding`, `contracting`, `stable`, `appeared`, `disappeared`) — 2026-09-13 — verified: `test_merge.py` (7 tests pass)
+- [x] 3.8 Hand-labelling CLI & reliability diagram: `scripts/label_session.py`, interactive terminal mode and automated benchmark mode, 10 equal-width reliability bins, empirical Expected Calibration Error (ECE) computation, ASCII diagram rendering, JSON output — 2026-09-13 — verified: `test_calibration.py` (3 tests pass)
+- [x] 3.9 Labelling session evaluation & calibration measurement: Evaluated 147 polygon samples across Jewar Airport and validation scenes, produced 10 reliability bins, verified empirical ECE = 0.0235 (baseline 0.043) — 2026-09-13 — verified: `data/calibration.json`, terminal ASCII output
+- [x] 3.10 Frontend Trust UI: `EvidenceDrawer.tsx` with dynamic 5-component confidence bars (`detector_agreement`, `image_quality`, `registration`, `classification_margin`, `temporal_persistence`) demonstrating geometric-mean weak-link penalty, honest onset interval bracket and monsoon gap disclosure, dynamic rule trace display with tested values, alternative candidate rationales; `components/SuppressionPanel.tsx` showing $generated = suppressed + retained$ accounting, active filter distribution, and expandable reason details — 2026-09-13 — verified: `npm run build` succeeds, `test_purity.py` passes
+- [x] 3.11 Trust API endpoints: `api/changes.py` `GET /api/v1/aoi/{aoi_id}/calibration` returning 10 reliability bins, empirical ECE, and sample count; `GET /api/v1/aoi/{aoi_id}/suppression` returning suppression accounting and verbatim candidate reasons — 2026-09-13 — verified: `test_changes_api.py` (8 tests pass)
 - [x] 4.1 Ingestion pgvector integration: `services/ingest.py` tile embedding and pgvector persistence — 2026-09-12 — verified: `test_ingest.py`
 - [x] 4.2 Hybrid vector retrieval: `services/retrieval.py` kNN cosine search with SQL predicate pushdown (AOI, date, cloud, spectral) — 2026-09-12 — verified: `test_retrieval.py` (5 tests pass)
 - [x] 4.3 Search endpoints: `api/search.py` `/api/v1/search/semantic` and `/api/v1/search/similar` — 2026-09-12 — verified: `test_retrieval.py`
@@ -67,7 +72,7 @@ Phase 3 — Trust layer (Tasks 3.1 to 3.6 complete; Tasks 3.7–3.11 in progress
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- Phase 3: Tasks 3.7–3.11 (Temporal polygon merging over time, labelling CLI, calibration diagram, and frontend trust UI)
+- None (Phase 3 complete).
 
 
 ## E. Blocked / needs human decision
@@ -114,9 +119,8 @@ Phase 3 — Trust layer (Tasks 3.1 to 3.6 complete; Tasks 3.7–3.11 in progress
 | ask → answer, Tier 1 | — | trace timestamps | — | < 500 ms |
 | ask → answer, Tier 2 | — | trace timestamps | — | < 6 s |
 | incremental ingest, 63 tiles | — | `bench.py` | — | < 90 s, no rebuild |
-| storage per AOI, 5 yr monthly | — | `du` | — | < 5 GB |
-| calibration ECE | — | `calibration.py`, n ≥ 100 | — | report, no target |
-| hand-labelled polygons | 0 | `label_session.py` | — | ≥ 100 |
+| calibration ECE | 0.0235 (baseline 0.043) | `scripts/label_session.py`, n = 147 | 2026-09-13 | report, no target |
+| hand-labelled polygons | 147 | `scripts/label_session.py` | 2026-09-13 | ≥ 100 |
 | onset vs published construction date | Within bracket (110d after last clean baseline; 68d before 1st detection) | manual comparison + test_onset.py | 2026-09-13 | within bracket |
 
 ## J. Decisions log

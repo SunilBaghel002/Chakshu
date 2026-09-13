@@ -167,3 +167,25 @@ def test_get_aoi_suppression_endpoint(client: TestClient) -> None:
         assert "detail" in sample
         assert len(sample["detail"].strip()) > 0
 
+
+def test_get_aoi_calibration_endpoint(client: TestClient) -> None:
+    """Verify GET /api/v1/aoi/{id}/calibration returns 10 reliability bins and ECE."""
+    aoi_id = "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1"
+    res = client.get(f"/api/v1/aoi/{aoi_id}/calibration")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["aoi_id"] == aoi_id
+    assert "expected_calibration_error" in data
+    assert 0.0 <= data["expected_calibration_error"] <= 0.20
+    assert data["samples_count"] >= 100
+    assert len(data["bins"]) == 10
+
+    for idx, b in enumerate(data["bins"], start=1):
+        assert b["bin_index"] == idx
+        assert len(b["confidence_range"]) == 2
+        assert 0.0 <= b["mean_confidence"] <= 1.0
+        assert 0.0 <= b["accuracy"] <= 1.0
+        assert b["count"] >= 0
+
+

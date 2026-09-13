@@ -19,17 +19,23 @@ export interface MeasurementSubObject {
 
 export interface RuleTraceItem {
   rule: string;
-  field: string;
-  value: unknown;
+  field?: string;
+  value?: unknown;
+  tested_value?: unknown;
   threshold?: unknown;
   expected?: unknown;
-  fired: boolean;
+  comparator?: string;
+  passed?: boolean;
+  fired?: boolean;
+  rationale?: string;
 }
 
 export interface ClassificationAlternative {
-  change_type: ChangeType;
+  change_type?: ChangeType;
+  type?: string;
   score: number;
-  reason: string;
+  reason?: string;
+  rationale?: string;
 }
 
 export interface ClassificationSubObject {
