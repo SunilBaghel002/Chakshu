@@ -27,7 +27,23 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
   onSwapDates,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const dividerRef = useRef<HTMLDivElement>(null);
+  const percentTagRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
+
+  // Ensure active dates are always present in dropdown options
+  const beforeOptions = React.useMemo(() => {
+    const dates = new Set(availableDates);
+    if (beforeDate) dates.add(beforeDate);
+    return Array.from(dates).sort();
+  }, [availableDates, beforeDate]);
+
+  const afterOptions = React.useMemo(() => {
+    const dates = new Set(availableDates);
+    if (afterDate) dates.add(afterDate);
+    return Array.from(dates).sort();
+  }, [availableDates, afterDate]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     isDraggingRef.current = true;
@@ -39,24 +55,49 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
       if (!isDraggingRef.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-      const pct = (x / rect.width) * 100;
-      onSliderChange(Math.round(pct * 10) / 10);
+      const pct = Math.round((x / rect.width) * 1000) / 10;
+
+      // Direct DOM update for instant tracking without waiting on React state re-renders
+      if (dividerRef.current) {
+        dividerRef.current.style.left = `${pct}%`;
+      }
+      if (percentTagRef.current) {
+        percentTagRef.current.textContent = `${Math.round(pct)}% Split`;
+      }
+
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          onSliderChange(pct);
+          rafRef.current = null;
+        });
+      }
     },
     [onSliderChange]
   );
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    isDraggingRef.current = false;
-    try {
-      (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-    } catch {
-      // ignore
-    }
-  }, []);
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      isDraggingRef.current = false;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      try {
+        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+      } catch {
+        // ignore
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const handleGlobalUp = () => {
       isDraggingRef.current = false;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
     window.addEventListener('pointerup', handleGlobalUp);
     return () => window.removeEventListener('pointerup', handleGlobalUp);
@@ -95,14 +136,14 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
         >
           <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <span className="text-[11px] font-mono text-slate-400 font-semibold">BEFORE:</span>
-          {onSelectBeforeDate && availableDates.length > 0 ? (
+          {onSelectBeforeDate && beforeOptions.length > 0 ? (
             <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
               <select
                 value={beforeDate}
                 onChange={(e) => onSelectBeforeDate(e.target.value)}
                 className="appearance-none bg-[#0F172A] text-slate-100 text-xs font-mono font-bold pl-2 pr-6 py-1 rounded border border-slate-700 cursor-pointer focus:outline-none hover:border-amber-500"
               >
-                {availableDates.map((d) => (
+                {beforeOptions.map((d) => (
                   <option key={d} value={d} className="bg-[#111827]">
                     {d}
                   </option>
@@ -151,14 +192,14 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
             Newest Satellite Photo
           </span>
           <span className="text-[11px] font-mono text-slate-400 font-semibold">AFTER:</span>
-          {onSelectAfterDate && availableDates.length > 0 ? (
+          {onSelectAfterDate && afterOptions.length > 0 ? (
             <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
               <select
                 value={afterDate}
                 onChange={(e) => onSelectAfterDate(e.target.value)}
                 className="appearance-none bg-[#0F172A] text-slate-100 text-xs font-mono font-bold pl-2 pr-6 py-1 rounded border border-slate-700 cursor-pointer focus:outline-none hover:border-indigo-500"
               >
-                {availableDates.map((d) => (
+                {afterOptions.map((d) => (
                   <option key={d} value={d} className="bg-[#111827]">
                     {d}
                   </option>
@@ -177,6 +218,7 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
 
       {/* Vertical Hairline Divider */}
       <div
+        ref={dividerRef}
         className="absolute top-0 bottom-0 w-[2px] bg-gradient-to-b from-indigo-500/80 via-white to-indigo-500/80 shadow-[0_0_12px_rgba(99,102,241,0.8)] pointer-events-none"
         style={{ left: `${sliderPos}%` }}
       >
@@ -194,7 +236,10 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
         </div>
 
         {/* Bottom Percentage Tag */}
-        <div className="absolute bottom-6 -translate-x-1/2 bg-[#0F172A]/95 border border-slate-700 text-slate-200 px-2 py-0.5 rounded text-[10px] font-mono tabular-nums shadow-lg pointer-events-none">
+        <div
+          ref={percentTagRef}
+          className="absolute bottom-6 -translate-x-1/2 bg-[#0F172A]/95 border border-slate-700 text-slate-200 px-2 py-0.5 rounded text-[10px] font-mono tabular-nums shadow-lg pointer-events-none"
+        >
           {Math.round(sliderPos)}% Split
         </div>
       </div>

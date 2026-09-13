@@ -256,14 +256,83 @@ export async function getEvidence(changeObjectId: string): Promise<ApiResult<Evi
   );
 }
 
-export async function getEvidenceList(aoiId?: string): Promise<ApiResult<Evidence[]>> {
+export interface ChangeFilterParams {
+  types?: string[];
+  min_area_m2?: number;
+  max_area_m2?: number;
+  after?: string;
+  before?: string;
+  min_confidence?: number;
+  status?: string;
+  sort?: string;
+  limit?: number;
+}
+
+export async function getEvidenceList(
+  aoiId?: string,
+  filters?: ChangeFilterParams
+): Promise<ApiResult<Evidence[]>> {
   const list = evidenceListFixture as unknown as Evidence[];
-  const filtered = aoiId ? list.filter((e) => e.aoi_id === aoiId) : list;
-  return safeFetch(
-    `/aoi/${aoiId ?? 'default'}/changes`,
+  const fallbackFiltered = aoiId ? list.filter((e) => e.aoi_id === aoiId) : list;
+
+  const params = new URLSearchParams();
+  if (filters?.types) filters.types.forEach((t) => params.append('type', t));
+  if (filters?.min_area_m2 !== undefined) params.append('min_area_m2', filters.min_area_m2.toString());
+  if (filters?.max_area_m2 !== undefined) params.append('max_area_m2', filters.max_area_m2.toString());
+  if (filters?.after) params.append('after', filters.after);
+  if (filters?.before) params.append('before', filters.before);
+  if (filters?.min_confidence !== undefined) params.append('min_confidence', filters.min_confidence.toString());
+  if (filters?.status) params.append('status', filters.status);
+  if (filters?.sort) params.append('sort', filters.sort);
+  if (filters?.limit) params.append('limit', filters.limit.toString());
+
+  const q = params.toString();
+  const endpoint = `/aoi/${aoiId ?? 'default'}/changes${q ? `?${q}` : ''}`;
+  const res = await safeFetch<Evidence[] | { items: Evidence[]; total: number }>(
+    endpoint,
     undefined,
-    filtered.length > 0 ? filtered : list
+    fallbackFiltered.length > 0 ? fallbackFiltered : list
   );
+
+  if (res.kind === 'ok') {
+    const data = Array.isArray(res.data) ? res.data : res.data.items;
+    return { kind: 'ok', data };
+  }
+  return res as ApiResult<Evidence[]>;
+}
+
+export async function triggerAoiAnalyse(aoiId: string): Promise<ApiResult<JobResponse>> {
+  return safeFetch(`/aoi/${aoiId}/analyse`, {
+    method: 'POST',
+  });
+}
+
+export interface DecisionRecord {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  note: string | null;
+  actor: string;
+  recorded_at: string;
+}
+
+export async function submitDecision(
+  entityType: string,
+  entityId: string,
+  action: 'confirm' | 'reject',
+  note?: string
+): Promise<ApiResult<DecisionRecord>> {
+  return safeFetch('/decisions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      entity_type: entityType,
+      entity_id: entityId,
+      action,
+      note,
+    }),
+  });
 }
 
 export async function getChangeSummary(aoiId: string): Promise<ApiResult<ChangeSummary>> {

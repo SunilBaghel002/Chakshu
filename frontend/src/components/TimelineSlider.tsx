@@ -23,16 +23,19 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
   const [selectedYear, setSelectedYear] = useState<number | 'all'>('all');
   const playIntervalRef = useRef<number | null>(null);
 
-  // Sort scenes chronologically
-  const sortedScenes = [...scenes].sort(
-    (a, b) => new Date(a.acquired_at).getTime() - new Date(b.acquired_at).getTime()
-  );
+  // Sort scenes chronologically (memoized to prevent sorting 136 scenes on every render)
+  const sortedScenes = React.useMemo(() => {
+    return [...scenes].sort(
+      (a, b) => new Date(a.acquired_at).getTime() - new Date(b.acquired_at).getTime()
+    );
+  }, [scenes]);
 
-  // Filter by year if chosen
-  const displayedScenes =
-    selectedYear === 'all'
+  // Filter by year if chosen (memoized)
+  const displayedScenes = React.useMemo(() => {
+    return selectedYear === 'all'
       ? sortedScenes
       : sortedScenes.filter((s) => s.acquired_at.startsWith(String(selectedYear)));
+  }, [sortedScenes, selectedYear]);
 
   const currentAfterIndex = sortedScenes.findIndex((s) => s.acquired_at === afterDate);
   const activeScene = sortedScenes[currentAfterIndex >= 0 ? currentAfterIndex : sortedScenes.length - 1];

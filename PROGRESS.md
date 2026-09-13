@@ -6,14 +6,14 @@
 Last updated: 2026-09-12 11:30 IST by Claude / Antigravity
 
 ## A. Current phase
-Phase 1 — Data in. Tasks 1.1–1.3 complete.
+Phase 3 — Trust layer. Phase 1 and Phase 2 complete.
 
 ## B. Gate log
 | Phase | Gate | Result | Date | Evidence |
 |---|---|---|---|---|
 | 0 | Skeleton and contracts | PASS | 2026-09-12 | All Phase 0 unit tests pass (resolution, bbox synthetic, verifier, purity, audit, fixture roundtrip); make types valid |
-| 1 | Data in | IN PROGRESS | — | Tasks 1.1-1.3 complete (STAC downloader, demo site delta verified, spectral indices 12 tests pass) |
-| 2 | Change detection vertical slice | — | — | — |
+| 1 | Data in | PASS | 2026-09-13 | Ingest service (SCL cloud score, 2-98% percentile stretch, 256x256 Web Mercator tiles), AOI & Scene catalog, tile server, background jobs, test_ingest.py + test_aoi_scenes_api.py + test_tiles_api.py pass |
+| 2 | Change detection vertical slice | PASS | 2026-09-13 | Classical CVA + dynamic Otsu thresholding, RFC 7946 polygonization, Kruger UTM measure (ST_Area error < 0.01% exceeding 0.1% target), 73 real Jewar polygons (runway 475.83 ha), triptych PNG generation, SQL predicate pushdown, ReviewQueue keyboard shortcuts (j/k/c/r/e), all 114 backend tests + frontend build pass |
 | 3 | Trust | — | — | — |
 | 4 | Retrieval | PASS | 2026-09-12 | OpenCLIP 512-dim vectors, CPU latency < 1s, hybrid kNN search with SQL predicates, test_retrieval.py passes |
 | 5 | Upload and detection | PASS | 2026-09-12 | Upload validation (magic bytes, 40x bomb ratio), GSD Resolution Gate, verbatim refusals, Track 1/2/3, NMS, rejection accounting, test_upload_service.py + test_detection.py pass |
@@ -43,6 +43,12 @@ Phase 1 — Data in. Tasks 1.1–1.3 complete.
 - [x] 1.7 AOI & Scene catalog API: `services/aoi_service.py`, `services/scene_service.py`, `api/aoi.py`, `api/scenes.py` with UTM zone derivation, date bracketing, PostGIS queries, and offline fixture fallback — 2026-09-13 — verified: `test_aoi_scenes_api.py` (7 tests pass)
 - [x] 1.8 Raster-to-PNG tile server: `services/tile_service.py` + `api/tiles.py` serving 256x256 Web Mercator true-color imagery, change masks, and evidence triptychs with caching — 2026-09-13 — verified: `test_tiles_api.py` (5 tests pass)
 - [x] 1.10 OpenCLIP ViT-B-32 adapter: `adapters/clip_encoder.py`, 512-dim unit vectors, CPU latency < 1s, deterministic offline projection — 2026-09-12 — verified: `test_clip_encoder.py` (5 tests pass)
+- [x] 2.1 Pure classical change detection: `domain/change_classical.py`, index differences (ΔNDVI, ΔNDBI, ΔNDWI), Euclidean CVA magnitude, dynamic Otsu thresholding with plateau midpoint resolution, 3x3 morphological opening, 8-connectivity filtering >= 4 px — 2026-09-13 — verified: `test_change_classical.py` (7 tests pass)
+- [x] 2.2 Vectorisation: `domain/vectorise.py`, binary change mask to GeoJSON Polygons via `shapely.geometry.box` + `unary_union`, RFC 7946 exterior boundaries & interior holes, WGS84 coordinates — 2026-09-13 — verified: `test_vectorise.py` (3 tests pass)
+- [x] 2.3 Deterministic measurement: `domain/measure.py`, pure Python Kruger-series Transverse Mercator ellipsoid projection, planar UTM area matching PostGIS ST_Area within < 0.01% (gate requirement < 0.1%), perimeter, centroid, ha / m² formatting — 2026-09-13 — verified: `test_measure.py` (5 tests pass)
+- [x] 2.4 End-to-end analysis & evidence generation: `services/analysis.py` + `services/evidence_builder.py`, sub-pixel registration check, rule trace generation, geometric-mean confidence, 3-stage triptych PNG generation (`before.png`, `mask.png`, `after.png`), 73 change polygons on Jewar Airport — 2026-09-13 — verified: `test_analysis_service.py` (3 tests pass)
+- [x] 2.5 Change endpoints & SQL predicate pushdown: `api/changes.py`, `GET /api/v1/aoi/{id}/changes` with SQL filtering (type, area, dates, confidence, status), `POST /api/v1/aoi/{id}/analyse` background job, `GET /api/v1/changes/{id}`, `POST /api/v1/decisions` — 2026-09-13 — verified: `test_changes_api.py` (6 tests pass)
+- [x] 2.6 Frontend change wiring & Review Queue: `components/ReviewQueueModal.tsx` with full keyboard shortcuts (j/k/c/r/e), status & category filtering, sorting, card/table view toggle; `components/ChangeCard.tsx`; `components/MapPane.tsx` showing all polygons with tooltips; `App.tsx` wired with Detect Changes trigger and live decision submission — 2026-09-13 — verified: `npm run build` succeeds, `test_purity.py` passes
 - [x] 4.1 Ingestion pgvector integration: `services/ingest.py` tile embedding and pgvector persistence — 2026-09-12 — verified: `test_ingest.py`
 - [x] 4.2 Hybrid vector retrieval: `services/retrieval.py` kNN cosine search with SQL predicate pushdown (AOI, date, cloud, spectral) — 2026-09-12 — verified: `test_retrieval.py` (5 tests pass)
 - [x] 4.3 Search endpoints: `api/search.py` `/api/v1/search/semantic` and `/api/v1/search/similar` — 2026-09-12 — verified: `test_retrieval.py`
@@ -55,8 +61,8 @@ Phase 1 — Data in. Tasks 1.1–1.3 complete.
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- Phase 2: Change detection vertical slice (Tasks 2.1–2.6)
-- Frontend Integration: Wiring MapLibre GL real tile server with live backend API
+- Phase 3: Trust layer (Tasks 3.1–3.6)
+
 
 ## E. Blocked / needs human decision
 <!-- blocker — since — tried — the specific question that unblocks it -->
