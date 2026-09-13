@@ -20,9 +20,11 @@ import numpy as np
 from PIL import Image
 
 try:
+    from app.adapters.clip_encoder import get_clip_encoder
     from app.domain.indices import compute_ndbi, compute_ndvi, compute_ndwi, resample_2x
     from app.settings import settings
 except ImportError:
+    from ..adapters.clip_encoder import get_clip_encoder
     from ..domain.indices import compute_ndbi, compute_ndvi, compute_ndwi, resample_2x
     from ..settings import settings
 
@@ -198,6 +200,9 @@ class IngestService:
                 with png_path.open("wb") as f:
                     f.write(png_bytes)
 
+                # Embed tile using CLIP (Task 1.10 / 4.1)
+                tile_vector = get_clip_encoder().embed_image(png_bytes)
+
                 tiles_meta.append(
                     {
                         "x": tx,
@@ -207,6 +212,7 @@ class IngestService:
                         "ndvi_mean": round(ndvi_mean, 3),
                         "ndwi_mean": round(ndwi_mean, 3),
                         "ndbi_mean": round(ndbi_mean, 3),
+                        "vector": tile_vector,
                         "png_path": str(png_path).replace("\\", "/"),
                     }
                 )
@@ -272,18 +278,24 @@ class IngestService:
                 # 2. Insert tiles
                 for t in scene_meta["tiles"]:
                     geom_str = json.dumps(t["geom"])
+                    vec_str = (
+                        f"[{','.join(f'{v:.6f}' for v in t['vector'])}]"
+                        if "vector" in t and t["vector"]
+                        else None
+                    )
                     cur.execute(
                         """
                         INSERT INTO tile (
-                            scene_id, x, y, geom, cloud_pct, ndvi_mean, ndwi_mean, ndbi_mean
+                            scene_id, x, y, geom, cloud_pct, ndvi_mean, ndwi_mean, ndbi_mean, vector
                         ) VALUES (
-                            %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), %s, %s, %s, %s
+                            %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326), %s, %s, %s, %s, %s
                         )
                         ON CONFLICT (scene_id, x, y) DO UPDATE SET
                             cloud_pct = EXCLUDED.cloud_pct,
                             ndvi_mean = EXCLUDED.ndvi_mean,
                             ndwi_mean = EXCLUDED.ndwi_mean,
-                            ndbi_mean = EXCLUDED.ndbi_mean;
+                            ndbi_mean = EXCLUDED.ndbi_mean,
+                            vector = COALESCE(EXCLUDED.vector, tile.vector);
                         """,
                         (
                             scene_meta["scene_id"],
@@ -294,6 +306,7 @@ class IngestService:
                             t["ndvi_mean"],
                             t["ndwi_mean"],
                             t["ndbi_mean"],
+                            vec_str,
                         ),
                     )
 

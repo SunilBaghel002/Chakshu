@@ -15,8 +15,8 @@ Phase 1 — Data in. Tasks 1.1–1.3 complete.
 | 1 | Data in | IN PROGRESS | — | Tasks 1.1-1.3 complete (STAC downloader, demo site delta verified, spectral indices 12 tests pass) |
 | 2 | Change detection vertical slice | — | — | — |
 | 3 | Trust | — | — | — |
-| 4 | Retrieval | — | — | — |
-| 5 | Upload and detection | — | — | — |
+| 4 | Retrieval | PASS | 2026-09-12 | OpenCLIP 512-dim vectors, CPU latency < 1s, hybrid kNN search with SQL predicates, test_retrieval.py passes |
+| 5 | Upload and detection | PASS | 2026-09-12 | Upload validation (magic bytes, 40x bomb ratio), GSD Resolution Gate, verbatim refusals, Track 1/2/3, NMS, rejection accounting, test_upload_service.py + test_detection.py pass |
 | 6 | Question layer | — | — | — |
 | 7 | Release | — | — | — |
 
@@ -42,11 +42,21 @@ Phase 1 — Data in. Tasks 1.1–1.3 complete.
 - [x] 1.6 Job polling & BackgroundTasks: `services/jobs.py` JobManager thread-safe registry + `api/jobs.py` `GET /api/v1/jobs/{id}` and `GET /api/v1/jobs` — 2026-09-13 — verified: `test_jobs_api.py` (5 tests pass)
 - [x] 1.7 AOI & Scene catalog API: `services/aoi_service.py`, `services/scene_service.py`, `api/aoi.py`, `api/scenes.py` with UTM zone derivation, date bracketing, PostGIS queries, and offline fixture fallback — 2026-09-13 — verified: `test_aoi_scenes_api.py` (7 tests pass)
 - [x] 1.8 Raster-to-PNG tile server: `services/tile_service.py` + `api/tiles.py` serving 256x256 Web Mercator true-color imagery, change masks, and evidence triptychs with caching — 2026-09-13 — verified: `test_tiles_api.py` (5 tests pass)
+- [x] 1.10 OpenCLIP ViT-B-32 adapter: `adapters/clip_encoder.py`, 512-dim unit vectors, CPU latency < 1s, deterministic offline projection — 2026-09-12 — verified: `test_clip_encoder.py` (5 tests pass)
+- [x] 4.1 Ingestion pgvector integration: `services/ingest.py` tile embedding and pgvector persistence — 2026-09-12 — verified: `test_ingest.py`
+- [x] 4.2 Hybrid vector retrieval: `services/retrieval.py` kNN cosine search with SQL predicate pushdown (AOI, date, cloud, spectral) — 2026-09-12 — verified: `test_retrieval.py` (5 tests pass)
+- [x] 4.3 Search endpoints: `api/search.py` `/api/v1/search/semantic` and `/api/v1/search/similar` — 2026-09-12 — verified: `test_retrieval.py`
+- [x] 5.1 Ingestion & security validation: `services/upload_service.py` magic bytes, 40x decompression-bomb check, path sanitization, GSD Resolution Gate, overview generation — 2026-09-12 — verified: `test_upload_service.py` (8 tests pass)
+- [x] 5.2 Upload API router: `api/uploads.py` `/uploads`, `/uploads/{id}`, `/uploads/{id}/detections`, `/uploads/{id}/overview` — 2026-09-12 — verified: `test_upload_service.py`
+- [x] 5.3 Pure domain land-cover: `domain/landcover.py` Track 1 priority classification, morphological opening, polygonization, coverage summary — 2026-09-12 — verified: `test_detection.py`
+- [x] 5.4 ESA WorldCover 2021 adapter: `adapters/worldcover.py` Track 2 deterministic reference map integration — 2026-09-12 — verified: `test_detection.py`
+- [x] 5.5 Multi-track detection orchestrator: `services/detection.py` Resolution Gate refusal, Track 3 validation, class-aware NMS, rejection tracing, deterministic SQL counts — 2026-09-12 — verified: `test_detection.py` (3 tests pass)
+- [x] 5.6 Gemini 2.0 Flash detection adapter: `adapters/gemini.py` downscaling <= 1568px, strict JSON schema with GSD and permitted classes injected — 2026-09-12 — verified: `test_detection.py`
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- Phase 1: 1.9 Frontend `MapPane`, `SwipeCompare`, `Timeline` — Sunil
-- Phase 1: 1.10 CLIP tile encoder `adapters/clip_encoder.py` — Sunil
+- Phase 2: Change detection vertical slice (Tasks 2.1–2.6)
+- Frontend Integration: Wiring MapLibre GL real tile server with live backend API
 
 ## E. Blocked / needs human decision
 <!-- blocker — since — tried — the specific question that unblocks it -->

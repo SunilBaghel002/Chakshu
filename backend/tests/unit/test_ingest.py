@@ -108,6 +108,8 @@ def test_ingest_service_scene_bands(tmp_path: Path) -> None:
     assert t0["y"] == 0
     assert 0.75 <= t0["ndvi_mean"] <= 0.85
     assert Path(t0["png_path"]).exists()
+    assert "vector" in t0
+    assert len(t0["vector"]) == 512
 
     # Verify manifest file on disk
     manifest_path = tmp_path / "TEST_SCENE_001" / "manifest.json"
