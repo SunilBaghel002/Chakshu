@@ -39,10 +39,14 @@ Phase 1 — Data in. Tasks 1.1–1.3 complete.
 - [x] 1.3 Pure domain spectral indices: `domain/indices.py`, NDVI, NDWI, NDBI, NDSI with nodata masking and 10000.0 scale factor, classify_land_cover — 2026-09-12 — verified: `test_indices.py` (12 tests pass)
 - [x] 1.4 Phase-correlation registration: `domain/align.py` 2D Fourier phase correlation, Hann windowing, sub-pixel quadratic peak interpolation, 2.0 px tolerance check — 2026-09-12 — verified: `test_align.py` (6 tests pass)
 - [x] 1.5 Spatial tiling & ingestion: `services/ingest.py` SCL cloud scoring, 256x256 Web Mercator tiling, tile spectral index means, 2-98% percentile stretch RGB rendering, DB persistence with offline fallback — 2026-09-12 — verified: `test_ingest.py` (5 tests pass)
+- [x] 1.6 Job polling & BackgroundTasks: `services/jobs.py` JobManager thread-safe registry + `api/jobs.py` `GET /api/v1/jobs/{id}` and `GET /api/v1/jobs` — 2026-09-13 — verified: `test_jobs_api.py` (5 tests pass)
+- [x] 1.7 AOI & Scene catalog API: `services/aoi_service.py`, `services/scene_service.py`, `api/aoi.py`, `api/scenes.py` with UTM zone derivation, date bracketing, PostGIS queries, and offline fixture fallback — 2026-09-13 — verified: `test_aoi_scenes_api.py` (7 tests pass)
+- [x] 1.8 Raster-to-PNG tile server: `services/tile_service.py` + `api/tiles.py` serving 256x256 Web Mercator true-color imagery, change masks, and evidence triptychs with caching — 2026-09-13 — verified: `test_tiles_api.py` (5 tests pass)
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- Phase 1: 1.6 `jobs`, 1.7 `aoi`/`scenes`, 1.8 `tiles` API endpoints — Sunil
+- Phase 1: 1.9 Frontend `MapPane`, `SwipeCompare`, `Timeline` — Sunil
+- Phase 1: 1.10 CLIP tile encoder `adapters/clip_encoder.py` — Sunil
 
 ## E. Blocked / needs human decision
 <!-- blocker — since — tried — the specific question that unblocks it -->

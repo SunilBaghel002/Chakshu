@@ -10,3 +10,4 @@ export * from './types/evidence';
 export * from './types/detection';
 export * from './types/summary';
 export * from './types/ask';
+export * from './types/aoi';

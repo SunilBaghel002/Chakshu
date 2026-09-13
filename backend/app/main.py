@@ -18,9 +18,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 try:
+    from app.api.aoi import router as aoi_router
+    from app.api.jobs import router as jobs_router
+    from app.api.scenes import router as scenes_router
+    from app.api.tiles import router as tiles_router
     from app.exceptions import ChakshuError
     from app.settings import settings
 except ImportError:
+    from .api.aoi import router as aoi_router
+    from .api.jobs import router as jobs_router
+    from .api.scenes import router as scenes_router
+    from .api.tiles import router as tiles_router
     from .exceptions import ChakshuError
     from .settings import settings
 
@@ -99,6 +107,12 @@ def create_app() -> FastAPI:
                 }
             },
         )
+
+    # Register API Routers
+    app.include_router(jobs_router, prefix="/api/v1")
+    app.include_router(aoi_router, prefix="/api/v1")
+    app.include_router(scenes_router, prefix="/api/v1")
+    app.include_router(tiles_router, prefix="/api/v1")
 
     # Health Check Endpoint
     @app.get("/health", tags=["System"])

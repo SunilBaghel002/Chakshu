@@ -10,9 +10,15 @@
 import { z } from 'zod';
 import type {
   Answer,
+  Aoi,
+  AoiCreate,
+  AoiListResponse,
   ChangeSummary,
   DetectionSet,
   Evidence,
+  JobResponse,
+  Scene,
+  SceneListResponse,
   Upload,
 } from './types';
 
@@ -132,4 +138,57 @@ export async function askQuestion(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question, aoi_id: aoiId, upload_id: uploadId }),
   });
+}
+
+// Areas of Interest (AOIs)
+export async function getAois(): Promise<ApiResult<AoiListResponse>> {
+  return safeFetch('/aoi');
+}
+
+export async function getAoi(id: string): Promise<ApiResult<Aoi>> {
+  return safeFetch(`/aoi/${id}`);
+}
+
+export async function createAoi(data: AoiCreate): Promise<ApiResult<Aoi>> {
+  return safeFetch('/aoi', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function triggerAoiIngest(aoiId: string): Promise<ApiResult<JobResponse>> {
+  return safeFetch(`/aoi/${aoiId}/ingest`, {
+    method: 'POST',
+  });
+}
+
+// Scenes
+export async function getScenes(
+  aoiId?: string,
+  usableOnly = false,
+  before?: string,
+  after?: string
+): Promise<ApiResult<SceneListResponse>> {
+  const params = new URLSearchParams();
+  if (aoiId) params.append('aoi_id', aoiId);
+  if (usableOnly) params.append('usable_only', 'true');
+  if (before) params.append('before', before);
+  if (after) params.append('after', after);
+  const q = params.toString();
+  return safeFetch(`/scenes${q ? `?${q}` : ''}`);
+}
+
+export async function getScene(sceneId: string): Promise<ApiResult<Scene>> {
+  return safeFetch(`/scenes/${sceneId}`);
+}
+
+// Jobs
+export async function getJob(jobId: string): Promise<ApiResult<JobResponse>> {
+  return safeFetch(`/jobs/${jobId}`);
+}
+
+// Tile URL Builder
+export function getTileUrl(sceneId: string, z: number, x: number, y: number): string {
+  return `${API_BASE}/tiles/imagery/${z}/${x}/${y}.png?scene_id=${encodeURIComponent(sceneId)}`;
 }
