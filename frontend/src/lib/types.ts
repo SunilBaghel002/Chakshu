@@ -10,3 +10,11 @@ export * from './types/evidence';
 export * from './types/detection';
 export * from './types/summary';
 export * from './types/ask';
+export * from './types/aoi';
+
+// Type aliases for prompt and frontend convenience
+import type { Answer } from './types/ask';
+import type { Evidence } from './types/evidence';
+
+export type EvidenceCard = Evidence;
+export type AskResponse = Answer;

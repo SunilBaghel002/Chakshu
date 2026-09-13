@@ -1,1 +1,1 @@
-"""API routes for Chakshu."""
+"""API routers package for Chakshu."""

@@ -3,6 +3,15 @@
 Exports all data contracts specified in PRD 4.
 """
 
+from app.schemas.aoi import (
+    Aoi,
+    AoiCreate,
+    AoiListResponse,
+    JobListResponse,
+    JobResponse,
+    Scene,
+    SceneListResponse,
+)
 from app.schemas.ask import Answer, AnswerHighlights, AskRequest, IntentMatch
 from app.schemas.common import (
     AnswerTier,
@@ -44,6 +53,9 @@ __all__ = [
     "Answer",
     "AnswerHighlights",
     "AnswerTier",
+    "Aoi",
+    "AoiCreate",
+    "AoiListResponse",
     "AskRequest",
     "CapabilityTier",
     "ChangeByTypeItem",
@@ -61,6 +73,8 @@ __all__ = [
     "ErrorEnvelope",
     "Evidence",
     "IntentMatch",
+    "JobListResponse",
+    "JobResponse",
     "JobState",
     "LandCoverClass",
     "MeasurementSubObject",
@@ -68,6 +82,8 @@ __all__ = [
     "ObjectClass",
     "ProvenanceSource",
     "RejectionsSummary",
+    "Scene",
+    "SceneListResponse",
     "SourcesSubObject",
     "SuppressionContextSubObject",
     "SuppressionReason",
