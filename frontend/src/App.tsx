@@ -6,13 +6,15 @@ import { EvidenceDrawer } from './components/EvidenceDrawer';
 import { AskPanel } from './components/AskPanel';
 import { ReviewQueueModal } from './components/ReviewQueueModal';
 import { UploadModal } from './components/UploadModal';
-import { Calendar, ArrowLeftRight } from 'lucide-react';
+import { Calendar, ArrowLeftRight, Sparkles } from 'lucide-react';
 import {
   getAois,
   getScenes,
   getChangeSummary,
   getEvidenceList,
   getDetections,
+  triggerAoiAnalyse,
+  submitDecision,
   isMockMode,
   setMockMode,
   type AoiItem,
@@ -24,13 +26,13 @@ export const App: React.FC = () => {
   const [aois, setAois] = useState<AoiItem[]>([]);
   const [selectedAoiId, setSelectedAoiId] = useState<string>('');
   const [scenes, setScenes] = useState<SceneItem[]>([]);
-  const [currentScene, setCurrentScene] = useState<SceneItem | null>(null);
-  const [changeSummary, setChangeSummary] = useState<ChangeSummary | null>(null);
+  const [, setCurrentScene] = useState<SceneItem | null>(null);
+  const [, setChangeSummary] = useState<ChangeSummary | null>(null);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
   const [detectionSet, setDetectionSet] = useState<DetectionSet | null>(null);
 
-  // Date states for Before (Old baseline) and After (Recent observation)
+  // Date states for Before and After
   const [beforeDate, setBeforeDate] = useState<string>('2021-01-15');
   const [afterDate, setAfterDate] = useState<string>('2026-08-18');
 
@@ -39,17 +41,16 @@ export const App: React.FC = () => {
   const [isMock, setIsMock] = useState<boolean>(isMockMode());
   const [sliderPos, setSliderPos] = useState<number>(50);
   const [isSwipeActive, setIsSwipeActive] = useState<boolean>(true);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
-  // Load initial data
+  // Load initial AOIs
   useEffect(() => {
     async function init() {
       const aoiRes = await getAois();
       if (aoiRes.kind === 'ok' && aoiRes.data.length > 0) {
         setAois(aoiRes.data);
         const defaultAoi = aoiRes.data[0];
-        if (defaultAoi) {
-          setSelectedAoiId(defaultAoi.id);
-        }
+        if (defaultAoi) setSelectedAoiId(defaultAoi.id);
       }
     }
     init();
@@ -60,13 +61,19 @@ export const App: React.FC = () => {
     if (!selectedAoiId) return;
 
     async function loadAoiData() {
-      // 1. Scenes
-      const scenesRes = await getScenes(selectedAoiId);
+      const [scenesRes, sumRes, evListRes, detRes] = await Promise.all([
+        getScenes(selectedAoiId),
+        getChangeSummary(selectedAoiId),
+        getEvidenceList(selectedAoiId),
+        getDetections('jewar_crop'),
+      ]);
+
       if (scenesRes.kind === 'ok' && scenesRes.data.length > 0) {
-        setScenes(scenesRes.data);
-        const firstUsable = scenesRes.data.find((s) => s.usable) || scenesRes.data[0];
-        const lastUsable =
-          [...scenesRes.data].reverse().find((s) => s.usable) || scenesRes.data[scenesRes.data.length - 1];
+        // Sort chronologically (oldest baseline first, newest observation last)
+        const sorted = [...scenesRes.data].sort((a, b) => a.acquired_at.localeCompare(b.acquired_at));
+        setScenes(sorted);
+        const firstUsable = sorted.find((s) => s.usable) || sorted[0];
+        const lastUsable = [...sorted].reverse().find((s) => s.usable) || sorted[sorted.length - 1];
         if (firstUsable) setBeforeDate(firstUsable.acquired_at);
         if (lastUsable) {
           setAfterDate(lastUsable.acquired_at);
@@ -74,14 +81,8 @@ export const App: React.FC = () => {
         }
       }
 
-      // 2. Summary
-      const sumRes = await getChangeSummary(selectedAoiId);
-      if (sumRes.kind === 'ok') {
-        setChangeSummary(sumRes.data);
-      }
+      if (sumRes.kind === 'ok') setChangeSummary(sumRes.data);
 
-      // 3. Evidence list
-      const evListRes = await getEvidenceList(selectedAoiId);
       if (evListRes.kind === 'ok') {
         setEvidenceList(evListRes.data);
         if (evListRes.data.length > 0 && evListRes.data[0]) {
@@ -89,11 +90,7 @@ export const App: React.FC = () => {
         }
       }
 
-      // 4. Detections
-      const detRes = await getDetections('jewar_crop');
-      if (detRes.kind === 'ok') {
-        setDetectionSet(detRes.data);
-      }
+      if (detRes.kind === 'ok') setDetectionSet(detRes.data);
     }
 
     loadAoiData();
@@ -111,28 +108,72 @@ export const App: React.FC = () => {
     setAfterDate(temp);
   };
 
-  // Dynamic filtering of evidence based on selected afterDate:
-  // Shows changes detected up to the afterDate observation point
+  const handleConfirmEvidence = async (id: string) => {
+    setEvidenceList((prev) =>
+      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
+    );
+    if (selectedEvidence?.change_object_id === id) {
+      setSelectedEvidence((prev) => (prev ? { ...prev, status: 'confirmed' } : null));
+    }
+    await submitDecision('change_object', id, 'confirm');
+  };
+
+  const handleRejectEvidence = async (id: string) => {
+    setEvidenceList((prev) =>
+      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
+    );
+    if (selectedEvidence?.change_object_id === id) {
+      setSelectedEvidence((prev) => (prev ? { ...prev, status: 'rejected' } : null));
+    }
+    await submitDecision('change_object', id, 'reject');
+  };
+
+  const handleRunAnalysis = async () => {
+    if (!selectedAoiId || isAnalyzing) return;
+    setIsAnalyzing(true);
+    try {
+      const res = await triggerAoiAnalyse(selectedAoiId);
+      if (res.kind === 'ok') {
+        setTimeout(async () => {
+          const [evListRes, sumRes] = await Promise.all([
+            getEvidenceList(selectedAoiId),
+            getChangeSummary(selectedAoiId),
+          ]);
+          if (evListRes.kind === 'ok') {
+            setEvidenceList(evListRes.data);
+            if (evListRes.data.length > 0 && !selectedEvidence) {
+              const first = evListRes.data[0];
+              if (first) setSelectedEvidence(first);
+            }
+          }
+          if (sumRes.kind === 'ok') setChangeSummary(sumRes.data);
+          setIsAnalyzing(false);
+        }, 1800);
+      } else {
+        setIsAnalyzing(false);
+      }
+    } catch {
+      setIsAnalyzing(false);
+    }
+  };
+
   const visibleEvidenceList = useMemo(() => {
+    const maxObservationDate = beforeDate < afterDate ? afterDate : beforeDate;
     return evidenceList.filter((ev) => {
       const date = ev.temporal.first_supported || ev.sources.after.acquired_at;
-      return date <= afterDate;
+      return date <= maxObservationDate;
     });
-  }, [evidenceList, afterDate]);
+  }, [evidenceList, beforeDate, afterDate]);
 
-  // Compute total area dynamically based on visible evidence
   const totalAreaM2 = useMemo(() => {
     return visibleEvidenceList.reduce((acc, ev) => acc + (ev.measurement.area_m2 || 0), 0);
   }, [visibleEvidenceList]);
 
   const totalAreaLabel = useMemo(() => {
-    if (totalAreaM2 >= 10000) {
-      return `${(totalAreaM2 / 10000).toFixed(2)} ha`;
-    }
+    if (totalAreaM2 >= 10000) return `${(totalAreaM2 / 10000).toFixed(2)} ha`;
     return `${Math.round(totalAreaM2)} m²`;
   }, [totalAreaM2]);
 
-  // Ensure selected evidence is in visible set
   useEffect(() => {
     if (visibleEvidenceList.length > 0) {
       const exists = visibleEvidenceList.some((e) => e.change_object_id === selectedEvidence?.change_object_id);
@@ -144,16 +185,14 @@ export const App: React.FC = () => {
   }, [visibleEvidenceList, selectedEvidence]);
 
   const currentAoi = aois.find((a) => a.id === selectedAoiId);
-  // Centroids: Jewar Airport [28.1305, 77.7612], Bhadla Solar Park [27.53, 71.91]
   const aoiCoords = useMemo<[number, number]>(() => {
     return currentAoi?.name.includes('Bhadla') ? [27.53, 71.91] : [28.1305, 77.7612];
-  }, [selectedAoiId, currentAoi?.name]);
+  }, [currentAoi?.name]);
 
   const availableDates = Array.from(new Set(scenes.map((s) => s.acquired_at))).sort();
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0B0F19] text-slate-100 font-sans">
-      {/* Top Application Bar */}
       <AppHeader
         aois={aois}
         selectedAoiId={selectedAoiId}
@@ -167,9 +206,8 @@ export const App: React.FC = () => {
         usableScenes={scenes.filter((s) => s.usable).length || 29}
       />
 
-      {/* Interactive Date & Comparison Controls Bar */}
+      {/* Date & Trigger Controls */}
       <div className="bg-[#0D121F] border-b border-[#1F2937] px-4 py-2 flex items-center justify-between gap-3 text-xs flex-wrap z-20 shadow-md">
-        {/* Left: Baseline Before Date */}
         <div className="flex items-center gap-2">
           <span className="text-amber-400 font-bold font-mono text-[11px] uppercase tracking-wider flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5" />
@@ -181,7 +219,7 @@ export const App: React.FC = () => {
             min="2021-01-01"
             max="2026-12-31"
             onChange={(e) => setBeforeDate(e.target.value)}
-            className="bg-[#111827] border border-slate-700 text-amber-300 font-mono font-semibold px-2 py-1 rounded text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-inner hover:border-amber-500/70"
+            className="bg-[#111827] border border-slate-700 text-amber-300 font-mono font-semibold px-2 py-1 rounded text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-inner"
           />
           <div className="hidden sm:flex items-center gap-1 text-[11px]">
             {['2021-01-15', '2022-05-20', '2023-08-10'].map((d) => (
@@ -200,45 +238,46 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Swap Dates & Quick 1-Click Presets */}
+        {/* Center: Action Buttons & Presets */}
         <div className="flex items-center gap-2">
           <button
+            onClick={handleRunAnalysis}
+            disabled={isAnalyzing}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow transition-all"
+            title="Execute bi-temporal classical CVA detection pipeline"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+            <span>{isAnalyzing ? 'Detecting Changes...' : 'Detect Changes'}</span>
+          </button>
+
+          <button
             onClick={handleSwapDates}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-all hover:border-indigo-400 shadow"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-all shadow"
             title="Swap Before and After dates"
           >
             <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Swap Dates</span>
+            <span className="hidden sm:inline">Swap</span>
           </button>
 
           <div className="hidden lg:flex items-center gap-1.5 border-l border-slate-800 pl-2">
             <span className="text-slate-500 text-[11px] font-mono">Presets:</span>
             <button
-              onClick={() => {
-                setBeforeDate('2021-01-15');
-                setAfterDate('2026-08-18');
-              }}
-              className="px-2 py-0.5 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/50 text-[11px] font-medium transition-colors"
+              onClick={() => { setBeforeDate('2021-01-15'); setAfterDate('2026-08-18'); }}
+              className="px-2 py-0.5 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/50 text-[11px] font-medium"
             >
               Full 5-Year Build
             </button>
             <button
-              onClick={() => {
-                setBeforeDate('2021-01-15');
-                setAfterDate('2023-08-10');
-              }}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] transition-colors"
+              onClick={() => { setBeforeDate('2021-01-15'); setAfterDate('2023-08-10'); }}
+              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]"
             >
-              Earthworks (2021-23)
+              Earthworks
             </button>
             <button
-              onClick={() => {
-                setBeforeDate('2023-08-10');
-                setAfterDate('2026-08-18');
-              }}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] transition-colors"
+              onClick={() => { setBeforeDate('2023-08-10'); setAfterDate('2026-08-18'); }}
+              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]"
             >
-              Terminal & Paving (2023-26)
+              Runway & Terminal
             </button>
           </div>
         </div>
@@ -255,7 +294,7 @@ export const App: React.FC = () => {
             min="2021-01-01"
             max="2026-12-31"
             onChange={(e) => setAfterDate(e.target.value)}
-            className="bg-[#111827] border border-slate-700 text-indigo-300 font-mono font-semibold px-2 py-1 rounded text-xs focus:outline-none focus:border-indigo-500 cursor-pointer shadow-inner hover:border-indigo-500/70"
+            className="bg-[#111827] border border-slate-700 text-indigo-300 font-mono font-semibold px-2 py-1 rounded text-xs focus:outline-none focus:border-indigo-500 cursor-pointer shadow-inner"
           />
           <div className="hidden sm:flex items-center gap-1 text-[11px]">
             {['2024-04-12', '2025-03-18', '2026-08-18'].map((d) => (
@@ -263,9 +302,7 @@ export const App: React.FC = () => {
                 key={d}
                 onClick={() => setAfterDate(d)}
                 className={`px-1.5 py-0.5 rounded font-mono transition-colors ${
-                  afterDate === d
-                    ? 'bg-indigo-600 text-white font-bold'
-                    : 'text-slate-400 hover:text-white bg-slate-800/40'
+                  afterDate === d ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white bg-slate-800/40'
                 }`}
               >
                 {d.split('-')[0]}
@@ -277,7 +314,6 @@ export const App: React.FC = () => {
 
       {/* Main Map & Drawer Stage */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Map Stage */}
         <main className="flex-1 flex flex-col relative overflow-hidden bg-[#070A10]">
           <div className="flex-1 relative overflow-hidden">
             <MapPane
@@ -300,7 +336,6 @@ export const App: React.FC = () => {
               onSwapDates={handleSwapDates}
             />
 
-            {/* Floating Ask Panel overlay if active */}
             {activeView === 'ask' && (
               <div className="absolute left-6 top-6 z-[500] drop-shadow-2xl">
                 <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
@@ -308,7 +343,6 @@ export const App: React.FC = () => {
             )}
           </div>
 
-          {/* Bottom Timeline Scrubber */}
           <TimelineSlider
             scenes={scenes}
             beforeDate={beforeDate}
@@ -318,26 +352,17 @@ export const App: React.FC = () => {
           />
         </main>
 
-        {/* Slide-out Evidence Inspection Drawer */}
         {selectedEvidence && (
           <EvidenceDrawer
             evidence={selectedEvidence}
             onClose={() => setSelectedEvidence(null)}
-            onConfirm={(id) => {
-              setEvidenceList((prev) =>
-                prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
-              );
-            }}
-            onReject={(id) => {
-              setEvidenceList((prev) =>
-                prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
-              );
-            }}
+            onConfirm={handleConfirmEvidence}
+            onReject={handleRejectEvidence}
           />
         )}
       </div>
 
-      {/* Review Queue Modal */}
+      {/* Modals */}
       {activeView === 'review' && (
         <ReviewQueueModal
           evidenceList={visibleEvidenceList}
@@ -345,21 +370,12 @@ export const App: React.FC = () => {
             setSelectedEvidence(ev);
             setActiveView('map');
           }}
-          onConfirm={(id) => {
-            setEvidenceList((prev) =>
-              prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
-            );
-          }}
-          onReject={(id) => {
-            setEvidenceList((prev) =>
-              prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
-            );
-          }}
+          onConfirm={handleConfirmEvidence}
+          onReject={handleRejectEvidence}
           onClose={() => setActiveView('map')}
         />
       )}
 
-      {/* Single-Image Upload Modal */}
       {activeView === 'upload' && detectionSet && (
         <UploadModal
           detectionSet={detectionSet}
