@@ -72,3 +72,40 @@ MAX_IMAGE_EDGE_PX: int = 1568
 # --- Image Registration Tolerance (PRD 6 §9, Kuglin & Hines 1975) ---
 # Maximum shift magnitude in pixels permitted between temporal observation pairs
 MAX_REGISTRATION_SHIFT_PX: float = 2.0
+
+# --- Change Classification Decision Table Thresholds (PRD 2 §6, PRD 3 §A8) ---
+# Construction: rising NDBI (built-up) and falling NDVI (vegetation loss)
+CLASSIFY_NDBI_RISE_CONSTRUCTION: float = 0.05
+CLASSIFY_NDVI_FALL_CONSTRUCTION: float = -0.10
+
+# Clearance: severe vegetation loss without strong built-up response yet (earthworks/bare)
+CLASSIFY_NDVI_FALL_CLEARANCE: float = -0.15
+CLASSIFY_NDBI_MAX_CLEARANCE: float = 0.05
+
+# Water Gain / Loss (McFeeters 1996 NDWI difference)
+CLASSIFY_NDWI_RISE_WATER_GAIN: float = 0.15
+CLASSIFY_NDWI_FALL_WATER_LOSS: float = -0.15
+
+# Vegetation Gain: reforestation / crop emergence
+CLASSIFY_NDVI_RISE_VEGETATION: float = 0.20
+
+# Demolition: built-up structure removal (falling NDBI on prior built surface)
+CLASSIFY_NDBI_FALL_DEMOLITION: float = -0.05
+
+# Linear infrastructure (Road): elongated geometry
+CLASSIFY_ROAD_ASPECT_RATIO_MIN: float = 4.0
+CLASSIFY_ROAD_ISOPERIMETRIC_QUOTIENT_MAX: float = 0.30
+
+# --- False-Alarm Suppression Gate Thresholds (PRD 3 §A9) ---
+# Minimum spatial area: 4 pixels at 10m GSD (400 m²)
+SUPPRESS_MIN_AREA_M2: float = 400.0
+
+# Cloud overlap probability threshold
+SUPPRESS_CLOUD_PROB_MAX: float = 0.20
+
+# Ephemeral snow NDSI threshold (Hall et al. 1995)
+SUPPRESS_SNOW_NDSI_MIN: float = 0.40
+
+# Minimum change confidence score threshold
+SUPPRESS_CONFIDENCE_MIN: float = 0.30
+

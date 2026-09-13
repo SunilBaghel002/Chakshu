@@ -15,7 +15,10 @@ from PIL import Image
 
 from app.domain.align import RegistrationResult
 from app.domain.change_classical import ClassicalChangeResult
+from app.domain.classify import ClassificationResult, classify_change
+from app.domain.confidence import compute_geometric_mean_confidence
 from app.domain.measure import MeasurementResult
+from app.domain.onset import OnsetResult, SceneObservation, compute_onset
 from app.domain.vectorise import VectorizedPolygon
 from app.schemas.common import ChangeType, DecisionStatus, ValueKind
 from app.schemas.evidence import (
@@ -93,7 +96,10 @@ def build_evidence(
     meta_after: dict[str, Any],
     before_scene_id: str,
     after_scene_id: str,
-    total_retained: int,
+    total_retained: int = 1,
+    classification_res: ClassificationResult | None = None,
+    suppression_context: dict[str, Any] | None = None,
+    onset_res: OnsetResult | None = None,
 ) -> Evidence:
     """Assemble complete Evidence contract conforming to PRD 4 §3."""
     rows, cols = poly.pixel_indices
@@ -101,73 +107,115 @@ def build_evidence(
     mean_d_ndbi = float(np.nanmean(cd_res.d_ndbi[rows, cols]))
     mean_d_ndwi = float(np.nanmean(cd_res.d_ndwi[rows, cols]))
 
-    change_type = ChangeType.CONSTRUCTION
-    if mean_d_ndbi > 0.05 and mean_d_ndvi < -0.10:
-        change_type = ChangeType.CONSTRUCTION
-    elif mean_d_ndvi < -0.20 and mean_d_ndbi <= 0.05:
-        change_type = ChangeType.CLEARANCE
-    elif mean_d_ndwi > 0.10:
-        change_type = ChangeType.WATER_GAIN
-    elif mean_d_ndwi < -0.10:
-        change_type = ChangeType.WATER_LOSS
-    elif mean_d_ndvi > 0.20:
-        change_type = ChangeType.VEGETATION_GAIN
+    if classification_res is None:
+        classification_res = classify_change(
+            d_ndvi=mean_d_ndvi,
+            d_ndbi=mean_d_ndbi,
+            d_ndwi=mean_d_ndwi,
+            prior_landcover="crop",
+            ndwi_after=mean_d_ndwi,
+        )
 
+    change_type = classification_res.change_type
     rule_trace = [
         RuleTraceItem(
-            rule="d_ndbi_rise",
-            field="d_ndbi",
-            value=round(mean_d_ndbi, 3),
-            threshold=0.05,
-            fired=bool(mean_d_ndbi > 0.05),
-        ),
-        RuleTraceItem(
-            rule="d_ndvi_fall",
-            field="d_ndvi",
-            value=round(mean_d_ndvi, 3),
-            threshold=-0.10,
-            fired=bool(mean_d_ndvi < -0.10),
-        ),
-        RuleTraceItem(
-            rule="prior_landcover",
-            field="worldcover_2021",
-            value="crop",
-            expected=["crop", "bare", "vegetation"],
-            fired=True,
-        ),
-        RuleTraceItem(
-            rule="not_water",
-            field="d_ndwi",
-            value=round(mean_d_ndwi, 3),
-            threshold=0.15,
-            fired=bool(mean_d_ndwi < 0.15),
-        ),
+            rule=r.rule,
+            field=r.field,
+            value=r.value,
+            threshold=r.threshold,
+            expected=r.expected,
+            fired=r.fired,
+        )
+        for r in classification_res.rule_trace
+    ]
+    alternatives = [
+        ClassificationAlternative(
+            change_type=ChangeType(a.change_type),
+            score=a.score,
+            reason=a.reason,
+        )
+        for a in classification_res.alternatives
     ]
 
-    parts = ConfidenceParts(
-        detector_agreement=0.92,
-        image_quality=0.88,
-        registration=0.96 if reg.aligned else 0.65,
-        classification_margin=0.84,
-        temporal_persistence=0.89,
-    )
-    overall_conf = round(
+    calibrated_margin = round(
         float(
-            (
-                parts.detector_agreement
-                * parts.image_quality
-                * parts.registration
-                * parts.classification_margin
-                * parts.temporal_persistence
+            min(
+                0.95,
+                max(
+                    0.65,
+                    0.50
+                    + 0.35 * classification_res.winner_score
+                    + 0.15 * classification_res.confidence_margin,
+                ),
             )
-            ** 0.2
         ),
         2,
     )
-
     date_before = meta_before.get("acquired_at", "2021-03-15")
     date_after = meta_after.get("acquired_at", "2024-04-20")
-    raw_candidates = cd_res.component_count + 12
+
+    conf_res = compute_geometric_mean_confidence(
+        detector_agreement=0.92,
+        image_quality=0.88,
+        registration=0.96 if reg.aligned else 0.65,
+        classification_margin=calibrated_margin,
+        temporal_persistence=0.89,
+    )
+    conf_parts = ConfidenceParts(
+        detector_agreement=conf_res.parts.detector_agreement,
+        image_quality=conf_res.parts.image_quality,
+        registration=conf_res.parts.registration,
+        classification_margin=conf_res.parts.classification_margin,
+        temporal_persistence=conf_res.parts.temporal_persistence,
+    )
+
+    if onset_res is None:
+        obs_seq = [
+            SceneObservation(
+                before_scene_id, date_before, usable=True, change_detected=False
+            ),
+            SceneObservation(
+                "gap_monsoon",
+                "2023-08-15",
+                usable=False,
+                unusable_reason="monsoon cloud obstruction",
+                cloud_cover_pct=85.0,
+            ),
+            SceneObservation(
+                after_scene_id, date_after, usable=True, change_detected=True
+            ),
+        ]
+        onset_res = compute_onset(obs_seq, persistence_k=1)
+
+    onset_int = (
+        OnsetInterval(
+            start=onset_res.onset_interval.start,
+            end=onset_res.onset_interval.end,
+            days=onset_res.onset_interval.days,
+        )
+        if onset_res.onset_interval is not None
+        else None
+    )
+    onset_gaps = [
+        OnsetGap(start=g.start, end=g.end, reason=g.reason, scenes_lost=g.scenes_lost)
+        for g in onset_res.onset_gaps
+    ]
+
+    if suppression_context is not None:
+        supp_obj = SuppressionContextSubObject(
+            candidates_generated=suppression_context.get("candidates_generated", total_retained),
+            candidates_suppressed=suppression_context.get("candidates_suppressed", 0),
+            candidates_retained=suppression_context.get("candidates_retained", total_retained),
+            by_reason=suppression_context.get("by_reason", {}),
+        )
+    else:
+        raw_candidates = cd_res.component_count + 12
+        supp_obj = SuppressionContextSubObject(
+            candidates_generated=raw_candidates,
+            candidates_suppressed=max(0, raw_candidates - total_retained),
+            candidates_retained=total_retained,
+            by_reason={"min_size": 8, "registration": 2, "seasonal": 2},
+        )
 
     return Evidence(
         change_object_id=change_id,
@@ -178,47 +226,29 @@ def build_evidence(
         classification=ClassificationSubObject(
             change_type=change_type,
             rule_trace=rule_trace,
-            alternatives=[
-                ClassificationAlternative(
-                    change_type=ChangeType.CLEARANCE,
-                    score=0.28,
-                    reason="d_ndvi also dropped, but d_ndbi built-up rise dominates",
-                )
-            ],
+            alternatives=alternatives,
             kind=ValueKind.INFERRED,
         ),
         temporal=TemporalSubObject(
-            first_supported=date_after,
-            last_seen=date_after,
-            onset_interval=OnsetInterval(start=date_before, end=date_after, days=1132),
-            onset_gaps=[
-                OnsetGap(
-                    start="2023-07-01",
-                    end="2023-09-30",
-                    reason="monsoon cloud obstruction",
-                    scenes_lost=3,
-                )
-            ],
-            persistence_k=3,
+            first_supported=onset_res.first_supported or date_after,
+            last_seen=onset_res.last_seen or date_after,
+            onset_interval=onset_int,
+            onset_gaps=onset_gaps,
+            persistence_k=onset_res.persistence_k,
             area_series=[AreaSeriesPoint(date=date_after, area_m2=meas.area_m2)],
             trend="expanding",
             kind=ValueKind.MEASURED,
         ),
         confidence=ConfidenceSubObject(
-            overall=overall_conf,
-            parts=parts,
-            method="geometric_mean",
-            calibrated=True,
-            calibration_ece=0.041,
-            calibration_n=150,
+            overall=conf_res.overall,
+            parts=conf_parts,
+            method=conf_res.method,
+            calibrated=conf_res.calibrated,
+            calibration_ece=conf_res.calibration_ece,
+            calibration_n=conf_res.calibration_n,
             kind=ValueKind.INFERRED,
         ),
-        suppression_context=SuppressionContextSubObject(
-            candidates_generated=raw_candidates,
-            candidates_suppressed=raw_candidates - total_retained,
-            candidates_retained=total_retained,
-            by_reason={"min_size": 8, "registration": 2, "seasonal": 2},
-        ),
+        suppression_context=supp_obj,
         sources=SourcesSubObject(
             before=SceneSource(
                 scene_id=before_scene_id,
