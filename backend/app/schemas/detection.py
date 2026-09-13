@@ -152,3 +152,10 @@ class DetectionSet(BaseModel):
     rejections: RejectionsSummary
     job_id: str | None = None
     trace_id: str | None = None
+    mode: str | None = None
+    blind_landcover_pct: dict[str, float] | None = None
+    merged_landcover_pct: dict[str, float] | None = None
+    merged_water_polygons: list[dict[str, Any]] | None = None
+    reconciliation: list[dict[str, Any]] | None = None
+    summary: str | None = None
+

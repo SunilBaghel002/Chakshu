@@ -75,6 +75,7 @@ class DetectionService:
         upload: Upload,
         image_path: Path | str,
         synthetic_proposals: list[dict[str, Any]] | None = None,
+        mode: str = "reconcile",
     ) -> DetectionSet:
         """Execute all permitted detection tracks for an upload and return DetectionSet."""
         img = Image.open(image_path).convert("RGB")
@@ -98,14 +99,34 @@ class DetectionService:
             all_detections.extend(track2_detections)
 
         # -------------------------------------------------------------
-        # Track 3: Multimodal Object Detection (Gemini 2.0 Flash)
+        # Track 3: Multimodal Object Detection (Gemini Blind Vision)
         # -------------------------------------------------------------
+        deterministic_results = {
+            "landcover_pct": {
+                item.label: item.pct
+                for item in (coverage_summary.by_class if coverage_summary else [])
+            },
+            "water_polygons": [
+                {
+                    "points": d.geom_px.get("coordinates", [[]])[0],
+                    "est_area_m2": d.area_m2 or 0.0,
+                }
+                for d in track1_detections
+                if d.label == "water"
+            ],
+        }
+
+        vision_info: dict[str, Any] = {}
         if upload.capability_tier != CapabilityTier.T0_UNKNOWN and upload.capabilities.object_classes:
-            track3_detections, track3_rejections = self._run_track3_objects(
-                img, upload, synthetic_proposals
+            track3_dets, track3_rejs, vision_info = self._run_track3_objects(
+                img,
+                upload,
+                synthetic_proposals=synthetic_proposals,
+                mode=mode,
+                deterministic_results=deterministic_results,
             )
-            all_detections.extend(track3_detections)
-            rejections.extend(track3_rejections)
+            all_detections.extend(track3_dets)
+            rejections.extend(track3_rejs)
         else:
             log.info(
                 "Upload %s at tier %s forbids object classes; Track 3 omitted",
@@ -141,6 +162,9 @@ class DetectionService:
             source="SELECT count(*) FROM detection GROUP BY label",
         )
 
+        blind_pct = vision_info.get("blind_landcover_pct") or vision_info.get("landcover_pct")
+        merged_pct = vision_info.get("merged_landcover_pct") or blind_pct
+
         return DetectionSet(
             upload=upload,
             detections=all_detections,
@@ -148,6 +172,12 @@ class DetectionService:
             counts=counts_envelope,
             rejections=rejections_envelope,
             trace_id=f"trace_{uuid.uuid4().hex[:8]}",
+            mode=vision_info.get("mode", mode.upper()),
+            blind_landcover_pct=blind_pct,
+            merged_landcover_pct=merged_pct,
+            merged_water_polygons=vision_info.get("merged_water_polygons"),
+            reconciliation=vision_info.get("reconciliation"),
+            summary=vision_info.get("summary"),
         )
 
     def _run_track1_landcover(
@@ -186,7 +216,13 @@ class DetectionService:
         detections: list[Detection] = []
         for class_name in ["water", "built", "vegetation"]:
             mask = classified == class_name
-            patches = vectorize_class_mask(mask, min_pixels=4)
+            is_w = (class_name == "water")
+            patches = vectorize_class_mask(
+                mask,
+                min_pixels=30 if is_w else 4,
+                is_water=is_w,
+                max_polygons=5 if is_w else None,
+            )
             for p in patches:
                 area_px = p["area_px"]
                 area_m2 = (
@@ -217,22 +253,14 @@ class DetectionService:
         """Execute Track 2 ESA WorldCover reference polygon integration."""
         if not upload.bounds_4326:
             return []
-
-        raw_records = self.worldcover_adapter.get_landcover_polygons(
-            bounds_4326=upload.bounds_4326,
-            width_px=upload.width_px,
-            height_px=upload.height_px,
+        raw = self.worldcover_adapter.get_landcover_polygons(
+            bounds_4326=upload.bounds_4326, width_px=upload.width_px, height_px=upload.height_px
         )
-
-        detections: list[Detection] = []
-        for r in raw_records:
-            area_px = r["area_px"]
-            area_m2 = (
-                area_px * (upload.gsd_m**2)
-                if upload.gsd_m and upload.capabilities.area_measurements
-                else None
-            )
-            detections.append(
+        dets: list[Detection] = []
+        for r in raw:
+            a_px = r["area_px"]
+            a_m2 = a_px * (upload.gsd_m**2) if upload.gsd_m and upload.capabilities.area_measurements else None
+            dets.append(
                 Detection(
                     id=str(uuid.uuid4()),
                     track=DetectionTrack.LANDCOVER_WORLDCOVER,
@@ -240,36 +268,37 @@ class DetectionService:
                     label_raw=r.get("label_raw"),
                     kind=DetectionKind.POLYGON,
                     geom_px=r["geom_px"],
-                    area_px=float(area_px),
-                    area_m2=float(round(area_m2, 2)) if area_m2 is not None else None,
+                    area_px=float(a_px),
+                    area_m2=float(round(a_m2, 2)) if a_m2 is not None else None,
                     score=1.0,
                     score_source="deterministic",
                     verified=True,
                     verifier_note=r.get("verifier_note"),
                 )
             )
-        return detections
+        return dets
 
     def _run_track3_objects(
         self,
         img: Image.Image,
         upload: Upload,
         synthetic_proposals: list[dict[str, Any]] | None = None,
-    ) -> tuple[list[Detection], list[RejectionDetail]]:
+        mode: str = "reconcile",
+        deterministic_results: dict[str, Any] | None = None,
+    ) -> tuple[list[Detection], list[RejectionDetail], dict[str, Any]]:
         """Execute Track 3 Gemini detection with strict defensive validation and NMS."""
         permitted = upload.capabilities.object_classes
         w, h = upload.width_px, upload.height_px
 
-        raw_proposals = (
-            synthetic_proposals
-            if synthetic_proposals is not None
-            else self.gemini_adapter.detect_objects(
-                img,
-                permitted_classes=permitted,
-                gsd_m=upload.gsd_m,
-                capability_tier=upload.capability_tier.value,
+        vision_res: dict[str, Any] = {}
+        if synthetic_proposals is not None:
+            raw_proposals = synthetic_proposals
+            vision_res = {"objects": synthetic_proposals}
+        else:
+            vision_res = self.gemini_adapter.analyze_image(
+                img, gsd_m=upload.gsd_m, mode=mode.upper(), deterministic_results=deterministic_results
             )
-        )
+            raw_proposals = vision_res.get("objects", [])
 
         valid_proposals: list[tuple[PixelBox, float, str, str, str]] = []
         rejections: list[RejectionDetail] = []
@@ -278,93 +307,36 @@ class DetectionService:
             raw_label = str(p.get("label", "unknown"))
             raw_box = p.get("bbox", [])
             score = float(p.get("score", 0.0))
-            reason = str(p.get("reason", ""))
+            reason = str(p.get("evidence") or p.get("reason", ""))
 
-            # 1. Score threshold
             if score < settings.DETECTION_SCORE_MIN:
-                rejections.append(
-                    RejectionDetail(
-                        label_raw=raw_label,
-                        reason="score_below_threshold",
-                        detail=f"Score {score:.2f} < {settings.DETECTION_SCORE_MIN:.2f}",
-                    )
-                )
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="score_below_threshold", detail=f"Score {score:.2f} < {settings.DETECTION_SCORE_MIN:.2f}"))
                 continue
-
-            # 2. Canonical alias normalisation
             canonical = normalize_label(raw_label)
             if not canonical:
-                rejections.append(
-                    RejectionDetail(
-                        label_raw=raw_label,
-                        reason="unknown_label_alias",
-                        detail=f"Label '{raw_label}' has no canonical alias",
-                    )
-                )
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="unknown_label_alias", detail=f"Label '{raw_label}' has no canonical alias"))
                 continue
-
-            # 3. Permitted label for resolution tier
             if canonical not in permitted:
-                rejections.append(
-                    RejectionDetail(
-                        label_raw=raw_label,
-                        reason="label_forbidden_at_resolution_tier",
-                        detail=f"Class '{canonical}' not permitted at tier {upload.capability_tier.value}",
-                    )
-                )
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="label_forbidden_at_resolution_tier", detail=f"Class '{canonical}' not permitted at tier {upload.capability_tier.value}"))
                 continue
-
-            # 4. Bbox normalization & geometry check
             norm_res = normalise_bbox(raw_box, w, h, bbox_order=settings.GEMINI_BBOX_ORDER)
             if isinstance(norm_res, BboxReject):
-                rejections.append(
-                    RejectionDetail(
-                        label_raw=raw_label,
-                        reason=norm_res.reason,
-                        detail=norm_res.detail,
-                    )
-                )
+                rejections.append(RejectionDetail(label_raw=raw_label, reason=norm_res.reason, detail=norm_res.detail))
                 continue
-
-            # 5. Aspect ratio check
             aspect_ratio = norm_res.width / max(norm_res.height, 1e-4)
             if aspect_ratio < MIN_ASPECT_RATIO or aspect_ratio > MAX_ASPECT_RATIO:
-                rejections.append(
-                    RejectionDetail(
-                        label_raw=raw_label,
-                        reason="aspect_ratio_out_of_bounds",
-                        detail=f"Aspect ratio {aspect_ratio:.2f} outside [{MIN_ASPECT_RATIO:.3f}, {MAX_ASPECT_RATIO}]",
-                    )
-                )
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="aspect_ratio_out_of_bounds", detail=f"Aspect ratio {aspect_ratio:.2f} outside [{MIN_ASPECT_RATIO:.3f}, {MAX_ASPECT_RATIO}]"))
                 continue
-
-            # 6. Minimum area check
             if norm_res.area_px < MIN_BOX_AREA_PX:
-                rejections.append(
-                    RejectionDetail(
-                        label_raw=raw_label,
-                        reason="area_below_minimum_threshold",
-                        detail=f"Area {norm_res.area_px:.1f}px² < {MIN_BOX_AREA_PX}px²",
-                    )
-                )
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="area_below_minimum_threshold", detail=f"Area {norm_res.area_px:.1f}px² < {MIN_BOX_AREA_PX}px²"))
                 continue
 
             valid_proposals.append((norm_res, score, canonical, raw_label, reason))
 
-        # 7. Non-Maximum Suppression (NMS) per canonical class
-        nms_survivors, nms_rej_tuples = apply_class_nms(
-            valid_proposals, iou_threshold=settings.DETECTION_NMS_IOU
-        )
+        nms_survivors, nms_rej_tuples = apply_class_nms(valid_proposals, iou_threshold=settings.DETECTION_NMS_IOU)
         for raw_lbl, reason_str, detail_str in nms_rej_tuples:
-            rejections.append(
-                RejectionDetail(
-                    label_raw=raw_lbl,
-                    reason=reason_str,
-                    detail=detail_str,
-                )
-            )
+            rejections.append(RejectionDetail(label_raw=raw_lbl, reason=reason_str, detail=detail_str))
 
-        # Convert survivors to Detection models
         detections: list[Detection] = []
         for box, score, canonical, raw_label, reason in nms_survivors:
             area_m2 = (
@@ -372,7 +344,6 @@ class DetectionService:
                 if upload.gsd_m and upload.gsd_source in (ProvenanceSource.METADATA, ProvenanceSource.USER_DECLARED)
                 else None
             )
-
             detections.append(
                 Detection(
                     id=str(uuid.uuid4()),
@@ -390,4 +361,4 @@ class DetectionService:
                 )
             )
 
-        return detections, rejections
+        return detections, rejections, vision_res
