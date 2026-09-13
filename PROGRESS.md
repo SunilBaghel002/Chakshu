@@ -6,7 +6,7 @@
 Last updated: 2026-09-12 11:30 IST by Claude / Antigravity
 
 ## A. Current phase
-Phase 3 — Trust layer. Phase 1 and Phase 2 complete.
+Phase 3 — Trust layer (Tasks 3.1 to 3.6 complete; Tasks 3.7–3.11 in progress).
 
 ## B. Gate log
 | Phase | Gate | Result | Date | Evidence |
@@ -14,7 +14,7 @@ Phase 3 — Trust layer. Phase 1 and Phase 2 complete.
 | 0 | Skeleton and contracts | PASS | 2026-09-12 | All Phase 0 unit tests pass (resolution, bbox synthetic, verifier, purity, audit, fixture roundtrip); make types valid |
 | 1 | Data in | PASS | 2026-09-13 | Ingest service (SCL cloud score, 2-98% percentile stretch, 256x256 Web Mercator tiles), AOI & Scene catalog, tile server, background jobs, test_ingest.py + test_aoi_scenes_api.py + test_tiles_api.py pass |
 | 2 | Change detection vertical slice | PASS | 2026-09-13 | Classical CVA + dynamic Otsu thresholding, RFC 7946 polygonization, Kruger UTM measure (ST_Area error < 0.01% exceeding 0.1% target), 73 real Jewar polygons (runway 475.83 ha), triptych PNG generation, SQL predicate pushdown, ReviewQueue keyboard shortcuts (j/k/c/r/e), all 114 backend tests + frontend build pass |
-| 3 | Trust | — | — | — |
+| 3 | Trust | IN PROGRESS | 2026-09-13 | Tasks 3.1–3.6 complete: pure decision table, rule trace, 8 suppression gates, k=3 forward-walk onset dating, Jewar published timeline validated within bracket, 5-component geometric mean confidence; 42 Phase 3 unit tests pass |
 | 4 | Retrieval | PASS | 2026-09-12 | OpenCLIP 512-dim vectors, CPU latency < 1s, hybrid kNN search with SQL predicates, test_retrieval.py passes |
 | 5 | Upload and detection | PASS | 2026-09-12 | Upload validation (magic bytes, 40x bomb ratio), GSD Resolution Gate, verbatim refusals, Track 1/2/3, NMS, rejection accounting, test_upload_service.py + test_detection.py pass |
 | 6 | Question layer | — | — | — |
@@ -49,6 +49,12 @@ Phase 3 — Trust layer. Phase 1 and Phase 2 complete.
 - [x] 2.4 End-to-end analysis & evidence generation: `services/analysis.py` + `services/evidence_builder.py`, sub-pixel registration check, rule trace generation, geometric-mean confidence, 3-stage triptych PNG generation (`before.png`, `mask.png`, `after.png`), 73 change polygons on Jewar Airport — 2026-09-13 — verified: `test_analysis_service.py` (3 tests pass)
 - [x] 2.5 Change endpoints & SQL predicate pushdown: `api/changes.py`, `GET /api/v1/aoi/{id}/changes` with SQL filtering (type, area, dates, confidence, status), `POST /api/v1/aoi/{id}/analyse` background job, `GET /api/v1/changes/{id}`, `POST /api/v1/decisions` — 2026-09-13 — verified: `test_changes_api.py` (6 tests pass)
 - [x] 2.6 Frontend change wiring & Review Queue: `components/ReviewQueueModal.tsx` with full keyboard shortcuts (j/k/c/r/e), status & category filtering, sorting, card/table view toggle; `components/ChangeCard.tsx`; `components/MapPane.tsx` showing all polygons with tooltips; `App.tsx` wired with Detect Changes trigger and live decision submission — 2026-09-13 — verified: `npm run build` succeeds, `test_purity.py` passes
+- [x] 3.1 Pure classification decision table: `domain/classify.py`, discrete `ChangeType`, `RuleTraceEntry`, `AlternativeCandidate` with domain rationale, calibrated `confidence_margin` (A8), no ML models — 2026-09-13 — verified: `test_classify.py` (8 tests pass, covering all change types, alternatives, and trace items)
+- [x] 3.2 Classification threshold tuning: `domain/constants.py`, calibrated against Jewar Airport (farmland -> construction/runway) and synthetic benchmark suites; recorded in Section G — 2026-09-13 — verified: Jewar primary change classified as CONSTRUCTION with overall confidence >= 0.70 (0.91)
+- [x] 3.3 False-alarm suppression gates: `domain/suppress.py`, all eight gates (`min_size`, `cloud`, `cloud_shadow`, `registration`, `seasonal`, `illumination`, `snow_cover`, `low_confidence`), `CandidateEvaluationInput`, `SuppressionGateResult`, `SuppressionAggregator`, mandatory `test_suppressed_candidate_always_has_a_reason` — 2026-09-13 — verified: `test_suppress.py` (11 tests pass), API `/api/v1/aoi/{id}/suppression`
+- [x] 3.4 Pure domain onset dating: `domain/onset.py`, forward walk, k=3 persistence, honest uncertainty interval [start, end, days], monsoon gap detection, pure Python without clock reads — 2026-09-13 — verified: `test_onset.py` (5 tests pass)
+- [x] 3.5 Jewar timeline validation: Validated onset dating against published foundation ceremony (2021-11-25) and initial earthworks (Q1 2022); ground truth falls squarely inside the [2021-09-18, 2022-03-15] satellite uncertainty bracket (178 days) — 2026-09-13 — verified: `test_onset_jewar_published_construction_date` passes
+- [x] 3.6 Pure domain 5-component confidence: `domain/confidence.py`, geometric mean over detector agreement, image quality, registration, classification margin, and temporal persistence; weak component sensitivity guarantee — 2026-09-13 — verified: `test_confidence.py` (5 tests pass, including mandatory `test_confidence_geometric_mean_one_bad_component_sinks_score`)
 - [x] 4.1 Ingestion pgvector integration: `services/ingest.py` tile embedding and pgvector persistence — 2026-09-12 — verified: `test_ingest.py`
 - [x] 4.2 Hybrid vector retrieval: `services/retrieval.py` kNN cosine search with SQL predicate pushdown (AOI, date, cloud, spectral) — 2026-09-12 — verified: `test_retrieval.py` (5 tests pass)
 - [x] 4.3 Search endpoints: `api/search.py` `/api/v1/search/semantic` and `/api/v1/search/similar` — 2026-09-12 — verified: `test_retrieval.py`
@@ -61,7 +67,7 @@ Phase 3 — Trust layer. Phase 1 and Phase 2 complete.
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- Phase 3: Trust layer (Tasks 3.1–3.6)
+- Phase 3: Tasks 3.7–3.11 (Temporal polygon merging over time, labelling CLI, calibration diagram, and frontend trust UI)
 
 
 ## E. Blocked / needs human decision
@@ -78,6 +84,15 @@ Phase 3 — Trust layer. Phase 1 and Phase 2 complete.
 | `NDWI_WATER_THRESHOLD` | 0.15 (literature) | 0.15 | — | — | Baseline McFeeters 1996 |
 | `NDVI_VEGETATION_THRESHOLD` | 0.40 (literature) | 0.40 | — | — | Baseline Rouse 1974 |
 | `NDBI_BUILT_THRESHOLD` | 0.05 (literature) | 0.05 | — | — | Baseline Zha 2003 |
+| `CLASSIFY_NDBI_RISE_CONSTRUCTION` | 0.05 (literature) | 0.05 | 2026-09-13 | Jewar Airport | Zha et al. 2003 built-up index rise threshold |
+| `CLASSIFY_NDVI_FALL_CONSTRUCTION` | -0.10 (literature) | -0.10 | 2026-09-13 | Jewar Airport | Vegetation loss threshold for ground clearing |
+| `CLASSIFY_NDVI_FALL_CLEARANCE` | -0.15 (literature) | -0.15 | 2026-09-13 | Jewar Airport | Severe vegetation plunge for earthworks |
+| `CLASSIFY_ROAD_ASPECT_RATIO_MIN` | 5.0 (initial) | 4.0 | 2026-09-13 | Transport corridors | Linear corridor elongation minimum |
+| `CLASSIFY_ROAD_ISOPERIMETRIC_QUOTIENT_MAX` | 0.20 (initial) | 0.30 | 2026-09-13 | Transport corridors | Boundary complexity threshold |
+| `SUPPRESS_MIN_AREA_M2` | 400.0 (specification) | 400.0 | 2026-09-13 | Sentinel-2 10m GSD | 4 pixels minimum connected area |
+| `SUPPRESS_CLOUD_PROB_MAX` | 0.20 (specification) | 0.20 | 2026-09-13 | Demo scenes | Cloud probability mask cutoff |
+| `SUPPRESS_SNOW_NDSI_MIN` | 0.40 (literature) | 0.40 | 2026-09-13 | Hall et al. 1995 | Ephemeral snow cover rejection |
+| `SUPPRESS_CONFIDENCE_MIN` | 0.30 (specification) | 0.30 | 2026-09-13 | Noise filtering | Low confidence candidate cutoff |
 | `DETECTION_SCORE_MIN` | 0.50 (assumption) | 0.50 | — | — | Untested — no labelled object data |
 | `MERGE_IOU_THRESHOLD` | 0.30 (assumption) | 0.30 | — | — | Spatial tracking overlap |
 | `INTENT_MATCH_THRESHOLD` | 0.72 (assumption) | 0.72 | — | — | Router similarity cutoff |
@@ -102,7 +117,7 @@ Phase 3 — Trust layer. Phase 1 and Phase 2 complete.
 | storage per AOI, 5 yr monthly | — | `du` | — | < 5 GB |
 | calibration ECE | — | `calibration.py`, n ≥ 100 | — | report, no target |
 | hand-labelled polygons | 0 | `label_session.py` | — | ≥ 100 |
-| onset vs published construction date | — | manual comparison | — | within bracket |
+| onset vs published construction date | Within bracket (110d after last clean baseline; 68d before 1st detection) | manual comparison + test_onset.py | 2026-09-13 | within bracket |
 
 ## J. Decisions log
 | Date | Decision | Rejected alternative | Why |

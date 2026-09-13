@@ -224,3 +224,36 @@ async def submit_analyst_decision(
         actor=updated.analyst.actor or "analyst",
         recorded_at=datetime.datetime.now(datetime.UTC).isoformat(),
     )
+
+
+class SuppressionSampleReason(BaseModel):
+    """Sample reason entry for an individual candidate."""
+
+    candidate_id: str
+    reason: str
+    detail: str
+
+
+class SuppressionSummaryResponse(BaseModel):
+    """Counts by reason and sample reasons for an AOI per PRD 4 §6 table."""
+
+    aoi_id: str
+    candidates_generated: int
+    candidates_suppressed: int
+    candidates_retained: int
+    by_reason: dict[str, int]
+    sample_reasons: list[SuppressionSampleReason] = Field(default_factory=list)
+
+
+@router.get(
+    "/aoi/{aoi_id}/suppression",
+    response_model=SuppressionSummaryResponse,
+    summary="Get false-alarm suppression summary for an AOI",
+)
+async def get_aoi_suppression(
+    aoi_id: str = Path(..., description="Area of Interest UUID"),
+) -> SuppressionSummaryResponse:
+    """Return counts by suppression reason and sample verbatim reasons (Task 3.3, PRD 3 §A9)."""
+    summary = analysis_service.get_suppression_summary(aoi_id)
+    return SuppressionSummaryResponse(**summary)
+
