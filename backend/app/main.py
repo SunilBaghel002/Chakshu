@@ -9,8 +9,15 @@ Enforces:
 from __future__ import annotations
 
 import logging
+import sys
 import uuid
+from pathlib import Path
 from typing import Any
+
+# Ensure backend directory is in sys.path when launched as `backend.app.main:app`
+_backend_dir = str(Path(__file__).resolve().parent.parent)
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
