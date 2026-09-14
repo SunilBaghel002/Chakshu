@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, AlertTriangle, CloudRain, SkipBack, SkipForward, Calendar, Check } from 'lucide-react';
+import { Play, Pause, AlertTriangle, SkipBack, SkipForward } from 'lucide-react';
 import type { SceneItem } from '../lib/api';
 
 interface TimelineSliderProps {
@@ -10,6 +10,11 @@ interface TimelineSliderProps {
   onSelectAfterDate: (date: string) => void;
 }
 
+/**
+ * SLOT-30 — Timeline Strip (72px)
+ * Teal-filled usable dots, hollow red unusable, compared dates ringed amber.
+ * Console-style dark treatment.
+ */
 export const TimelineSlider: React.FC<TimelineSliderProps> = ({
   scenes,
   beforeDate,
@@ -23,14 +28,12 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
   const [selectedYear, setSelectedYear] = useState<number | 'all'>('all');
   const playIntervalRef = useRef<number | null>(null);
 
-  // Sort scenes chronologically (memoized to prevent sorting 136 scenes on every render)
   const sortedScenes = React.useMemo(() => {
     return [...scenes].sort(
       (a, b) => new Date(a.acquired_at).getTime() - new Date(b.acquired_at).getTime()
     );
   }, [scenes]);
 
-  // Filter by year if chosen (memoized)
   const displayedScenes = React.useMemo(() => {
     return selectedYear === 'all'
       ? sortedScenes
@@ -38,9 +41,7 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
   }, [sortedScenes, selectedYear]);
 
   const currentAfterIndex = sortedScenes.findIndex((s) => s.acquired_at === afterDate);
-  const activeScene = sortedScenes[currentAfterIndex >= 0 ? currentAfterIndex : sortedScenes.length - 1];
 
-  // Play animation through scenes
   useEffect(() => {
     if (isPlaying && sortedScenes.length > 0) {
       playIntervalRef.current = window.setInterval(() => {
@@ -79,179 +80,238 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
   };
 
   return (
-    <div className="h-24 w-full bg-[#0F172A]/95 border-t border-[#1F2937] px-4 py-2 flex flex-col justify-between select-none relative z-20 backdrop-blur-md">
-      {/* Top Controller Bar */}
-      <div className="flex items-center justify-between text-xs gap-2 flex-wrap">
-        {/* Playback Controls & Quick Years */}
-        <div className="flex items-center gap-2">
+    <div
+      id="slot-30-timeline"
+      className="w-full px-4 py-2 flex flex-col justify-between select-none"
+      style={{
+        height: 72,
+        background: 'var(--panel)',
+        borderTop: '1px solid var(--line)',
+        zIndex: 20,
+      }}
+    >
+      {/* Top: Controls */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        {/* Playback */}
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-md transition-all text-xs"
-            title={isPlaying ? 'Pause timeline animation' : 'Watch satellite timeline from 2021 to 2026'}
+            className="btn-primary"
+            style={{ padding: '4px 12px', fontSize: 10, minHeight: 26 }}
+            title={isPlaying ? 'Pause' : 'Play timeline'}
           >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-            <span>{isPlaying ? 'Pause' : 'Play Timeline'}</span>
+            {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
+            <span>{isPlaying ? 'PAUSE' : 'PLAY'}</span>
           </button>
 
           <button
             onClick={handlePrev}
             disabled={currentAfterIndex <= 0}
-            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30"
-            title="Previous month"
+            className="p-1.5 cursor-pointer transition-colors disabled:opacity-30"
+            style={{
+              background: 'var(--panel-2)',
+              border: '1px solid var(--line)',
+              color: 'var(--ink-2)',
+              borderRadius: 'var(--radius)',
+            }}
+            title="Previous"
           >
-            <SkipBack className="w-3.5 h-3.5" />
+            <SkipBack className="w-3 h-3" />
           </button>
-
           <button
             onClick={handleNext}
             disabled={currentAfterIndex >= sortedScenes.length - 1}
-            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30"
-            title="Next month"
+            className="p-1.5 cursor-pointer transition-colors disabled:opacity-30"
+            style={{
+              background: 'var(--panel-2)',
+              border: '1px solid var(--line)',
+              color: 'var(--ink-2)',
+              borderRadius: 'var(--radius)',
+            }}
+            title="Next"
           >
-            <SkipForward className="w-3.5 h-3.5" />
+            <SkipForward className="w-3 h-3" />
           </button>
 
-          {/* Quick Year Filter Buttons */}
-          <div className="hidden lg:flex items-center gap-1 bg-[#111827] p-0.5 rounded border border-slate-800 text-[11px] font-mono ml-1">
+          {/* Year filter */}
+          <div
+            className="hidden lg:flex items-center gap-0.5 p-0.5 ml-1"
+            style={{
+              background: 'var(--panel-2)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius)',
+            }}
+          >
             {(['all', 2021, 2022, 2023, 2024, 2025, 2026] as const).map((yr) => (
               <button
                 key={yr}
                 onClick={() => setSelectedYear(yr)}
-                className={`px-1.5 py-0.5 rounded transition-colors ${
-                  selectedYear === yr
-                    ? 'bg-indigo-600 text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
+                className="t-tag px-1.5 py-0.5 cursor-pointer transition-colors"
+                style={{
+                  background: selectedYear === yr ? 'var(--amber-wash)' : 'transparent',
+                  color: selectedYear === yr ? 'var(--amber)' : 'var(--ink-3)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  fontSize: 9,
+                  fontWeight: selectedYear === yr ? 700 : 600,
+                }}
               >
-                {yr === 'all' ? 'All' : yr}
+                {yr === 'all' ? 'ALL' : yr}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Target Mode Toggle (Click updates Before or After) */}
-        <div className="flex items-center gap-1.5 bg-[#111827] px-2 py-1 rounded-lg border border-slate-800 text-xs">
-          <span className="text-slate-400 text-[11px] hidden sm:inline">Clicking Dot Sets:</span>
+        {/* Target mode */}
+        <div
+          className="flex items-center gap-1 px-2 py-1"
+          style={{
+            background: 'var(--panel-2)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)',
+          }}
+        >
+          <span className="t-tag hidden sm:inline" style={{ color: 'var(--ink-3)', fontSize: 8 }}>CLICK SETS:</span>
           <button
             onClick={() => setTargetDateMode('before')}
-            className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold transition-all ${
-              targetDateMode === 'before'
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className="t-tag px-2 py-0.5 cursor-pointer transition-colors"
+            style={{
+              background: targetDateMode === 'before' ? 'var(--amber-wash)' : 'transparent',
+              color: targetDateMode === 'before' ? 'var(--amber)' : 'var(--ink-3)',
+              border: targetDateMode === 'before' ? '1px solid var(--amber)' : '1px solid transparent',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 9,
+            }}
           >
-            ● Before Date ({beforeDate})
+            DATE A ({beforeDate})
           </button>
           <button
             onClick={() => setTargetDateMode('after')}
-            className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold transition-all ${
-              targetDateMode === 'after'
-                ? 'bg-indigo-600 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className="t-tag px-2 py-0.5 cursor-pointer transition-colors"
+            style={{
+              background: targetDateMode === 'after' ? 'var(--teal-wash)' : 'transparent',
+              color: targetDateMode === 'after' ? 'var(--teal)' : 'var(--ink-3)',
+              border: targetDateMode === 'after' ? '1px solid var(--teal)' : '1px solid transparent',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 9,
+            }}
           >
-            ● After Date ({afterDate})
+            DATE B ({afterDate})
           </button>
         </div>
 
         {/* Legend */}
-        <div className="hidden md:flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+        <div className="hidden md:flex items-center gap-3 t-tag" style={{ fontSize: 8, color: 'var(--ink-3)' }}>
           <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-            <span>Clear Sky</span>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} />
+            <span>CLEAR</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full border-2 border-rose-400 bg-transparent" />
-            <span className="text-rose-300">Monsoon Rain/Clouds</span>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', border: '1.5px solid var(--danger)', display: 'inline-block' }} />
+            <span style={{ color: 'var(--danger)' }}>UNUSABLE</span>
           </div>
         </div>
       </div>
 
-      {/* Timeline Range Scrubber & Scene Dots */}
-      <div className="relative w-full flex flex-col justify-center px-1">
-        {/* Continuous Range Slider for dragging */}
-        <div className="w-full flex items-center h-4 mb-0.5">
-          <input
-            type="range"
-            min={0}
-            max={Math.max(0, sortedScenes.length - 1)}
-            value={currentAfterIndex >= 0 ? currentAfterIndex : 0}
-            onChange={(e) => {
-              const idx = Number(e.target.value);
-              const target = sortedScenes[idx];
-              if (target) {
-                if (targetDateMode === 'before') {
-                  onSelectBeforeDate(target.acquired_at);
-                } else {
-                  onSelectAfterDate(target.acquired_at);
-                }
-              }
-            }}
-            className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer transition-all"
-            title="Drag slider left or right to scrub through satellite history"
-          />
-        </div>
+      {/* Dot timeline */}
+      <div className="relative w-full flex items-center justify-between h-6">
+        {displayedScenes.map((scene) => {
+          const isBefore = scene.acquired_at === beforeDate;
+          const isAfter = scene.acquired_at === afterDate;
 
-        {/* Dots along timeline with generous w-6 h-6 click hit targets */}
-        <div className="relative w-full flex items-center justify-between h-6">
-          {displayedScenes.map((scene) => {
-            const isBefore = scene.acquired_at === beforeDate;
-            const isAfter = scene.acquired_at === afterDate;
+          let dotStyle: React.CSSProperties;
+          if (isAfter) {
+            dotStyle = {
+              width: 12, height: 12,
+              borderRadius: '50%',
+              background: 'var(--teal)',
+              border: '2px solid var(--ink)',
+              boxShadow: '0 0 8px rgba(53, 184, 192, 0.5)',
+            };
+          } else if (isBefore) {
+            dotStyle = {
+              width: 10, height: 10,
+              borderRadius: '50%',
+              background: 'var(--amber)',
+              border: '2px solid var(--ink)',
+              boxShadow: '0 0 6px rgba(240, 180, 95, 0.4)',
+            };
+          } else if (scene.usable) {
+            dotStyle = {
+              width: 6, height: 6,
+              borderRadius: '50%',
+              background: 'var(--teal)',
+              transition: 'transform 100ms ease-out',
+            };
+          } else {
+            dotStyle = {
+              width: 6, height: 6,
+              borderRadius: '50%',
+              background: 'transparent',
+              border: '1.5px solid var(--danger)',
+              transition: 'transform 100ms ease-out',
+            };
+          }
 
-            return (
-              <button
-                type="button"
-                key={scene.id}
-                className="relative group w-6 h-6 flex items-center justify-center p-0 cursor-pointer bg-transparent border-none focus:outline-none"
-                onClick={() => handleSceneClick(scene)}
-                onMouseEnter={() => setHoveredScene(scene)}
-                onMouseLeave={() => setHoveredScene(null)}
-                title={`${scene.acquired_at} · ${scene.usable ? 'Clear Pass' : 'Cloudy / Monsoon'}`}
-              >
-                {/* Visual Dot */}
-                <span
-                  className={`transition-all duration-150 rounded-full block pointer-events-none ${
-                    isAfter
-                      ? 'w-4 h-4 bg-indigo-500 border-2 border-white ring-4 ring-indigo-500/50 shadow-lg scale-110'
-                      : isBefore
-                      ? 'w-3.5 h-3.5 bg-amber-400 border-2 border-white ring-2 ring-amber-400/50'
-                      : scene.usable
-                      ? 'w-2 h-2 bg-emerald-400 group-hover:scale-150 group-hover:bg-emerald-300'
-                      : 'w-2 h-2 bg-rose-500/80 ring-1 ring-rose-400/60 group-hover:scale-150'
-                  }`}
-                />
+          return (
+            <button
+              type="button"
+              key={scene.id}
+              className="relative group w-6 h-6 flex items-center justify-center p-0 cursor-pointer bg-transparent border-none focus:outline-none"
+              onClick={() => handleSceneClick(scene)}
+              onMouseEnter={() => setHoveredScene(scene)}
+              onMouseLeave={() => setHoveredScene(null)}
+              title={`${scene.acquired_at} · ${scene.usable ? 'Clear' : 'Unusable'}`}
+            >
+              <span
+                className="block pointer-events-none group-hover:scale-150"
+                style={dotStyle}
+              />
 
-                {/* Tooltip on Hover */}
-                {hoveredScene?.id === scene.id && (
-                  <div className="absolute bottom-7 left-1/2 -translate-x-1/2 w-48 bg-[#111827] border border-slate-700 text-slate-200 p-2.5 rounded-lg shadow-2xl z-50 text-[11px] font-mono pointer-events-none text-left">
-                    <div className="font-bold text-white flex items-center justify-between">
-                      <span>{scene.acquired_at}</span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                          scene.usable ? 'text-emerald-400 bg-emerald-950' : 'text-rose-300 bg-rose-950'
-                        }`}
-                      >
-                        {scene.usable ? 'CLEAR PASS' : '☁️ CLOUDY'}
-                      </span>
-                    </div>
-                    <div className="text-slate-400 mt-1">
-                      Cloud Cover: <span className="text-white font-semibold">{scene.cloud_cover_pct.toFixed(1)}%</span>
-                    </div>
-                    {scene.unusable_reason && (
-                      <div className="text-rose-300 mt-1 text-[10px] flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3 shrink-0" />
-                        <span>{scene.unusable_reason}</span>
-                      </div>
-                    )}
-                    <div className="text-indigo-300 mt-1 pt-1 border-t border-slate-800 text-[10px]">
-                      Click to set as {targetDateMode === 'before' ? 'Before' : 'After'} date
-                    </div>
+              {/* Tooltip */}
+              {hoveredScene?.id === scene.id && (
+                <div
+                  className="absolute bottom-7 left-1/2 -translate-x-1/2 w-48 p-2 pointer-events-none text-left z-50"
+                  style={{
+                    background: 'var(--panel)',
+                    border: '1px solid var(--line-strong)',
+                    borderRadius: 'var(--radius)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                  }}
+                >
+                  <div className="flex items-center justify-between t-mono" style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}>
+                    <span>{scene.acquired_at}</span>
+                    <span
+                      className="t-tag"
+                      style={{
+                        padding: '1px 4px',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 8,
+                        background: scene.usable ? 'var(--measured-fill)' : 'var(--rejected-fill)',
+                        color: scene.usable ? 'var(--measured-text)' : 'var(--rejected-text)',
+                        border: `1px solid ${scene.usable ? 'var(--measured-border)' : 'var(--rejected-border)'}`,
+                      }}
+                    >
+                      {scene.usable ? 'CLEAR' : 'UNUSABLE'}
+                    </span>
                   </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                  <div className="t-mono mt-1" style={{ color: 'var(--ink-3)', fontSize: 10 }}>
+                    Cloud: <span className="tabular-nums" style={{ color: 'var(--ink-2)' }}>{scene.cloud_cover_pct.toFixed(1)}%</span>
+                  </div>
+                  {scene.unusable_reason && (
+                    <div className="flex items-center gap-1 mt-1 t-mono" style={{ color: 'var(--danger)', fontSize: 9 }}>
+                      <AlertTriangle className="w-3 h-3 shrink-0" />
+                      <span>{scene.unusable_reason}</span>
+                    </div>
+                  )}
+                  <div className="t-tag mt-1.5 pt-1" style={{ borderTop: '1px solid var(--line)', color: 'var(--amber)', fontSize: 8 }}>
+                    CLICK → SET {targetDateMode === 'before' ? 'DATE A' : 'DATE B'}
+                  </div>
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

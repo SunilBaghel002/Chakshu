@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, CheckCircle2, ShieldAlert, Sparkles } from 'lucide-react';
+import { Send, CheckCircle2, ShieldAlert, Sparkles, X } from 'lucide-react';
 import type { Answer } from '../lib/types';
 import { askQuestion } from '../lib/api';
 
@@ -15,6 +15,9 @@ const PRESET_QUERIES = [
   'Why did the lake water shrink?',
 ];
 
+/**
+ * AskPanel — Intelligence Query Panel with Console Treatment
+ */
 export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,29 +34,46 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
   };
 
   return (
-    <div className="w-full max-w-xl bg-[#111827] border border-[#374151] rounded-xl shadow-2xl overflow-hidden text-slate-200 z-30 select-none flex flex-col">
+    <div
+      className="w-full max-w-xl bg-[var(--panel)] border border-[var(--line-strong)] shadow-2xl overflow-hidden text-[var(--ink)] z-30 select-none flex flex-col corner-ticks"
+      style={{ borderRadius: 'var(--r-sm)' }}
+    >
       {/* Panel Header */}
-      <div className="p-4 bg-[#0F172A] border-b border-[#1F2937] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+      <div
+        className="p-4 bg-[var(--panel2)] border-b border-[var(--line)] flex items-center justify-between"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="dossier-bar inline-block" />
+          <div
+            className="p-1.5 border border-[rgba(240,180,95,0.3)] bg-[var(--amber-wash)] text-[var(--amber)]"
+            style={{ borderRadius: 'var(--r-sm)' }}
+          >
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">Ask Chakshu (Plain English AI)</h3>
-            <p className="text-[11px] text-slate-400">
-              Ask questions about changes. Every single number is checked against real satellite math.
+            <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-[var(--ink)]">
+              Ask Chakshu (AI Query)
+            </h3>
+            <p className="text-[11px] text-[var(--ink3)] font-mono">
+              Every single measurement is strictly verified against satellite database facts.
             </p>
           </div>
         </div>
         {onClose && (
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xs">
-            ✕
+          <button
+            onClick={onClose}
+            className="p-1.5 text-[var(--ink3)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+            style={{ borderRadius: 'var(--r-sm)' }}
+          >
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {/* Preset Suggestions */}
-      <div className="p-3 bg-[#0B0F19] border-b border-[#1F2937] flex flex-wrap gap-1.5 text-xs">
+      <div
+        className="p-2.5 bg-[var(--well)] border-b border-[var(--line)] flex flex-wrap gap-1.5 text-xs"
+      >
         {PRESET_QUERIES.map((pq, idx) => (
           <button
             key={idx}
@@ -61,7 +81,8 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
               setQuery(pq);
               handleAsk(pq);
             }}
-            className="px-2.5 py-1 rounded-md bg-[#1E293B]/70 hover:bg-indigo-900/40 text-slate-300 hover:text-indigo-200 border border-slate-700/60 transition-colors text-[11px]"
+            className="px-2.5 py-1 text-xs font-mono transition-colors bg-[var(--panel2)] hover:bg-[var(--line)] hover:text-[var(--amber)] text-[var(--ink2)] border border-[var(--line)]"
+            style={{ borderRadius: 'var(--r-sm)' }}
           >
             {pq}
           </button>
@@ -69,37 +90,41 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
       </div>
 
       {/* Query Input */}
-      <div className="p-3 border-b border-[#1F2937] flex gap-2">
+      <div
+        className="p-3 border-b border-[var(--line)] flex gap-2 bg-[var(--panel)]"
+      >
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAsk(query)}
           placeholder="Ask anything about satellite changes at this location..."
-          className="flex-1 bg-[#0F172A] border border-[#374151] rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="flex-1 bg-[var(--well)] border border-[var(--line)] px-3 py-2 text-xs font-mono text-[var(--ink)] placeholder-[var(--ink3)] focus:outline-none focus:border-[var(--amber)] transition-colors"
+          style={{ borderRadius: 'var(--r-sm)' }}
         />
         <button
           onClick={() => handleAsk(query)}
           disabled={loading || !query.trim()}
-          className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow"
+          className="btn-primary flex items-center gap-1.5 disabled:opacity-40"
+          style={{ borderRadius: 'var(--r-sm)', padding: '6px 14px' }}
         >
           <Send className="w-3.5 h-3.5" />
-          <span>Ask</span>
+          <span>ASK</span>
         </button>
       </div>
 
       {/* Answer Body */}
-      <div className="p-4 space-y-4 max-h-[380px] overflow-y-auto">
+      <div className="p-4 space-y-4 max-h-[380px] overflow-y-auto font-mono text-xs">
         {loading && (
-          <div className="flex items-center justify-center py-8 text-xs text-indigo-400 font-mono animate-pulse gap-2">
-            <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <span>Verifying satellite math with Number Verifier...</span>
+          <div className="flex items-center justify-center py-8 text-xs text-[var(--amber)] font-mono animate-pulse gap-2">
+            <div className="w-4 h-4 border-2 border-[var(--amber)] border-t-transparent rounded-full animate-spin" />
+            <span>Verifying satellite telemetry with Ground Truth Engine...</span>
           </div>
         )}
 
         {!loading && !answer && (
-          <div className="py-8 text-center text-xs text-slate-500 font-mono">
-            Type a question above or click one of the preset buttons.
+          <div className="py-8 text-center text-xs text-[var(--ink3)] font-mono">
+            Type an intelligence query above or select a preset prompt.
           </div>
         )}
 
@@ -107,39 +132,51 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
           <div className="space-y-3 font-mono text-xs">
             {/* Capability Refusal or Answer Notice */}
             {answer.capability_notice && (
-              <div className="bg-amber-950/30 border border-amber-800/60 p-3 rounded-lg text-amber-200 text-xs">
+              <div
+                className="bg-[var(--amber-wash)] border border-[rgba(240,180,95,0.3)] p-3 text-[var(--amber)] text-xs"
+                style={{ borderRadius: 'var(--r-sm)' }}
+              >
                 <div className="flex items-center gap-2 font-bold mb-1">
-                  <ShieldAlert className="w-4 h-4 text-amber-400" />
-                  <span>Resolution Notice</span>
+                  <ShieldAlert className="w-4 h-4 text-[var(--amber)]" />
+                  <span>RESOLUTION NOTICE</span>
                 </div>
-                <p className="font-sans text-[12px] text-slate-300 leading-relaxed">
+                <p className="font-sans text-[12px] text-[var(--ink2)] leading-relaxed">
                   {answer.capability_notice}
                 </p>
               </div>
             )}
 
             {/* Answer Text Card */}
-            <div className="bg-[#0F172A] border border-[#1F2937] p-3.5 rounded-lg space-y-2">
+            <div
+              className="bg-[var(--well)] border border-[var(--line)] p-3.5 space-y-2 corner-ticks"
+              style={{ borderRadius: 'var(--r-sm)' }}
+            >
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-indigo-400 font-bold uppercase">
-                  Verified Intelligence Answer
+                <span className="text-[var(--amber)] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="dossier-bar inline-block" />
+                  Verified Intelligence Output
                 </span>
-                <span className="text-slate-400">Confidence: {(answer.confidence * 100).toFixed(0)}%</span>
+                <span className="text-[var(--ink3)] tabular-nums">
+                  CONFIDENCE: {(answer.confidence * 100).toFixed(0)}%
+                </span>
               </div>
-              <p className="font-sans text-sm text-slate-100 leading-relaxed">
+              <p className="font-sans text-sm text-[var(--ink)] leading-relaxed">
                 {answer.text}
               </p>
             </div>
 
             {/* Number Verifier Shield Card */}
-            <div className="bg-emerald-950/30 border border-emerald-800/60 p-3 rounded-lg flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <div
+              className="bg-[var(--color-measured-fill)] border border-[rgba(47,191,113,0.3)] p-3 flex items-start gap-2.5"
+              style={{ borderRadius: 'var(--r-sm)' }}
+            >
+              <CheckCircle2 className="w-4 h-4 text-[var(--color-measured-text)] shrink-0 mt-0.5" />
               <div>
-                <span className="text-emerald-400 font-bold block text-xs">
-                  ✓ Verified Accurate Numbers (Zero AI Hallucinations)
+                <span className="text-[var(--color-measured-text)] font-bold block text-xs">
+                  ✓ VERIFIED ACCURATE NUMBERS (ZERO AI HALLUCINATION)
                 </span>
-                <p className="text-[11px] text-slate-300 font-sans mt-0.5">
-                  Every single number (18.43 hectares, 6 construction sites, dates) comes from direct database math, never generated by an AI guess.
+                <p className="text-[11px] text-[var(--ink2)] font-sans mt-0.5 leading-relaxed">
+                  Every figure (hectares, counts, coordinates, acquisition dates) stems strictly from verified database records.
                 </p>
               </div>
             </div>
@@ -147,15 +184,18 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
             {/* Verified Facts Grounding */}
             {answer.measurements?.facts && (
               <div className="space-y-1">
-                <span className="text-slate-400 text-[11px] block">Verified Data Used:</span>
+                <span className="text-[var(--ink3)] text-[10px] uppercase tracking-wider block">
+                  Ground Truth Telemetry:
+                </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {(answer.measurements.facts as any[]).map((fact, i) => (
                     <div
                       key={i}
-                      className="bg-[#0F172A] border border-slate-800 p-2 rounded text-[11px] flex justify-between"
+                      className="bg-[var(--well)] border border-[var(--line)] p-2 text-[11px] flex justify-between"
+                      style={{ borderRadius: 'var(--r-sm)' }}
                     >
-                      <span className="text-slate-400">{fact.type || fact.kind}:</span>
-                      <span className="text-emerald-300 font-semibold tabular-nums">
+                      <span className="text-[var(--ink3)]">{fact.type || fact.kind}:</span>
+                      <span className="text-[var(--color-measured-text)] font-semibold tabular-nums">
                         {String(fact.value)} {fact.unit || ''}
                       </span>
                     </div>
