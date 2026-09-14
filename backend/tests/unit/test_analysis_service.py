@@ -10,10 +10,45 @@ Verifies:
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from app.schemas.common import ChangeType, DecisionStatus, ValueKind
 from app.services.analysis import analysis_service
+
+
+@pytest.fixture(autouse=True)
+def ensure_synthetic_scenes() -> None:
+    """Ensure baseline synthetic scenes exist on disk for automated test runs."""
+    scenes_dir = analysis_service.scenes_dir
+    s1 = scenes_dir / "S2A_JEWAR_20210315_SYNTH"
+    s2 = scenes_dir / "S2B_JEWAR_20240420_SYNTH"
+    s1.mkdir(parents=True, exist_ok=True)
+    s2.mkdir(parents=True, exist_ok=True)
+
+    if not (s1 / "B02.npy").exists():
+        h, w = 200, 200
+        np.save(s1 / "B02.npy", np.full((h, w), 500, dtype=np.uint16))
+        np.save(s1 / "B03.npy", np.full((h, w), 800, dtype=np.uint16))
+        np.save(s1 / "B04.npy", np.full((h, w), 800, dtype=np.uint16))
+        np.save(s1 / "B08.npy", np.full((h, w), 4000, dtype=np.uint16))
+        np.save(s1 / "B11.npy", np.full((h // 2, w // 2), 800, dtype=np.uint16))
+        np.save(s1 / "SCL.npy", np.full((h, w), 4, dtype=np.uint8))
+
+    if not (s2 / "B02.npy").exists():
+        h, w = 200, 200
+        b04_after = np.full((h, w), 800, dtype=np.uint16)
+        b08_after = np.full((h, w), 4000, dtype=np.uint16)
+        b11_after = np.full((h // 2, w // 2), 800, dtype=np.uint16)
+        b04_after[60:140, 60:140] = 2500
+        b08_after[60:140, 60:140] = 800
+        b11_after[30:70, 30:70] = 3000
+        np.save(s2 / "B02.npy", np.full((h, w), 600, dtype=np.uint16))
+        np.save(s2 / "B03.npy", np.full((h, w), 900, dtype=np.uint16))
+        np.save(s2 / "B04.npy", b04_after)
+        np.save(s2 / "B08.npy", b08_after)
+        np.save(s2 / "B11.npy", b11_after)
+        np.save(s2 / "SCL.npy", np.full((h, w), 5, dtype=np.uint8))
 
 
 def test_run_change_detection_jewar_demo() -> None:
