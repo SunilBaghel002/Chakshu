@@ -12,6 +12,7 @@ interface SwipeCompareProps {
   onSelectBeforeDate?: (date: string) => void;
   onSelectAfterDate?: (date: string) => void;
   onSwapDates?: () => void;
+  onDragMove?: (newPos: number) => void;
 }
 
 export const SwipeCompare: React.FC<SwipeCompareProps> = ({
@@ -25,12 +26,22 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
   onSelectBeforeDate,
   onSelectAfterDate,
   onSwapDates,
+  onDragMove,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const dividerRef = useRef<HTMLDivElement>(null);
   const percentTagRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const lastPctRef = useRef(sliderPos);
   const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      lastPctRef.current = sliderPos;
+      if (dividerRef.current) dividerRef.current.style.left = `${sliderPos}%`;
+      if (percentTagRef.current) percentTagRef.current.textContent = `${Math.round(sliderPos)}% Split`;
+    }
+  }, [sliderPos]);
 
   // Ensure active dates are always present in dropdown options
   const beforeOptions = React.useMemo(() => {
@@ -56,14 +67,16 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
       const rect = containerRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
       const pct = Math.round((x / rect.width) * 1000) / 10;
+      lastPctRef.current = pct;
 
-      // Direct DOM update for instant tracking without waiting on React state re-renders
+      // Direct DOM update for instant tracking — zero lag on slider & map wipe!
       if (dividerRef.current) {
         dividerRef.current.style.left = `${pct}%`;
       }
       if (percentTagRef.current) {
         percentTagRef.current.textContent = `${Math.round(pct)}% Split`;
       }
+      onDragMove?.(pct);
 
       if (!rafRef.current) {
         rafRef.current = requestAnimationFrame(() => {
@@ -72,36 +85,41 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
         });
       }
     },
-    [onSliderChange]
+    [onSliderChange, onDragMove]
   );
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
+      if (!isDraggingRef.current) return;
       isDraggingRef.current = false;
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      onSliderChange(lastPctRef.current);
       try {
         (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
       } catch {
         // ignore
       }
     },
-    []
+    [onSliderChange]
   );
 
   useEffect(() => {
     const handleGlobalUp = () => {
-      isDraggingRef.current = false;
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+        onSliderChange(lastPctRef.current);
       }
     };
     window.addEventListener('pointerup', handleGlobalUp);
     return () => window.removeEventListener('pointerup', handleGlobalUp);
-  }, []);
+  }, [onSliderChange]);
 
   if (!isSwipeActive) {
     return (
