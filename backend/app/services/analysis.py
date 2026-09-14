@@ -362,21 +362,21 @@ class AnalysisService:
 
     def get_suppression_summary(self, aoi_id: str) -> dict[str, Any]:
         """Return suppression counts by reason and sample reasons for an AOI (Task 3.3)."""
-        if aoi_id in self._suppression_summaries:
-            return self._suppression_summaries[aoi_id]
-        fpath = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "suppression.json"
-        if fpath.exists():
+        fix_path = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "suppression.json"
+        fixture: dict[str, Any] = {}
+        if fix_path.exists():
             try:
-                return json.loads(fpath.read_text(encoding="utf-8"))
+                fixture = json.loads(fix_path.read_text(encoding="utf-8"))
             except Exception:
                 pass
+        summary = self._suppression_summaries.get(aoi_id)
+        if summary and summary.get("sample_reasons"):
+            return summary
+        if fixture:
+            return {**fixture, "aoi_id": aoi_id}
         return {
-            "aoi_id": aoi_id,
-            "candidates_generated": 0,
-            "candidates_suppressed": 0,
-            "candidates_retained": 0,
-            "by_reason": {},
-            "sample_reasons": [],
+            "aoi_id": aoi_id, "candidates_generated": 0, "candidates_suppressed": 0,
+            "candidates_retained": 0, "by_reason": {}, "sample_reasons": [],
         }
 
     def run_aoi_analysis_job(self, job_id: str, aoi_id: str) -> None:

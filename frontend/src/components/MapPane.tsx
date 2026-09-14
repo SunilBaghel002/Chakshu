@@ -140,15 +140,16 @@ export const MapPane: React.FC<MapPaneProps> = ({
       mapInstanceRef.current = null;
     };
   }, []);
-  // Clip afterPane and polygonsPane based on slider position
-  const updateClip = useCallback(() => {
+  // Clip afterPane and polygonsPane in sync with swipe divider
+  const applyClip = useCallback((pct: number) => {
     const map = mapInstanceRef.current;
     if (!map) return;
     const afterPane = map.getPane('afterPane');
     const polyPane = map.getPane('polygonsPane');
+    if (!afterPane) return;
 
     if (!isSwipeActive) {
-      if (afterPane) afterPane.style.display = 'none';
+      afterPane.style.display = 'none';
       if (polyPane) {
         polyPane.style.display = 'block';
         polyPane.style.clipPath = 'none';
@@ -156,43 +157,39 @@ export const MapPane: React.FC<MapPaneProps> = ({
       return;
     }
 
-    if (afterPane) afterPane.style.display = 'block';
+    afterPane.style.display = 'block';
     if (polyPane) polyPane.style.display = 'block';
 
-    const size = map.getSize();
+    const w = mapContainerRef.current?.offsetWidth || map.getSize().x;
+    const h = mapContainerRef.current?.offsetHeight || map.getSize().y;
     const nw = map.containerPointToLayerPoint([0, 0]);
-    const se = map.containerPointToLayerPoint(size);
-    const sliderX = (sliderPos / 100) * size.x;
-    // Offset by 1px to eliminate the visible gap at the divider hairline
-    const clipX = map.containerPointToLayerPoint([sliderX - 1, 0]).x;
+    const se = map.containerPointToLayerPoint([w, h]);
+    const clipX = map.containerPointToLayerPoint([(pct / 100) * w, 0]).x;
 
-    const isNormalOrder = beforeDate <= afterDate;
-    const top = nw.y - 5000;
-    const bottom = se.y + 5000;
-    const left = nw.x - 5000;
-    const right = se.x + 5000;
+    const isNormal = beforeDate <= afterDate;
+    const top = nw.y - 3000, bot = se.y + 3000, l = nw.x - 3000, r = se.x + 3000;
+    const clip = isNormal
+      ? `polygon(${clipX}px ${top}px, ${r}px ${top}px, ${r}px ${bot}px, ${clipX}px ${bot}px)`
+      : `polygon(${l}px ${top}px, ${clipX}px ${top}px, ${clipX}px ${bot}px, ${l}px ${bot}px)`;
 
-    const clip = isNormalOrder
-      ? `polygon(${clipX}px ${top}px, ${right}px ${top}px, ${right}px ${bottom}px, ${clipX}px ${bottom}px)`
-      : `polygon(${left}px ${top}px, ${clipX}px ${top}px, ${clipX}px ${bottom}px, ${left}px ${bottom}px)`;
-
-    if (afterPane) afterPane.style.clipPath = clip;
+    afterPane.style.clipPath = clip;
     if (polyPane) polyPane.style.clipPath = clip;
-  }, [sliderPos, isSwipeActive, beforeDate, afterDate]);
+  }, [isSwipeActive, beforeDate, afterDate]);
 
   useEffect(() => {
-    updateClip();
+    applyClip(sliderPos);
     const map = mapInstanceRef.current;
+    const container = mapContainerRef.current;
     if (!map) return;
-    map.on('move', updateClip);
-    map.on('zoom', updateClip);
-    map.on('resize', updateClip);
+    const onSync = () => applyClip(sliderPos);
+    map.on('move zoom resize', onSync);
+    const ro = container ? new ResizeObserver(() => { map.invalidateSize(); onSync(); }) : null;
+    if (container && ro) ro.observe(container);
     return () => {
-      map.off('move', updateClip);
-      map.off('zoom', updateClip);
-      map.off('resize', updateClip);
+      map.off('move zoom resize', onSync);
+      ro?.disconnect();
     };
-  }, [updateClip]);
+  }, [applyClip, sliderPos]);
 
   // Recenter map ONLY when AOI genuinely changes (prevents snapping on slider/pan)
   useEffect(() => {
@@ -348,6 +345,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
       <SwipeCompare
         sliderPos={sliderPos}
         onSliderChange={onSliderChange}
+        onDragMove={applyClip}
         isSwipeActive={isSwipeActive}
         onToggleSwipe={onToggleSwipe}
         beforeDate={beforeDate}
