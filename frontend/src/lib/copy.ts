@@ -1,37 +1,54 @@
 /**
- * User-facing copy for Chakshu with plain-language, easy-to-understand labels.
+ * User-facing copy for Chakshu — Intelligence Console v2.
+ * All strings live here; nothing hardcoded in JSX.
+ * Console shorthand is for LABELS AND TAGS only — body prose stays sentence case.
  */
 
 export const COPY = {
   // Brand & Philosophy
   appName: 'Chakshu',
   appNameDevanagari: 'चक्षु',
-  tagline: 'Every satellite change, backed by real proof.',
+  tagline: 'Satellite Change-Detection & Evidence Platform',
   heroDescription:
-    'Satellite change-detection platform. Every measurement is calculated with direct geometry math — no AI hallucinations, backed by raw pixels.',
+    'Every measurement is calculated with direct geometry math — no AI hallucinations, backed by raw pixels.',
+
+  // SLOT-00 Data stream marquee
+  marquee:
+    'THEIA DATA STREAM: DRONE // TPOD:02 // AI:ENHANCED · RECON//02 :: //GMT · SENTINEL-2 L2A · 10M GSD · CONTINUOUS MONITORING ACTIVE · ',
+
+  // Console shorthand for tags
+  orgTag: 'MOD · ISRO',
+  liveTag: 'LIVE API',
+  offlineTag: 'OFFLINE DEMO',
 
   // Exact Invariant Labels (Defense & SIH Requirements)
-  verifiedMeasurement: 'Verified Measurement',
-  deterministicMetric: 'Deterministic Metric',
-  refusalInsufficientResolution: 'Resolution Notice: Cars Too Small to Count',
+  verifiedMeasurement: 'VERIFIED MEASUREMENT',
+  deterministicMetric: 'DETERMINISTIC METRIC',
+  refusalInsufficientResolution: 'RESOLUTION GATE: INSUFFICIENT GSD',
 
-  // Plain-language friendly badges & headers
-  realMathCalculation: '✓ Real Math Calculation (Not an AI guess)',
-  realMathTooltip: 'Calculated directly from satellite pixel geometry with 100% precision. The AI never guesses numbers.',
-  
-  beforeLabel: 'Older Photo (Before)',
-  afterLabel: 'Recent Photo (After)',
-  swipeToCompare: 'Drag Slider to Compare Before & After',
+  // Epistemic badges
+  measuredBadge: 'MEASURED',
+  measuredBadgeTooltip:
+    'Directly computed from satellite pixels. Guaranteed accurate geometry — the AI never produces a number.',
+  inferredBadge: 'INFERRED',
+  inferredBadgeTooltip:
+    'Identified by pattern detection; fully inspectable in the decision trace.',
+  unverifiedBadge: 'UNVERIFIED',
+
+  // Date labels
+  beforeLabel: 'DATE A',
+  afterLabel: 'DATE B',
+  swipeToCompare: 'Drag to compare Before & After',
 
   // Resolution Gate Refusals (PRD 2 §5, PRD 3 §B3)
   refusal10mVehicles:
-    "This satellite image has 10 meters per pixel. At this scale, an individual car is smaller than a single pixel, so cars cannot be counted. However, large buildings, roads, water bodies, and cleared land are clearly visible and tracked:",
+    "This satellite image has 10 metres per pixel. At this scale, an individual car is smaller than a single pixel, so cars cannot be counted. However, large buildings, roads, water bodies, and cleared land are clearly visible and tracked:",
 
   noGeoreferencing:
     "This image does not contain GPS location coordinates. We can describe what is visible, but cannot align it to satellite historical archives.",
 
   noGsd:
-    "Image scale is unknown. Please provide ground resolution in meters to measure exact real-world dimensions.",
+    "Image scale is unknown. Please provide ground resolution in metres to measure exact real-world dimensions.",
 
   emptyRaster: 'This image contains no pixel data.',
 
@@ -56,14 +73,10 @@ export const COPY = {
   emptySearchResults:
     'No satellite passes matched your query. Try choosing a different year or clearer weather month.',
 
-  // Epistemic Badges (Rule 1: The AI never produces a number)
-  measuredBadge: 'MEASURED',
-  measuredBadgeTooltip:
-    'Directly computed from satellite pixels. Guaranteed accurate geometry, not an AI hallucination.',
+  // Status line
+  statusIdle: 'READY',
+  statusAnalysing: 'ANALYSING',
+  statusComplete: 'COMPLETE',
 
-  inferredBadge: 'INFERRED',
-  inferredBadgeTooltip:
-    'Identified by pattern detection; fully inspectable in the decision trace.',
-
-  auditVerified: 'Audit Log Verified. Zero tampering detected.',
+  auditVerified: 'Audit log verified. Zero tampering detected.',
 } as const;

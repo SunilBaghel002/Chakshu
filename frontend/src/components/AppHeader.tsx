@@ -1,13 +1,6 @@
 import React from 'react';
 import {
-  Layers,
-  CheckCircle2,
-  HelpCircle,
-  Database,
-  UploadCloud,
   ChevronDown,
-  Activity,
-  Calendar,
   MapPin,
 } from 'lucide-react';
 import { COPY } from '../lib/copy';
@@ -26,6 +19,10 @@ interface AppHeaderProps {
   usableScenes?: number;
 }
 
+/**
+ * SLOT-01 — Command Bar (56px)
+ * Iris lockup + brand + AOI selector + stats + nav tabs + LIVE indicator
+ */
 export const AppHeader: React.FC<AppHeaderProps> = ({
   aois,
   selectedAoiId,
@@ -35,140 +32,182 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   isMock,
   onToggleMock,
   areaLabel = '18.43 ha',
-  sceneCount = 36,
   usableScenes = 29,
 }) => {
-  const currentAoi = aois.find((a) => a.id === selectedAoiId) ?? aois[0];
+  const tabs: { key: typeof activeView; label: string }[] = [
+    { key: 'map', label: 'MAP' },
+    { key: 'review', label: 'REVIEW' },
+    { key: 'upload', label: 'UPLOAD' },
+    { key: 'ask', label: 'ASK' },
+  ];
 
   return (
-    <header className="h-16 w-full bg-[#111827]/95 border-b border-[#1F2937] px-4 flex items-center justify-between select-none z-30 relative backdrop-blur-md">
-      {/* Brand & Eye Icon */}
+    <header
+      id="slot-01-command"
+      className="w-full flex items-center justify-between px-4 select-none"
+      style={{
+        height: 56,
+        background: 'var(--panel)',
+        borderBottom: '1px solid var(--line)',
+        zIndex: 30,
+      }}
+    >
+      {/* Left: Brand Lockup */}
       <div className="flex items-center gap-3">
-        <div className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-950/80 to-[#0B0F19] border border-indigo-500/30 p-1">
-          {/* Concentric Eye Pupil SVG */}
+        {/* Amber Iris SVG */}
+        <div
+          className="relative flex items-center justify-center"
+          style={{
+            width: 40,
+            height: 40,
+            background: 'var(--bg)',
+            border: '1px solid var(--line-strong)',
+            borderRadius: 'var(--radius)',
+          }}
+        >
           <svg className="w-8 h-8" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="21" stroke="#818CF8" strokeWidth="1.5" strokeOpacity="0.4" strokeDasharray="3 3" />
-            <circle cx="24" cy="24" r="16" stroke="#6366F1" strokeWidth="2" strokeOpacity="0.8" />
-            <circle cx="24" cy="24" r="11" stroke="#4F46E5" strokeWidth="2.5" />
-            <circle cx="24" cy="24" r="5" fill="#C7D2FE" className="animate-iris-pulse" />
+            <circle cx="24" cy="24" r="21" stroke="var(--amber)" strokeWidth="1.5" strokeOpacity="0.3" strokeDasharray="3 3" />
+            <circle cx="24" cy="24" r="16" stroke="var(--amber)" strokeWidth="2" strokeOpacity="0.6" />
+            <circle cx="24" cy="24" r="11" stroke="var(--amber)" strokeWidth="2.5" strokeOpacity="0.9" />
+            <circle cx="24" cy="24" r="5" fill="var(--amber)" className="animate-iris-pulse" />
           </svg>
         </div>
 
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
-              <span className="text-indigo-400 font-semibold">{COPY.appNameDevanagari}</span>
-              <span className="text-slate-100">({COPY.appName})</span>
+            <span className="t-h1" style={{ color: 'var(--amber)', fontSize: 16, letterSpacing: '0.04em' }}>
+              {COPY.appNameDevanagari}
             </span>
-            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold tracking-wider">
-              MoD · ISRO
+            <span className="t-h2" style={{ color: 'var(--ink)', fontSize: 14, letterSpacing: '0.04em' }}>
+              ({COPY.appName})
+            </span>
+            <span className="t-tag" style={{
+              background: 'var(--amber-wash)',
+              color: 'var(--amber)',
+              border: '1px solid var(--amber)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '2px 6px',
+              fontSize: 9,
+            }}>
+              {COPY.orgTag}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 font-normal truncate max-w-xs sm:max-w-md">
-            {COPY.tagline}
-          </p>
         </div>
       </div>
 
-      {/* Location Switcher & Key Numbers in Simple English */}
+      {/* Center: AOI Selector + Stats */}
       <div className="hidden md:flex items-center gap-3">
+        {/* AOI Selector */}
         <div className="relative">
-          <div className="flex items-center gap-1.5 bg-[#0F172A] pl-2.5 pr-8 py-1.5 rounded-lg border border-[#374151] hover:border-indigo-500/60 transition-colors cursor-pointer">
-            <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+          <div
+            className="flex items-center gap-1.5 pl-2.5 pr-8 py-1.5 cursor-pointer"
+            style={{
+              background: 'var(--panel-2)',
+              border: '1px solid var(--line-strong)',
+              borderRadius: 'var(--radius)',
+            }}
+          >
+            <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--amber)' }} />
             <select
               value={selectedAoiId}
               onChange={(e) => onSelectAoi(e.target.value)}
-              className="appearance-none bg-transparent text-slate-200 text-xs font-semibold focus:outline-none cursor-pointer"
+              className="appearance-none bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
+              style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}
             >
               {aois.map((aoi) => (
-                <option key={aoi.id} value={aoi.id} className="bg-[#111827] text-slate-200">
-                  {aoi.name.includes('Jewar') ? '📍 Jewar Airport (UP)' : '📍 Bhadla Solar Park (RJ)'}
+                <option key={aoi.id} value={aoi.id} style={{ background: 'var(--panel)' }}>
+                  {aoi.name}
                 </option>
               ))}
             </select>
           </div>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown
+            className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: 'var(--ink-3)' }}
+          />
         </div>
 
-        {/* Friendly Metric Pill */}
-        <div className="flex items-center gap-2 bg-[#0F172A] px-3 py-1.5 rounded-lg border border-[#1F2937] text-xs font-mono">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-semibold tabular-nums" title="18.43 hectares is roughly 45 standard football fields">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline shrink-0" />
-            {areaLabel} New Construction
+        {/* Stats pills */}
+        <div
+          className="flex items-center gap-3 px-3 py-1.5 t-tag"
+          style={{
+            background: 'var(--panel-2)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)',
+          }}
+        >
+          <span className="flex items-center gap-1 tabular-nums" style={{ color: 'var(--amber)' }}>
+            <span style={{ fontSize: 14, fontFamily: 'var(--font-cond)', fontWeight: 700 }}>{areaLabel}</span>
+            <span style={{ color: 'var(--ink-3)' }}>AREA</span>
           </span>
-          <span className="text-slate-600">|</span>
-          <span className="flex items-center gap-1 text-slate-300 tabular-nums">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 inline shrink-0" />
-            {usableScenes} Clear Passes
+          <span style={{ color: 'var(--line-strong)' }}>·</span>
+          <span className="flex items-center gap-1 tabular-nums" style={{ color: 'var(--teal)' }}>
+            <span style={{ fontSize: 14, fontFamily: 'var(--font-cond)', fontWeight: 700 }}>{usableScenes}</span>
+            <span style={{ color: 'var(--ink-3)' }}>PASSES</span>
           </span>
         </div>
       </div>
 
-      {/* Easy-to-Understand Navigation Tabs */}
+      {/* Right: Nav Tabs + LIVE */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center bg-[#0F172A] p-1 rounded-lg border border-[#1F2937] text-xs">
-          <button
-            onClick={() => onSelectView('map')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all font-medium ${
-              activeView === 'map'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Map</span>
-          </button>
-
-          <button
-            onClick={() => onSelectView('review')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all font-medium ${
-              activeView === 'review'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Review Changes</span>
-          </button>
-
-          <button
-            onClick={() => onSelectView('upload')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all font-medium ${
-              activeView === 'upload'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <UploadCloud className="w-3.5 h-3.5" />
-            <span>Upload Photo</span>
-          </button>
-
-          <button
-            onClick={() => onSelectView('ask')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all font-medium ${
-              activeView === 'ask'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>Ask AI</span>
-          </button>
+        {/* Nav tabs */}
+        <div
+          className="flex items-center p-0.5 gap-0.5"
+          style={{
+            background: 'var(--panel-2)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)',
+          }}
+        >
+          {tabs.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => onSelectView(key)}
+              className="t-tag px-3 py-1.5 transition-colors relative"
+              style={{
+                background: activeView === key ? 'var(--amber-wash)' : 'transparent',
+                color: activeView === key ? 'var(--amber)' : 'var(--ink-3)',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: activeView === key ? 700 : 600,
+              }}
+            >
+              {label}
+              {/* Active underline */}
+              {activeView === key && (
+                <span
+                  className="absolute bottom-0 left-1/4 right-1/4"
+                  style={{ height: 2, background: 'var(--amber)', borderRadius: 1 }}
+                />
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Demo Mode Badge */}
+        {/* LIVE / OFFLINE indicator */}
         <button
           onClick={onToggleMock}
-          title={isMock ? 'Offline Demo Mode: Fast instant local data' : 'Live Satellite API'}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-mono transition-colors ${
-            isMock
-              ? 'bg-emerald-950/40 text-emerald-300 border-emerald-800/60 hover:bg-emerald-900/40'
-              : 'bg-indigo-950/40 text-indigo-300 border-indigo-800/60 hover:bg-indigo-900/40'
-          }`}
+          title={isMock ? 'Offline Demo Mode' : 'Live Satellite API'}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 t-tag cursor-pointer transition-colors"
+          style={{
+            background: isMock ? 'var(--amber-wash)' : 'var(--teal-wash)',
+            border: `1px solid ${isMock ? 'var(--amber)' : 'var(--teal)'}`,
+            color: isMock ? 'var(--amber)' : 'var(--teal)',
+            borderRadius: 'var(--radius-sm)',
+          }}
         >
-          <span className={`w-2 h-2 rounded-full ${isMock ? 'bg-emerald-400 animate-pulse' : 'bg-indigo-400'}`} />
-          <span className="hidden lg:inline">{isMock ? 'OFFLINE DEMO' : 'LIVE API'}</span>
-          <Activity className="w-3 h-3 text-slate-400 ml-0.5" />
+          <span
+            className={isMock ? '' : 'animate-dot-pulse'}
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: isMock ? 'var(--amber)' : 'var(--teal)',
+              display: 'inline-block',
+            }}
+          />
+          <span className="hidden lg:inline">{isMock ? COPY.offlineTag : COPY.liveTag}</span>
         </button>
       </div>
     </header>

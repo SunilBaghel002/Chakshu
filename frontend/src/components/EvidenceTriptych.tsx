@@ -1,5 +1,4 @@
 import React from 'react';
-import { Layers } from 'lucide-react';
 import type { SourcesSubObject } from '../lib/types';
 import { SATELLITE_FALLBACK } from '../lib/satelliteFallback';
 
@@ -7,98 +6,83 @@ interface EvidenceTriptychProps {
   sources: SourcesSubObject;
 }
 
+/**
+ * Evidence Triptych — Three 1:1 wells labelled BEFORE / MASK / AFTER.
+ * Active well gets amber frame + corner ticks.
+ * Captions in t-mono with scene ID, sensor, cloud %.
+ */
 export const EvidenceTriptych: React.FC<EvidenceTriptychProps> = ({ sources }) => {
+  const panels = [
+    {
+      label: 'BEFORE',
+      src: sources.triptych_urls?.before || SATELLITE_FALLBACK.before,
+      fallback: SATELLITE_FALLBACK.before,
+      date: sources.before.acquired_at,
+      cloud: sources.before.cloud_cover_pct,
+      color: 'var(--ink-3)',
+    },
+    {
+      label: 'MASK',
+      src: sources.triptych_urls?.mask || SATELLITE_FALLBACK.mask,
+      fallback: SATELLITE_FALLBACK.mask,
+      date: 'Detected Shape',
+      cloud: null,
+      color: 'var(--amber)',
+    },
+    {
+      label: 'AFTER',
+      src: sources.triptych_urls?.after || SATELLITE_FALLBACK.after,
+      fallback: SATELLITE_FALLBACK.after,
+      date: sources.after.acquired_at,
+      cloud: sources.after.cloud_cover_pct,
+      color: 'var(--ink-3)',
+    },
+  ];
+
   return (
     <div>
-      <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 mb-2">
-        <Layers className="w-3.5 h-3.5 text-indigo-400" />
-        Satellite Verification Photos
-      </span>
-
+      <div className="dossier-bar" style={{ marginBottom: 8 }}>
+        <span>SATELLITE IMAGERY</span>
+      </div>
       <div className="grid grid-cols-3 gap-2">
-        {/* Before Thumbnail */}
-        <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center flex flex-col justify-between">
-          <div className="w-full h-20 rounded bg-slate-900 border border-slate-700/60 overflow-hidden relative">
-            <img
-              src={sources.triptych_urls?.before || SATELLITE_FALLBACK.before}
-              alt="Satellite Before"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = SATELLITE_FALLBACK.before;
+        {panels.map(({ label, src, fallback, date, cloud, color }) => (
+          <div key={label} className="flex flex-col">
+            <div
+              className={`relative overflow-hidden ${label === 'MASK' ? 'corner-ticks' : ''}`}
+              style={{
+                aspectRatio: '1',
+                background: 'var(--well)',
+                border: `1px solid ${label === 'MASK' ? 'var(--amber)' : 'var(--line-strong)'}`,
+                borderRadius: 'var(--radius)',
               }}
-            />
-            <span className="absolute top-1 left-1 text-[9px] font-mono px-1 py-0.5 rounded bg-black/80 text-amber-300 font-bold uppercase">
-              Before
-            </span>
+            >
+              <img
+                src={src}
+                alt={`Satellite ${label}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = fallback;
+                }}
+              />
+              <span
+                className="absolute top-1 left-1 t-tag"
+                style={{
+                  padding: '1px 4px',
+                  background: 'rgba(11, 13, 16, 0.85)',
+                  color,
+                  fontSize: 8,
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                {label}
+              </span>
+            </div>
+            <div className="mt-1 t-mono" style={{ fontSize: 9, color: 'var(--ink-3)' }}>
+              <div>{date}</div>
+              {cloud !== null && <div>☁ {cloud}%</div>}
+            </div>
           </div>
-          <div className="mt-1.5 space-y-0.5 text-left">
-            <span className="text-[10px] font-mono text-slate-300 font-medium block truncate">
-              {sources.before.acquired_at}
-            </span>
-            <span className="text-[9px] font-mono text-slate-500 block truncate">
-              Sentinel-2 L2A · 10m GSD
-            </span>
-            <span className="text-[9px] font-mono text-slate-500 block">
-              ☁️ {sources.before.cloud_cover_pct}% cloud
-            </span>
-          </div>
-        </div>
-
-        {/* Mask Thumbnail */}
-        <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center flex flex-col justify-between">
-          <div className="w-full h-20 rounded bg-slate-950 border border-indigo-500/40 overflow-hidden relative">
-            <img
-              src={sources.triptych_urls?.mask || SATELLITE_FALLBACK.mask}
-              alt="Detection Mask"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = SATELLITE_FALLBACK.mask;
-              }}
-            />
-            <span className="absolute top-1 left-1 text-[9px] font-mono px-1 py-0.5 rounded bg-black/80 text-indigo-300 font-bold uppercase">
-              Mask
-            </span>
-          </div>
-          <div className="mt-1.5 space-y-0.5 text-left">
-            <span className="text-[10px] font-mono text-indigo-300 font-medium block truncate">
-              Detected Shape
-            </span>
-            <span className="text-[9px] font-mono text-slate-500 block truncate">
-              Otsu + CVA Vector
-            </span>
-            <span className="text-[9px] font-mono text-slate-500 block">
-              Strict Perimeter
-            </span>
-          </div>
-        </div>
-
-        {/* After Thumbnail */}
-        <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center flex flex-col justify-between">
-          <div className="w-full h-20 rounded bg-slate-900 border border-orange-500/40 overflow-hidden relative">
-            <img
-              src={sources.triptych_urls?.after || SATELLITE_FALLBACK.after}
-              alt="Satellite After"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = SATELLITE_FALLBACK.after;
-              }}
-            />
-            <span className="absolute top-1 left-1 text-[9px] font-mono px-1 py-0.5 rounded bg-black/80 text-orange-400 font-bold uppercase">
-              After
-            </span>
-          </div>
-          <div className="mt-1.5 space-y-0.5 text-left">
-            <span className="text-[10px] font-mono text-slate-300 font-medium block truncate">
-              {sources.after.acquired_at}
-            </span>
-            <span className="text-[9px] font-mono text-slate-500 block truncate">
-              Sentinel-2 L2A · 10m GSD
-            </span>
-            <span className="text-[9px] font-mono text-slate-500 block">
-              ☁️ {sources.after.cloud_cover_pct}% cloud
-            </span>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );

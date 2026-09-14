@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import type { Evidence, DetectionSet } from '../lib/types';
-import { PALETTE, getClassColor } from '../lib/palette';
+import { useMapPolygons } from '../lib/useMapPolygons';
 import { SwipeCompare } from './SwipeCompare';
 import { MapCursorInspector } from './MapCursorInspector';
 import { MapZoomControls } from './MapZoomControls';
+import { GhostNumeral } from './GhostNumeral';
+import { MapReticleOverlay } from './MapReticleOverlay';
 
 interface MapPaneProps {
   selectedAoiId?: string;
   aoiCoords: [number, number]; // [lat, lng]
+  aoiBounds?: [[number, number], [number, number]]; // [[swLat, swLng], [neLat, neLng]]
   aoiName: string;
   evidenceList: Evidence[];
   selectedEvidenceId: string | null;
@@ -24,11 +27,19 @@ interface MapPaneProps {
   onSelectBeforeDate?: (date: string) => void;
   onSelectAfterDate?: (date: string) => void;
   onSwapDates?: () => void;
+  presetTarget?: { center: [number, number]; zoom: number } | null;
+  onPresetConsumed?: () => void;
 }
 
+/**
+ * SLOT-10 — Map Stage (the well)
+ * Cool-neutral --well background, 1px --line-strong frame, corner ticks.
+ * Integrates ghost numeral, vignette, and dot grid.
+ */
 export const MapPane: React.FC<MapPaneProps> = ({
   selectedAoiId,
   aoiCoords,
+  aoiBounds,
   aoiName,
   evidenceList,
   selectedEvidenceId,
@@ -44,11 +55,11 @@ export const MapPane: React.FC<MapPaneProps> = ({
   onSelectBeforeDate,
   onSelectAfterDate,
   onSwapDates,
+  presetTarget,
+  onPresetConsumed,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const geojsonLayerRef = useRef<L.GeoJSON | null>(null);
-  const detectionsLayerRef = useRef<L.LayerGroup | null>(null);
   const prevAoiIdRef = useRef<string | null>(null);
 
   const [showAllPolygons, setShowAllPolygons] = useState<boolean>(true);
@@ -67,7 +78,11 @@ export const MapPane: React.FC<MapPaneProps> = ({
       attributionControl: false,
     });
 
-    // Pane 1 (Custom 'beforePane'): ESRI World Imagery — older baseline (farmland era)
+    // Fit to rectangular AOI bounds if available
+    if (aoiBounds) {
+      map.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15 });
+    }
+
     const beforePane = map.createPane('beforePane');
     beforePane.style.zIndex = '200';
     beforePane.style.filter = 'saturate(1.1) contrast(1.0) sepia(0.12) brightness(0.97)';
@@ -78,7 +93,6 @@ export const MapPane: React.FC<MapPaneProps> = ({
     );
     esriSatellite.addTo(map);
 
-    // Pane 2 (Custom 'afterPane'): Google Satellite — newer imagery (construction era)
     const afterPane = map.createPane('afterPane');
     afterPane.style.zIndex = '450';
     afterPane.style.filter = 'contrast(1.15) brightness(1.03) saturate(1.1)';
@@ -89,20 +103,17 @@ export const MapPane: React.FC<MapPaneProps> = ({
     );
     googleSatellite.addTo(map);
 
-    // Pane 3 (Custom 'polygonsPane'): Dedicated vector overlay pane for change polygons
-    // Clipped dynamically in sync with the swipe slider
     const polygonsPane = map.createPane('polygonsPane');
     polygonsPane.style.zIndex = '500';
     polygonsPane.style.pointerEvents = 'auto';
 
-    // Labels overlay on top of polygons
+    // Dark-matter labels at --ink-3 70%
     const cartoLabels = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
-      { maxZoom: 18, opacity: 0.6 }
+      'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+      { maxZoom: 18, opacity: 0.5 }
     );
     cartoLabels.addTo(map);
 
-    // Track cursor for coordinate badge & inspector positioning via direct DOM (zero React re-renders)
     const handleMouseMove = (e: L.LeafletMouseEvent) => {
       const cEl = coordRef.current;
       if (cEl) {
@@ -140,7 +151,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
       mapInstanceRef.current = null;
     };
   }, []);
-  // Clip afterPane and polygonsPane in sync with swipe divider
+
   const applyClip = useCallback((pct: number) => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -191,157 +202,76 @@ export const MapPane: React.FC<MapPaneProps> = ({
     };
   }, [applyClip, sliderPos]);
 
-  // Recenter map ONLY when AOI genuinely changes (prevents snapping on slider/pan)
   useEffect(() => {
     if (!mapInstanceRef.current || !selectedAoiId) return;
     if (prevAoiIdRef.current && prevAoiIdRef.current !== selectedAoiId) {
       prevAoiIdRef.current = selectedAoiId;
-      mapInstanceRef.current.flyTo(aoiCoords, 14, { duration: 1.2 });
+      if (aoiBounds) {
+        mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
+      } else {
+        mapInstanceRef.current.flyTo(aoiCoords, 14, { duration: 1.2 });
+      }
     } else if (!prevAoiIdRef.current) {
       prevAoiIdRef.current = selectedAoiId;
     }
-  }, [selectedAoiId, aoiCoords]);
+  }, [selectedAoiId, aoiCoords, aoiBounds]);
 
-  // Track polygon layers for instant selection highlighting without full GeoJSON layer rebuilds
-  const polygonLayersRef = useRef<Map<string, { layer: L.Path; changeType: string }>>(new Map());
+  // Handle camera presets from TacticalTelemetryBar
+  useEffect(() => {
+    if (!mapInstanceRef.current || !presetTarget) return;
+    mapInstanceRef.current.flyTo(presetTarget.center, presetTarget.zoom, { duration: 1.0 });
+    onPresetConsumed?.();
+  }, [presetTarget, onPresetConsumed]);
 
-  const getPolyStyle = (isSelected: boolean, color: string, visible: boolean) => ({
-    color: isSelected ? '#A5B4FC' : visible ? color : 'transparent',
-    weight: isSelected ? 3 : visible ? 2 : 0,
-    opacity: visible ? 0.9 : 0,
-    fillColor: color,
-    fillOpacity: isSelected ? 0.35 : visible ? 0.16 : 0,
-    dashArray: isSelected ? undefined : '4, 4',
+  useMapPolygons({
+    map: mapInstanceRef.current,
+    evidenceList,
+    selectedEvidenceId,
+    onSelectEvidence,
+    detectionSet,
+    showAllPolygons,
+    setHoveredEvidence,
+    inspectorRef,
   });
-  // Render Vector Change Polygons
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    if (geojsonLayerRef.current) {
-      map.removeLayer(geojsonLayerRef.current);
-      geojsonLayerRef.current = null;
-    }
-    polygonLayersRef.current.clear();
-
-    const layerGroup = L.geoJSON(undefined, {
-      pane: 'polygonsPane', // Dedicated vector pane — clipped in sync with swipe slider
-      style: (feature) => {
-        const id = feature?.properties?.change_object_id;
-        const color = getClassColor(feature?.properties?.change_type || 'construction');
-        return getPolyStyle(id === selectedEvidenceId, color, showAllPolygons);
-      },
-      onEachFeature: (feature, layer) => {
-        const props = feature.properties;
-        const matched = evidenceList.find((e) => e.change_object_id === props.change_object_id);
-        const changeType = props.change_type || 'construction';
-        const color = getClassColor(changeType);
-
-        polygonLayersRef.current.set(props.change_object_id, {
-          layer: layer as L.Path,
-          changeType,
-        });
-
-        layer.on('mouseover', () => {
-          if (matched) {
-            setHoveredEvidence(matched);
-            if (inspectorRef.current) inspectorRef.current.classList.remove('hidden');
-          }
-          (layer as L.Path).setStyle({ weight: 3, color: '#38BDF8', fillOpacity: 0.38, dashArray: undefined });
-        });
-
-        layer.on('mouseout', () => {
-          setHoveredEvidence(null);
-          if (inspectorRef.current) inspectorRef.current.classList.add('hidden');
-          (layer as L.Path).setStyle(
-            getPolyStyle(props.change_object_id === selectedEvidenceId, color, showAllPolygons)
-          );
-        });
-
-        const label = props.area_label || 'Change';
-        const typeStr = changeType.replace('_', ' ').toUpperCase();
-        layer.bindTooltip(
-          `<div style="font-family: monospace; font-size: 11px; padding: 2px 4px;">
-            <strong style="color: ${color};">${typeStr}</strong>: <span style="font-weight: 700; color: #fff;">${label}</span>
-          </div>`,
-          { sticky: false, opacity: 0.95 }
-        );
-
-        layer.on('click', () => {
-          if (matched) onSelectEvidence(matched);
-        });
-      },
-    });
-
-    // Add polygons to GeoJSON layer
-    evidenceList.forEach((ev) => {
-      if (ev.measurement.geom_4326) {
-        layerGroup.addData({
-          type: 'Feature' as const,
-          properties: {
-            change_object_id: ev.change_object_id,
-            change_type: ev.change_type,
-            area_label: ev.measurement.area_label,
-          },
-          geometry: ev.measurement.geom_4326,
-        } as any);
-      }
-    });
-
-    layerGroup.addTo(map);
-    geojsonLayerRef.current = layerGroup;
-  }, [evidenceList, onSelectEvidence, showAllPolygons]);
-
-  // Fast style updates on selectedEvidenceId change (NO layer rebuilds!)
-  useEffect(() => {
-    polygonLayersRef.current.forEach(({ layer, changeType }, id) => {
-      const isSelected = id === selectedEvidenceId;
-      const color = getClassColor(changeType);
-      layer.setStyle({
-        color: isSelected ? '#A5B4FC' : showAllPolygons ? color : 'transparent',
-        weight: isSelected ? 3 : showAllPolygons ? 2 : 0,
-        fillOpacity: isSelected ? 0.35 : showAllPolygons ? 0.16 : 0,
-        dashArray: isSelected ? undefined : '4, 4',
-      });
-    });
-  }, [selectedEvidenceId, showAllPolygons]);
-  // Render Object Detection Bounding Boxes (only when showAllPolygons is active)
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    if (detectionsLayerRef.current) {
-      map.removeLayer(detectionsLayerRef.current);
-      detectionsLayerRef.current = null;
-    }
-
-    if (!showAllPolygons || !detectionSet || !detectionSet.detections.length) return;
-
-    const group = L.layerGroup();
-
-    detectionSet.detections.forEach((det) => {
-      if (!det.geom_4326) return;
-      const isTrack3 = det.track === 'object_model';
-      const color = getClassColor(det.label);
-
-      const boxLayer = L.geoJSON(det.geom_4326 as any, {
-        pane: 'polygonsPane',
-        style: { color, weight: 1.5, dashArray: isTrack3 ? '6, 4' : '4, 4', fillColor: color, fillOpacity: 0.08 },
-      });
-
-      group.addLayer(boxLayer);
-    });
-
-    group.addTo(map);
-    detectionsLayerRef.current = group;
-  }, [detectionSet, showAllPolygons]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-[#070A10]">
+    <div
+      className="relative w-full h-full overflow-hidden corner-ticks"
+      style={{
+        background: 'var(--well)',
+        border: '1px solid var(--line-strong)',
+      }}
+    >
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Swipe Controller Handles */}
+      {/* M1/M2: HUD Reticle Overlay */}
+      <MapReticleOverlay containerRef={mapContainerRef} />
+
+      {/* Inner vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 60%, var(--well) 100%)',
+          zIndex: 300,
+        }}
+      />
+
+      {/* Dot grid overlay */}
+      <div className="absolute inset-0 pointer-events-none dot-grid" style={{ zIndex: 299, opacity: 0.4 }} />
+
+      {/* SLOT-17: Ghost numeral */}
+      <GhostNumeral sector="03" />
+
+      {/* SLOT-11: Sector tag */}
+      <div
+        className="absolute top-3 left-3 z-[300] pointer-events-none t-tag"
+        style={{ color: 'var(--ink-3)', fontSize: 9 }}
+      >
+        SEC 04·B
+      </div>
+
+      {/* Swipe Controller */}
       <SwipeCompare
         sliderPos={sliderPos}
         onSliderChange={onSliderChange}
@@ -356,7 +286,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
         onSwapDates={onSwapDates}
       />
 
-      {/* Interactive Cursor Change Inspector */}
+      {/* Cursor Inspector */}
       <MapCursorInspector
         hoveredEvidence={hoveredEvidence}
         beforeDate={beforeDate}
@@ -367,25 +297,33 @@ export const MapPane: React.FC<MapPaneProps> = ({
         inspectorRef={inspectorRef}
       />
 
-      {/* Floating Bottom Date Watermarks */}
+      {/* Floating Date Watermarks */}
       {isSwipeActive && (
         <>
-          <div className="absolute bottom-4 left-4 z-[350] pointer-events-none bg-[#0B0F19]/85 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-mono text-amber-300 font-semibold shadow-2xl flex items-center gap-1.5 backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span>BEFORE: {beforeDate} (Pre-construction Farmland)</span>
+          <div className="absolute bottom-3 left-3 z-[350] pointer-events-none t-tag flex items-center gap-1.5 px-2.5 py-1"
+            style={{ background: 'var(--panel)', border: '1px solid var(--amber)', color: 'var(--amber)', borderRadius: 'var(--radius)', fontSize: 9 }}>
+            <span className="animate-dot-pulse" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--amber)', display: 'inline-block' }} />
+            <span>DATE A: {beforeDate}</span>
           </div>
-          <div className="absolute bottom-4 right-4 z-[350] pointer-events-none bg-[#0B0F19]/85 border border-indigo-500/40 px-3 py-1.5 rounded-lg text-xs font-mono text-indigo-300 font-semibold shadow-2xl flex items-center gap-1.5 backdrop-blur-md">
-            <span>AFTER: {afterDate} (Construction Phase)</span>
-            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+          <div className="absolute bottom-3 right-3 z-[350] pointer-events-none t-tag flex items-center gap-1.5 px-2.5 py-1"
+            style={{ background: 'var(--panel)', border: '1px solid var(--teal)', color: 'var(--teal)', borderRadius: 'var(--radius)', fontSize: 9 }}>
+            <span>DATE B: {afterDate}</span>
+            <span className="animate-dot-pulse" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} />
           </div>
         </>
       )}
 
-      {/* Floating Tactical Zoom & Control Overlay */}
+      {/* Zoom Controls */}
       <MapZoomControls
         onZoomIn={() => mapInstanceRef.current?.zoomIn()}
         onZoomOut={() => mapInstanceRef.current?.zoomOut()}
-        onCenter={() => mapInstanceRef.current?.flyTo(aoiCoords, 14)}
+        onCenter={() => {
+          if (aoiBounds && mapInstanceRef.current) {
+            mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
+          } else {
+            mapInstanceRef.current?.flyTo(aoiCoords, 14);
+          }
+        }}
         coords={aoiCoords}
       />
     </div>

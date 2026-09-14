@@ -12,6 +12,10 @@ interface MapCursorInspectorProps {
   inspectorRef: React.RefObject<HTMLDivElement | null>;
 }
 
+/**
+ * SLOT-14 coordinate readout + SLOT-16 lock-on tag.
+ * Amber-styled coordinate readout and hover inspector.
+ */
 export const MapCursorInspector: React.FC<MapCursorInspectorProps> = ({
   hoveredEvidence,
   beforeDate,
@@ -23,58 +27,99 @@ export const MapCursorInspector: React.FC<MapCursorInspectorProps> = ({
 }) => {
   return (
     <>
-      {/* Tactical Mode Switch: Show All Polygons toggle */}
-      <div className="absolute top-16 left-4 z-[400] flex items-center gap-2">
+      {/* Polygon visibility toggle */}
+      <div className="absolute top-16 left-3 z-[400] flex items-center gap-2">
         <button
           onClick={onToggleShowAll}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium shadow-2xl backdrop-blur-md border transition-all ${
-            showAllPolygons
-              ? 'bg-indigo-600/90 border-indigo-400 text-white shadow-indigo-500/20'
-              : 'bg-[#0B0F19]/85 border-slate-700/80 text-slate-300 hover:text-white hover:border-slate-600'
-          }`}
+          className="flex items-center gap-1.5 px-3 py-1.5 t-tag cursor-pointer transition-colors"
+          style={{
+            background: showAllPolygons ? 'var(--amber-wash)' : 'var(--panel)',
+            border: `1px solid ${showAllPolygons ? 'var(--amber)' : 'var(--line-strong)'}`,
+            color: showAllPolygons ? 'var(--amber)' : 'var(--ink-3)',
+            borderRadius: 'var(--radius)',
+            fontSize: 9,
+          }}
           title="Toggle visibility of change boundary polygons"
         >
-          {showAllPolygons ? <Eye className="w-3.5 h-3.5 text-indigo-200" /> : <EyeOff className="w-3.5 h-3.5 text-slate-400" />}
-          <span>{showAllPolygons ? 'All Polygons Visible' : 'Inspect on Hover'}</span>
+          {showAllPolygons ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+          <span>{showAllPolygons ? 'POLYGONS VISIBLE' : 'HOVER TO INSPECT'}</span>
         </button>
       </div>
 
-      {/* Fixed corner coordinate badge — positioned via DOM ref, no re-renders */}
+      {/* SLOT-14: Fixed corner coordinate badge */}
       <div
         ref={coordRef}
-        className="absolute top-16 right-4 z-[400] bg-[#0B0F19]/85 border border-slate-700/80 px-2.5 py-1.5 rounded-lg text-[11px] font-mono text-slate-400 shadow-lg backdrop-blur-md pointer-events-none hidden"
+        className="absolute top-16 right-24 z-[400] t-mono tabular-nums pointer-events-none hidden px-2.5 py-1"
+        style={{
+          background: 'var(--panel)',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--radius)',
+          fontSize: 10,
+          color: 'var(--ink-3)',
+        }}
       >
-        <span className="text-slate-500">LAT: </span>
-        <span className="text-slate-200 tabular-nums" data-lat="">—</span>
-        <span className="text-slate-500 ml-2">LON: </span>
-        <span className="text-slate-200 tabular-nums" data-lng="">—</span>
+        <span style={{ color: 'var(--ink-3)' }}>LAT: </span>
+        <span style={{ color: 'var(--amber)' }} data-lat="">—</span>
+        <span style={{ color: 'var(--ink-3)', marginLeft: 8 }}>LON: </span>
+        <span style={{ color: 'var(--amber)' }} data-lng="">—</span>
       </div>
 
-      {/* Polygon hover inspector card — shown only when hovering a polygon */}
+      {/* SLOT-16: Lock-on tag — polygon hover inspector */}
       <div
         ref={inspectorRef}
         className="pointer-events-none absolute z-[450] hidden"
         style={{ left: 0, top: 0 }}
       >
         {hoveredEvidence && (
-          <div className="bg-[#0B0F19]/92 border border-slate-700/90 rounded-xl p-2.5 shadow-2xl backdrop-blur-md text-xs font-mono text-slate-200 w-56 space-y-1.5 ring-1 ring-white/10">
-            <div className="flex items-center justify-between">
-              <span className="text-amber-300 font-bold uppercase text-[11px]">
-                {hoveredEvidence.change_type.replace('_', ' ')}
-              </span>
-              <span className="text-emerald-400 text-[10px] bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40">
-                {(hoveredEvidence.confidence.overall * 100).toFixed(0)}%
-              </span>
-            </div>
-            <div className="text-white font-bold text-sm">
-              {hoveredEvidence.measurement.area_label}
-              <span className="text-[10px] font-normal text-slate-400 ml-1">
+          <div
+            className="corner-ticks"
+            style={{
+              background: 'var(--panel)',
+              border: '1px solid var(--amber)',
+              borderRadius: 'var(--radius)',
+              padding: 10,
+              width: 220,
+              transform: 'skewX(-2deg)',
+            }}
+          >
+            <div style={{ transform: 'skewX(2deg)' }}>
+              {/* Amber left bar */}
+              <div
+                className="absolute left-0 top-2 bottom-2"
+                style={{ width: 3, background: 'var(--amber)', borderRadius: '0 2px 2px 0' }}
+              />
+
+              <div className="flex items-center justify-between mb-1">
+                <span className="t-tag" style={{ color: 'var(--amber)', fontSize: 10 }}>
+                  TARGET: {hoveredEvidence.change_type.replace('_', ' ').toUpperCase()}
+                </span>
+                <span
+                  className="t-tag tabular-nums"
+                  style={{
+                    padding: '1px 4px',
+                    background: 'var(--measured-fill)',
+                    border: '1px solid var(--measured-border)',
+                    color: 'var(--measured-text)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 9,
+                  }}
+                >
+                  {(hoveredEvidence.confidence.overall * 100).toFixed(0)}%
+                </span>
+              </div>
+
+              <div className="t-figure tabular-nums" style={{ color: 'var(--amber)', fontSize: 22 }}>
+                {hoveredEvidence.measurement.area_label}
+              </div>
+
+              <div className="t-mono mt-1" style={{ color: 'var(--ink-3)', fontSize: 9 }}>
                 ({hoveredEvidence.measurement.area_m2.toLocaleString()} m²)
-              </span>
-            </div>
-            <div className="text-[10px] text-slate-500 border-t border-slate-800 pt-1 flex justify-between">
-              <span>{beforeDate} → {afterDate}</span>
-              <span className="text-indigo-300">Click to inspect</span>
+              </div>
+
+              <div className="t-mono mt-1.5 pt-1.5 flex justify-between" style={{ borderTop: '1px solid var(--line)', color: 'var(--ink-3)', fontSize: 9 }}>
+                <span>{beforeDate} → {afterDate}</span>
+                <span style={{ color: 'var(--amber)' }}>CLICK TO INSPECT</span>
+              </div>
             </div>
           </div>
         )}

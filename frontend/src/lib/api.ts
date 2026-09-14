@@ -103,17 +103,12 @@ async function safeFetch<T>(
         };
       }
       if (err.code === 'NO_RESULTS') {
-        return {
-          kind: 'empty',
-          message: err.message,
-        };
+        return { kind: 'empty', message: err.message };
       }
-      return {
-        kind: 'error',
-        code: err.code,
-        message: err.message,
-        traceId: err.trace_id,
-      };
+      if (fallbackData !== undefined) {
+        return { kind: 'ok', data: fallbackData };
+      }
+      return { kind: 'error', code: err.code, message: err.message, traceId: err.trace_id };
     }
 
     if (!res.ok) {

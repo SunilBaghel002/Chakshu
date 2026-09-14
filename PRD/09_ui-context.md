@@ -1,593 +1,300 @@
-# PRD 9 — UI Context and Design System
+# PRD 9 — UI Context and Design System (v2 · INTELLIGENCE CONSOLE)
 
-> **Audience:** Claude Code, frontend developers, and anyone writing user-facing copy.
-> **Status:** Authoritative. **Do not invent colours, spacing, type, or component styling.** Everything is specified here. If something is missing, add it here first, then use it.
+> **Audience:** Claude Code, frontend developers, anyone writing user-facing copy.
+> **Status:** Authoritative. **Supersedes v1 (the light "paper instrument" theme) in full**, by user directive. Do not implement from memory of v1.
+> **Visual source of truth:** [`../brand/ui-prototype-intel.html`](../brand/ui-prototype-intel.html) — a working, self-contained prototype of this system including every map hover animation. Open it in a browser; match it.
 > **Depends on:** `project-overview.md`, `feature-specs.md`, `data-contracts.md`
+
+---
+
+## 0. Status and the reversal, stated plainly
+
+v1 specified a light, warm-paper interface and argued against dark. **The user has reversed that.** The target is now a **raw intelligence-agency / mission-control console**: near-black field, amber dossier accents, condensed and monospace type, skewed panel bars, huge ghost sector numerals, dot grids, scanlines, and aggressive hover lock-on behaviour over the map — in the visual family of the reference frames (spy-thriller title-sequence UIs and ISRO/NASA-style control rooms).
+
+This file is rewritten accordingly. Everything in v1 that was *not* about colour/light is **carried forward unchanged**, because it protects the project's credibility rather than its mood:
+
+- the `MEASURED` / `INFERRED` / `UNVERIFIED` provenance encodings (now restyled for dark, §2.4)
+- "colour is never the only signal" and the greyscale test (§8)
+- tabular numerals everywhere (§3)
+- the verbatim copy strings in `feature-specs.md` (§10)
+- offline constraints: self-hosted fonts, inline SVG icons, bundled basemap (§11)
+- the five-state component rule `loading | empty | error | capability_notice | ok` (§5)
+
+**One caution, once, then we build.** The reference frames are *cinema*: they sacrifice legibility for mood (tiny type, 4° panel skews, 6%-opacity labels). A judge must read your suppression counts at arm's length on a washed-out projector. So: take the reference's *vocabulary* — amber dossier bars, dot grids, ghost numerals, lock-on brackets, monospace tags — but keep type sizes, contrast and alignment at instrument grade. **Mission-control, not movie-villain.** Where the two conflict, legibility wins, and the prototype shows where that line sits.
 
 ---
 
 ## 1. Design thesis
 
-**Chakshu** (चक्षु) means *the eye*. The tagline is *"The eye that never blinks — from orbit to evidence."*
+> ### The screen is a console. Every element has a fixed, named slot. Nothing floats, nothing wanders, and nothing moves unless the operator moves first.
 
-The interface is built on one idea:
+Three ideas govern everything:
 
-> ### The map is the pupil. Everything else is the iris, arranged around it, getting quieter as it goes outward.
-
-Concretely, that means luminance falls off from the centre of the screen. The imagery viewport is the brightest, highest-contrast, most saturated region. The panels around it are progressively calmer. The outer chrome — navigation, headers, status bars — is nearly invisible.
-
-The eye is drawn to the satellite imagery because that is where the evidence is, and nowhere else. **Nothing in the chrome competes with it.** No gradient headers, no colourful nav icons, no decorative panels.
-
-### Light, not dark
-
-This is a **light interface**. Deliberately, and for reasons worth stating because a judge may ask:
-
-1. **Long analytical sessions.** An imagery analyst reviews a queue for hours. A dark UI with bright satellite imagery inside it produces a high-contrast frame around every panel, which causes more eye strain than the reverse, not less.
-2. **Printed and projected output.** Reports get printed. Demos get projected onto washed-out conference-room screens. Light survives both; dark dies on a projector.
-3. **It reads as a document, not a game.** A light, paper-toned, typographically careful interface signals *official record*. A dark UI with neon accents signals *hacker demo*. For a Ministry of Defence deliverable with an audit trail, the first framing is worth real marks.
-4. **It makes the imagery the only colourful thing on screen.** Satellite true-colour is vivid. On a neutral light background it sings. On a dark background it competes with every accent colour you chose.
-
-### A note on the "eye of god" framing
-
-The iris geometry is central to this design and it is genuinely good. But be deliberate about how far to push the *all-seeing eye* idea.
-
-An unblinking omniscient eye watching a population is a surveillance symbol with a long and uncomfortable history — the Eye of Providence, the panopticon, and a great deal of dystopian visual language. For a defence imagery product, leaning hard into that framing risks reading as something the panel would rather not fund.
-
-The Sanskrit itself does not carry that baggage. **चक्षु is simply sight, perception, the faculty of seeing** — it appears throughout Vedic and Upanishadic usage as a neutral word for vision. So: keep the name, keep the iris geometry, keep the luminous clarity. Frame it as **a precise scientific instrument that does not look away**, not as an eye watching people.
-
-Practical translation of that principle:
-
-| ✅ Do | ❌ Don't |
-|---|---|
-| Iris rings as focus, precision, and aperture | A literal staring eyeball as a mascot or logo |
-| Scan pulses radiating outward from a selected area | An eye graphic that tracks the cursor |
-| "The eye that never blinks" applied to *coverage* — continuous monitoring that discards nothing silently | The same phrase applied to *watching people* |
-| Calm, clinical, instrument-panel luminosity | Ominous dark vignettes, glowing red reticles |
-
-If a design choice makes the product feel like it is watching the user or the population, cut it.
+1. **Fixed slots.** An intelligence console is trusted because the operator's hand knows where everything is before the eyes look. §4 assigns every element a permanent slot ID (`SLOT-…`). A component never appears in a different slot on a different screen.
+2. **Amber is the operator's attention.** One accent family (amber/gold) marks anything the system wants the eye on: the live reticle, a locked-on target, an active tab, a measured figure. Everything else is grey-on-black. If two amber things compete in one viewport, one of them is wrong.
+3. **The imagery is the only photograph.** Satellite imagery is the sole continuous-tone, full-colour region on screen. All chrome is flat, dark, and graphic. This is what makes the map read as *evidence* and the chrome read as *instrument*.
 
 ---
 
 ## 2. Colour
 
-### 2.1 The base — warm paper, not white
-
-Pure white (`#FFFFFF`) behind hours of analysis is harsh, and it makes satellite imagery look flat by comparison. The base is a warm off-white.
+### 2.1 Base — near-black, slightly cool, never pure black
 
 | Token | Hex | Use |
 |---|---|---|
-| `--bg` | `#FAF8F4` | App background. Warm paper. |
-| `--surface` | `#FFFFFF` | Cards, panels, popovers — the raised layer |
-| `--surface-sunken` | `#F3F0E9` | Wells, code blocks, insets, table headers |
-| `--surface-hover` | `#F6F3ED` | Hover on any interactive row |
-| `--surface-active` | `#EFEBE2` | Pressed / selected row |
-| `--map-well` | `#EDEFF1` | **The frame around the imagery viewport — see §2.2** |
+| `--bg` | `#0B0D10` | App field |
+| `--bg-grid` | `rgba(240,180,95,0.055)` | Dot-grid + sector lines over `--bg` |
+| `--panel` | `#121519` | Panels, dossier, rails |
+| `--panel-2` | `#171B21` | Raised insets, tabs, wells |
+| `--panel-3` | `#1E242B` | Hover wells, selected rows |
+| `--well` | `#0E1114` | Map viewport well (imagery sits here) |
+| `--line` | `#262C34` | 1 px borders, dividers |
+| `--line-strong` | `#39424D` | Inputs, panel frames, table rules |
 
-### 2.2 The map well is cool, the chrome is warm — this is not an accident
+Pure `#000` is banned: it crushes the dot grid and makes imagery look pasted-on.
 
-Satellite true-colour imagery is a **cool, neutral** image. Put it inside a warm paper UI and it clashes: the surroundings look yellow and the imagery looks blue.
-
-So the imagery viewport sits in a **cool neutral well** (`--map-well`, `#EDEFF1`), and everything else is warm. The two never touch directly — there is always a 1 px border and usually 8–16 px of padding between them.
-
-The effect is that the map looks like a photograph mounted on paper. That is exactly the intended feeling.
-
-### 2.3 Ink
+### 2.2 Ink
 
 | Token | Hex | Use | Contrast on `--bg` |
 |---|---|---|---|
-| `--ink` | `#1A1712` | Headings, primary text, numbers | 16.1:1 (AAA) |
-| `--ink-2` | `#57503F` | Body text, secondary labels | 8.1:1 (AAA) |
-| `--ink-3` | `#8A8272` | Tertiary, placeholders, metadata | 3.6:1 (AA large / non-text only) |
-| `--ink-inverse` | `#FAF8F4` | Text on dark fills | — |
+| `--ink` | `#EDEAE3` | Headings, measured figures, primary text | 15.6:1 (AAA) |
+| `--ink-2` | `#A6ADB5` | Body, secondary labels | 8.0:1 (AAA) |
+| `--ink-3` | `#6B7480` | Tertiary, placeholders, axis labels | 4.1:1 (AA large / non-text) |
+| `--ink-ghost` | `rgba(237,234,227,0.06)` | Ghost sector numerals only | — |
 
-`--ink-3` **must never be used for body text or for any number.** Metadata and icons only.
+`--ink-3` never carries a number or body copy.
 
-### 2.4 Borders
-
-| Token | Hex | Use |
-|---|---|---|
-| `--line` | `#E4DFD4` | Default 1 px border, dividers |
-| `--line-strong` | `#C9C2B2` | Inputs, tables, anything the user must find |
-| `--line-focus` | `#8A4B12` | Focus ring inner edge |
-
-### 2.5 The iris — brand accent
-
-A copper-amber, taken from the human iris. Used sparingly: **focus, active state, and the single primary action on any screen.** If it appears more than twice in a viewport, something is wrong.
+### 2.3 Accent — amber dossier family
 
 | Token | Hex | Use |
 |---|---|---|
-| `--iris-900` | `#5C3009` | Deepest ring; text on light iris fills |
-| `--iris-700` | `#8A4B12` | Primary button, active nav, focus ring |
-| `--iris-500` | `#C67C1E` | Secondary ring, hover on primary, progress |
-| `--iris-300` | `#F0B45F` | Tertiary ring, chart accent |
-| `--iris-50` | `#FDF2DF` | Selected-row wash, badge background |
+| `--amber` | `#F0B45F` | Primary accent: reticle, lock-on brackets, active tab, measured figures, dossier bars |
+| `--amber-hot` | `#F5C15C` | Hover/active on amber elements; sweep highlights |
+| `--amber-deep` | `#8A4B12` | Filled amber bars' text-adjacent shade; disabled amber |
+| `--amber-wash` | `rgba(240,180,95,0.12)` | Selected-row wash, tag backgrounds |
+| `--teal` | `#35B8C0` | Orbital/satellite metadata, LIVE indicator, "clear pass" dots |
+| `--teal-wash` | `rgba(53,184,192,0.12)` | Teal metadata wash |
 
-### 2.6 The orbit — data accent
+Amber = *the operator's attention and the ground truth*. Teal = *the satellite / live data path*. Keep them semantically separate, as in v1.
 
-A deep teal, for anything that refers to the *satellite* rather than the *ground*: scene dots, ingestion status, sensor metadata, orbital paths.
+### 2.4 Semantic states — the trust encodings, restyled for dark
 
-| Token | Hex | Use |
-|---|---|---|
-| `--orbit-700` | `#0F5F63` | Scene markers, sensor chips |
-| `--orbit-500` | `#1B8A8F` | Links, secondary data accents |
-| `--orbit-100` | `#D6ECEE` | Wash behind orbital metadata |
+Border style remains the mandatory secondary encoding. Colour alone is never the signal.
 
-**Iris = the ground and the user's attention. Orbit = the satellite and the data provenance.** Keep them semantically separated. Do not use teal for a primary button.
-
-### 2.7 Evidence states — the semantic core
-
-These carry the project's central promise and must never be repurposed.
-
-| State | Fill | Border | Text | Chip style |
+| State | Fill | Border | Text | Glyph |
 |---|---|---|---|---|
-| `MEASURED` | `#E6F2EA` | `#1F6B3A` solid 1.5 px | `#1F6B3A` | Solid border, filled dot |
-| `INFERRED` | `#FBF0DA` | `#8A5A0B` dashed 1.5 px | `#7A4E08` | Dashed border, hollow dot |
-| `UNVERIFIED` (model track) | `#FFFFFF` | `#A8552F` dashed 1.5 px | `#8A4222` | Dashed border, hollow dot, `?` glyph |
-| `CONFIRMED` | `#E6F2EA` | `#1F6B3A` solid | `#1F6B3A` | Solid + check glyph |
-| `REJECTED` | `#F8E9E7` | `#8C2F27` solid | `#8C2F27` | Solid + cross glyph |
-| `SUPPRESSED` | `#EFEEE9` | `#6B655B` dotted 1.5 px | `#57503F` | Dotted border, struck-through dot |
+| `MEASURED` | `rgba(47,191,113,0.12)` | `#2FBF71` solid 1.5 px | `#5AD79A` | filled dot |
+| `INFERRED` | `rgba(240,180,95,0.10)` | `#F0B45F` **dashed** 1.5 px | `#F0B45F` | hollow dot |
+| `UNVERIFIED` | transparent | `#6B7480` **dashed** 1.5 px | `#A6ADB5` | hollow dot + `?` |
+| `CONFIRMED` | `rgba(47,191,113,0.12)` | `#2FBF71` solid | `#5AD79A` | check |
+| `REJECTED` | `rgba(229,72,77,0.12)` | `#E5484D` solid | `#F2767B` | cross |
+| `SUPPRESSED` | `rgba(107,116,128,0.10)` | `#6B7480` **dotted** 1.5 px | `#A6ADB5` | struck dot |
 
-**Border style is a mandatory secondary encoding.** Colour alone is never the signal — see §8. A colourblind user must be able to tell `MEASURED` from `INFERRED` from the border and the dot alone.
+Status: success `#2FBF71`, warning `#F0B45F`, danger `#E5484D`, info `#35B8C0`, neutral `#6B7480`.
 
-### 2.8 Land-cover palette (Tracks 1 and 2)
+### 2.5 Data palettes (unchanged semantics, retuned for dark)
 
-Fixed, keyed by canonical class. Defined once in `frontend/src/lib/palette.ts`. **Never generated at runtime, never chosen by a model.**
+Land cover, object class and change-type colour maps stay in `frontend/src/lib/palette.ts`, keyed by the `data-contracts.md` enums, but use the **dark-retuned** values below so they survive on a near-black map. Track 3 boxes remain **dashed**, Tracks 1/2 **solid**, and the legend still states it in words.
 
-| Class | Hex | Greyscale value | Secondary mark |
-|---|---|---|---|
-| `water` | `#1B6FA8` | 26% | ── solid |
-| `vegetation` | `#2E7D4F` | 33% | ▨ 45° hatch |
-| `crop` | `#7A9A2E` | 45% | ▦ grid |
-| `built` | `#A8552F` | 30% | ■ solid fill |
-| `bare` | `#B08948` | 47% | ▧ reverse hatch |
-| `snow` | `#9FB3C0` | 68% | ┄ dotted |
-| `unclassified` | `#8A8272` | 40% | ░ stipple |
+| Class | Hex | | Class | Hex |
+|---|---|---|---|---|
+| `water` | `#4FA3E0` | | `construction` | `#F0B45F` |
+| `vegetation` | `#4FB37A` | | `clearance` | `#D9A441` |
+| `crop` | `#A8C256` | | `vegetation_gain` | `#4FB37A` |
+| `built` | `#E08A5A` | | `water_gain` | `#4FA3E0` |
+| `bare` | `#C9A227` | | `water_loss` | `#7FA8C4` |
+| `snow` | `#B9C6D2` | | `demolition` | `#8A93A0` |
+| `unclassified` | `#6B7480` | | `road` / `other` | `#A6ADB5` |
 
-Fill polygons at **35% opacity** over imagery. Stroke at 100%, 1.5 px.
+Object classes: `building #E08A5A`, `building_cluster #F0B45F`, `vehicle #9B7BE0`, `aircraft #5A9BE0`, `ship #4FA3E0`, `ship_large #2E7BB5`, `storage_tank #D9A441`, `swimming_pool #4FD0E0`, `tower #B07BE0`, `container #E07B5A`, `road #A6ADB5`.
 
-### 2.9 Object-class palette (Track 3)
-
-| Class | Hex |
-|---|---|
-| `building` | `#A8552F` |
-| `building_cluster` | `#C2703F` |
-| `vehicle` | `#6B4E9E` |
-| `aircraft` | `#2E6DA4` |
-| `ship` | `#1B6FA8` |
-| `ship_large` | `#14557F` |
-| `storage_tank` | `#8A6D1F` |
-| `swimming_pool` | `#3FA9C9` |
-| `tower` | `#7A4B8C` |
-| `container` | `#B0563A` |
-| `road` | `#57503F` |
-
-Track 3 boxes are **always dashed**, Tracks 1 and 2 **always solid** (`feature-specs.md` §B3). The legend states this in words, not just by example:
-
-> *Solid outline — measured directly from the pixels. Dashed outline — identified by a vision model, not verified.*
-
-### 2.10 Change-type palette
-
-| Type | Hex |
-|---|---|
-| `construction` | `#A8552F` |
-| `demolition` | `#6B655B` |
-| `clearance` | `#8C6A1F` |
-| `vegetation_gain` | `#2E7D4F` |
-| `water_gain` | `#1B6FA8` |
-| `water_loss` | `#7FA8C4` |
-| `road` | `#57503F` |
-| `expansion` | `#C2703F` |
-| `contraction` | `#8A8272` |
-| `other` | `#8A8272` |
-
-### 2.11 Status
-
-| State | Hex |
-|---|---|
-| success | `#1F6B3A` |
-| warning | `#8A5A0B` |
-| danger | `#8C2F27` |
-| info | `#0F5F63` |
-| neutral | `#6B655B` |
-
-**There is no `#FF0000` and no `#00FF00` anywhere in this system.** Saturated primaries look like a debugging overlay, not an instrument.
+Polygon rendering over imagery: stroke at 100% 1.5 px + a 1 px **black inner halo** (on dark UI the halo is dark, not white) so edges stay legible over bright sand and dark water alike. Fill 30%.
 
 ---
 
 ## 3. Typography
 
-### 3.1 Offline constraint — read this first
-
-The finale demo runs with the network disabled. **A Google Fonts `<link>` will fail and fall back unpredictably.** Therefore:
-
-- **Self-host** any webfont, or use the system stack.
-- The system stack below is the default and requires nothing. Self-hosting is a P2 enhancement.
+Offline constraint unchanged: **self-host or system stack; no CDN fonts.**
 
 ```css
---font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-           "Helvetica Neue", "Noto Sans", "Noto Sans Devanagari", sans-serif;
---font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-             "Liberation Mono", monospace;
+--font-cond: "Bahnschrift", "DIN Alternate", "Franklin Gothic Medium",
+             "Arial Narrow", "Inter", sans-serif;      /* display + big numerals */
+--font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo,
+             Consolas, "Liberation Mono", monospace;   /* dossier tags, IDs, coords */
+--font-ui:   "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto,
+             "Noto Sans", "Noto Sans Devanagari", sans-serif;  /* body */
 ```
 
-`Noto Sans Devanagari` is in the stack because **चक्षु must render correctly.** Verify it on the demo machine — Devanagari shaping is not guaranteed on every Linux install. If it fails, drop the Devanagari lockup on that machine rather than shipping broken glyphs.
+`Noto Sans Devanagari` stays in the stack so **चक्षु** renders; verify on the demo machine.
 
-### 3.2 Scale
+| Token | Size / LH | Family | Weight / case | Use |
+|---|---|---|---|---|
+| `--t-ghost` | 96 / 1 | cond | 700 | Ghost sector numerals, `--ink-ghost` |
+| `--t-display` | 26 / 32 | cond | 700, +0.06em | Screen titles |
+| `--t-h1` | 18 / 24 | cond | 700, +0.08em, UPPER | Panel titles, dossier headers |
+| `--t-h2` | 15 / 20 | cond | 700, +0.06em, UPPER | Section headings |
+| `--t-tag` | 10 / 14 | mono | 600, +0.14em, UPPER | Dossier tags, slot labels, chips |
+| `--t-mono` | 12 / 17 | mono | 400 | IDs, checksums, coords, SQL, JSON |
+| `--t-body` | 13.5 / 20 | ui | 400 | Body, sentence case |
+| `--t-body-strong` | 13.5 / 20 | ui | 600 | Emphasised body |
+| `--t-figure` | 30 / 34 | cond | 700, tabular | The measured figure (area, count) |
 
-Base 16 px. A 1.2 ratio — tight, because this is a dense instrument panel, not a marketing page.
+Rules carried from v1: **tabular-nums on every number**; dates as `9 Jun 2024` in prose and ISO in monospace contexts; the measured figure is the most prominent element in any evidence block; **no number ever animates in a loop** — count-up on reveal only (§6 M7).
 
-| Token | Size / line-height | Weight | Use |
-|---|---|---|---|
-| `--t-display` | 28 / 34 | 600 | Screen titles only |
-| `--t-h1` | 22 / 28 | 600 | Panel titles |
-| `--t-h2` | 18 / 24 | 600 | Section headings |
-| `--t-h3` | 15 / 20 | 600 | Card titles, group labels |
-| `--t-body` | 14 / 20 | 400 | Default body |
-| `--t-body-strong` | 14 / 20 | 600 | Emphasised body |
-| `--t-small` | 12 / 16 | 400 | Metadata, captions, table cells |
-| `--t-micro` | 11 / 14 | 500 | Chips, badges, axis labels — **uppercase, +0.04em tracking** |
-| `--t-mono` | 13 / 18 | 400 | IDs, checksums, coordinates, SQL, JSON |
-
-### 3.3 Numbers
-
-**Every numeric value uses `font-variant-numeric: tabular-nums`.** Areas, dates, counts, confidence scores, percentages. Non-negotiable — in a review queue of 200 rows, proportional figures make columns unreadable and make change invisible.
-
-Large measurements (`area_label`, `18.43 ha`) use `--t-h2` with `tabular-nums` and `font-weight: 600`. **The number is the most visually prominent thing in an evidence card**, above the title. That ordering is deliberate: this product's value is its measurements.
-
-### 3.4 Dates
-
-Display format: `9 Jun 2024`. Never `06/09/2024` — ambiguous between DD/MM and MM/DD, and the team spans both conventions. ISO `2024-06-09` only in monospace contexts (trace, export, audit).
+Uppercase monospace is for *labels and tags*, never for paragraphs. Body copy stays sentence case — a wall of uppercase is unreadable and reads as costume, not console.
 
 ---
 
-## 4. Spacing, shape, elevation
+## 4. Layout — the console grid (every element has a slot)
 
-### 4.1 Spacing — 4 px base
+Fixed viewport grid. No reflow of slots between screens; screens change *content within* slots, not the slots themselves.
 
-`2 · 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64`
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│ SLOT-00  DATA-STREAM MARQUEE                                    18 px      │
+├────────────────────────────────────────────────────────────────────────────┤
+│ SLOT-01  COMMAND BAR: lockup · AOI · stat:area · stat:passes … nav · LIVE 56│
+├────────────────────────────────────────────────────────────────────────────┤
+│ SLOT-02  TEMPORAL BAR: [A date + year chips + DETECT + SWAP + presets]     │
+│                              [B date + year chips]              44 px      │
+├────┬───────────────────────────────────────────────────┬───────────────────┤
+│SLOT│ SLOT-10 MAP STAGE (the well)                      │ SLOT-20 DOSSIER   │
+│-05 │   overlays:                                       │  20 header+VERIFIED│
+│rail│   -11 sector tag (TL)   -12 zoom/coord (TR)       │  21 tabs           │
+│56px│   -13 legend (BL)       -14 coord readout (BR)    │  22 measured block │
+│    │   -15 reticle (cursor)  -16 lock-on tag (target)  │  23 triptych       │
+│    │   -17 ghost numeral     -18 swipe handle          │  24 confidence     │
+│    ├───────────────────────────────────────────────────┤  25 actions        │
+│    │ SLOT-30 TIMELINE STRIP (dots, play, years)  72 px │  26 trace/suppr    │
+├────┴───────────────────────────────────────────────────┴───────────────────┤
+│ SLOT-40  STATUS LINE: job state · last action · trace_id        24 px      │
+└────────────────────────────────────────────────────────────────────────────┘
+```
 
-Tokens: `--s-1` through `--s-9`. **No arbitrary values.** If you need 13 px, use 12 or 16.
+| Slot | Width / height | Contents (permanent) |
+|---|---|---|
+| `SLOT-00` | full × 18 | Slow marquee: `THEIA DATA STREAM: DRONE // TPOD:02 // AI:ENHANCED · RECON//02 :: //GMT · …` Pauses on hover. |
+| `SLOT-01` | full × 56 | Iris lockup + `चक्षु (Chakshu)` + `MOD · ISRO` tag; AOI selector; measured-area stat; clear-pass stat; nav tabs (MAP / REVIEW / UPLOAD / ASK); `LIVE API` indicator with pulsing teal dot. |
+| `SLOT-02` | full × 44 | Date-A group, year chips, `DETECT CHANGES` (amber filled, skewed bar), `SWAP`, presets; Date-B group, year chips. |
+| `SLOT-05` | 56 × main | Vertical icon rail: MAP, SEARCH, UPLOAD, REVIEW, AUDIT. Active = amber left bar + amber-wash. |
+| `SLOT-10` | flex | The imagery well. Cool-neutral `--well`, 1 px `--line-strong` frame, corner ticks. |
+| `SLOT-11..18` | overlays | Fixed corners as diagrammed. Never overlap each other; each is ≤ 220 px wide. |
+| `SLOT-20..26` | 380 × main | The dossier, top to bottom in this exact order. Collapses to 48 px rail below 1280 px viewport. |
+| `SLOT-30` | stage × 72 | Timeline: continuous date axis, usable dots teal-filled, unusable hollow red with reason on hover, compared dates ringed amber, onset interval as amber-wash band, PLAY. |
+| `SLOT-40` | full × 24 | Job state, last action, current `trace_id` (monospace, copyable). |
 
-| Pattern | Value |
-|---|---|
-| Panel padding | 16 |
-| Card padding | 12 |
-| Gap between cards | 8 |
-| Gap between panel sections | 24 |
-| Inline icon-to-label gap | 8 |
-| Table cell padding | 8 vertical, 12 horizontal |
+**Rule:** a new UI element must be assigned a slot in this table (edit this file) before it is built. Unslotted elements do not ship. This is what "a particular place for every element" means operationally.
 
-### 4.2 Radius
+---
+
+## 5. Components (restyled)
+
+- **Dossier bars.** Section headers sit on a skewed amber bar: `transform: skewX(-10deg)`, fill `--amber`, text `--amber-deep` at `--t-tag`, with a 6 px un-skewed square "tab" at the left edge (as in the reference frames). Body content below is *not* skewed.
+- **Panels.** `--panel` fill, 1 px `--line` border, 4 px radius (consoles are crisp, not rounded), plus **corner ticks**: 8 px amber L-marks at top-left and bottom-right via pseudo-elements.
+- **Chips / tags.** `--t-tag` monospace uppercase, 1 px border in the semantic colour, 2 px radius, 4 px × 8 px padding.
+- **Buttons.** Primary = amber filled bar, skewX(-10deg), text `--amber-deep` 700; hover = `--amber-hot` + a 120 ms diagonal sweep highlight. Secondary = transparent, 1 px `--line-strong`, `--ink-2`; hover = border `--amber`, text `--amber`. Destructive = red outline. All ≥ 36 px tall. Focus ring 2 px `--amber`, offset 2.
+- **Evidence triptych.** Three 1:1 wells labelled `BEFORE / MASK / AFTER` in `--t-tag`; 1 px `--line-strong` frames; the active one gets an amber frame + corner ticks; captions in `--t-mono` with scene ID, sensor, cloud %.
+- **Confidence.** The five-arc iris gauge from v1 survives, restyled: arcs in amber ramp (`--amber-deep → --amber`), pupil shows overall in `--t-tag`; uncalibrated renders at 40% opacity with a dotted outer ring and `UNCALIBRATED` tag. Beside it, the five components as monospace rows with values.
+- **Review queue rows.** Monospace index, condensed target type, tabular area, right-aligned confidence; hover = row shifts 2 px right + left amber bar grows 0→3 px (120 ms); selected = `--amber-wash` + amber bar.
+- **Empty / loading / error / capability_notice.** Same five-state rule as v1. Empty = the out-of-focus iris in `--line-strong` at 40% with the honest message; loading = skeleton wells in `--panel-2` plus a single scan sweep (not a spinner); error = red frame + code in monospace + copyable `trace_id`; capability notice = amber-wash panel with the aperture icon and the **verbatim** `feature-specs.md` copy, never red.
+
+---
+
+## 6. Map hover and animation specification  ← the priority ask
+
+All map interactions live in `frontend/src/lib/map-fx.ts` as one module. Coordinates are cursor→geo via the AOI bbox. Every effect below is implemented in the prototype; match timings exactly.
+
+**M1 — Cursor reticle + live coordinate readout.**
+A full-stage crosshair (1 px `--amber` at 22% opacity, one horizontal + one vertical line through the cursor) plus a 28 px iris reticle ring (2 px `--amber`, four 6 px gap notches) that follows the cursor with a 60 ms lerp lag. `SLOT-14` readout updates `LAT: 28.1395° N / LON: 77.7612° E` in `--t-mono` at pointer-move (throttled to rAF). On pointer-leave the reticle and crosshair fade over 140 ms. *This is the "the eye is looking" behaviour; it must feel attached, never floaty — cap the lag.*
+
+**M2 — Scan sweep on stage enter.**
+On pointer-enter, a 2 px `--amber` horizontal line with a 24 px gradient trail sweeps top→bottom once over 900 ms (`linear`), and the dot grid brightens under the cursor via a 240 px radial mask that tracks the pointer. No repeat while the pointer stays inside.
+
+**M3 — Target lock-on (polygon hover).** *The signature interaction.*
+On hovering a change polygon: (a) stroke goes `--amber-hot` 2 px, fill 30%→45%; (b) four L-shaped corner brackets animate from 12 px outside the bbox to the bbox corners over 160 ms, staggered 30 ms, `cubic-bezier(0.22,1,0.36,1)`, in `--amber`; (c) a dossier tag panel (`SLOT-16`) slides in 8 px from the bbox top-left over 140 ms, skewed −2°, amber left bar, containing: `TARGET: CONSTRUCTION // ID c67d562`, the measured area with a **400 ms count-up** (`--t-figure`), `MEASURED — UTM 43N` chip, confidence %, and onset date; (d) a 1 px leader line from the bracket to the tag. On leave: brackets retract and tag slides out over 120 ms. Hovering the *tag* keeps the lock (no flicker at the boundary).
+
+**M4 — Sector grid hover.**
+The stage carries a faint sector grid (8 × 5). The hovered cell's dots brighten to `--amber` 18% and `SLOT-11` shows `SEC 04·B` in `--t-tag`. Cells are computed from cursor position; no DOM per cell (canvas or CSS background-position).
+
+**M5 — Timeline dot hover.**
+Dot scales 8→12 px over 100 ms; tooltip (monospace) shows `09 JUN 2024 · 2.5% CLOUD` or, for unusable dots, the reason (`MONSOON · CLOUD 78%`). Compared dates keep their amber ring.
+
+**M6 — Panel and row hover.**
+Dossier rows and queue rows: 2 px right shift + left amber bar 0→3 px over 120 ms. Tabs: amber underline grows from centre over 140 ms. Buttons: diagonal sweep highlight 120 ms (§5).
+
+**M7 — Number tickers.**
+Any measured figure counts up over 400 ms (`ease-out`) on first reveal and on value change. **Never loops, never on inferred values** (inferred values appear instantly with their `INFERRED` chip — animating a guess would dress it as a measurement).
+
+**M8 — Live indicators.**
+`LIVE API` dot pulses opacity 1→0.35 over 2 s infinite. `SLOT-00` marquee translates over 60 s linear infinite, `animation-play-state: paused` on hover.
+
+**M9 — Ambient scanline.**
+A 1 px `rgba(240,180,95,0.05)` line traverses the viewport vertically every 8 s. Subtle enough to be felt, not seen.
+
+**M10 — Screen/panel entry.**
+On screen change: dossier slides in 12 px from right over 220 ms; stage fades 140 ms; ghost numeral scales 0.96→1 over 300 ms. Stagger dossier sections 30 ms.
+
+**Reduced motion:** `prefers-reduced-motion` disables M2, M8, M9, M10 and the M1 lag (snap), and makes M7 instant. M3 brackets appear without animation. The console remains fully usable.
+
+---
+
+## 7. Motion tokens
 
 | Token | Value | Use |
 |---|---|---|
-| `--r-sm` | 4 px | Chips, badges, inputs |
-| `--r-md` | 8 px | Cards, buttons, popovers |
-| `--r-lg` | 12 px | Panels, modals |
-| `--r-full` | 9999 px | The iris mark, circular controls, the pupil dot |
+| `--m-instant` | 80 ms ease-out | hover tints, focus |
+| `--m-fast` | 120–160 ms `cubic-bezier(0.22,1,0.36,1)` | brackets, rows, tags, sweeps |
+| `--m-base` | 220 ms same | panel/screen entry |
+| `--m-scan` | 900 ms linear | M2 sweep |
+| `--m-ambient` | 2 s / 8 s / 60 s | M8 / M9 / marquee |
+| `--m-tick` | 400 ms ease-out | M7 count-up |
 
-Nothing exceeds 12 px except circular elements. Large radii read as consumer-app; this is an instrument.
-
-### 4.3 Elevation — borders first, shadows barely
-
-On a light theme, a 1 px border does most of the work. Shadows are subtle and warm, never grey-black.
-
-| Level | Treatment | Use |
-|---|---|---|
-| `--e-0` | none | Flat elements inside a panel |
-| `--e-1` | 1 px `--line` | Cards, table rows, inputs |
-| `--e-2` | 1 px `--line` + `0 1px 2px rgba(26,23,18,0.05)` | Raised cards, hover state |
-| `--e-3` | 1 px `--line-strong` + `0 4px 12px rgba(26,23,18,0.08)` | Popovers, dropdowns |
-| `--e-4` | 1 px `--line-strong` + `0 12px 32px rgba(26,23,18,0.12)` | Modals, the evidence triptych |
-
-**Never** use a shadow without a border. A borderless shadow on a light background looks like a rendering bug.
+Nothing bounces, overshoots or elasticises. A console is damped.
 
 ---
 
-## 5. Layout
+## 8. Accessibility on dark
 
-### 5.1 The three-zone shell
+All v1 rules hold, retuned: AA minimum / AAA body (table in §2.2 satisfies it); colour never sole signal (border styles + glyphs, §2.4); **greyscale test** — screenshot the map in greyscale and confirm every land-cover class and every state chip remains distinguishable; full keyboard operability with `j/k/c/r/e` in the review queue and a visible 2 px amber focus ring everywhere; touch targets ≥ 40 px; no information conveyed by hover alone (every hover tooltip's content also exists in the dossier); `prefers-reduced-motion` honoured (§6).
 
-```
-┌────┬──────────────────────────────────────────┬──────────────┐
-│    │  ┌────────────────────────────────────┐  │              │
-│ R  │  │                                    │  │   CONTEXT    │
-│ A  │  │                                    │  │              │
-│ I  │  │          THE PUPIL                 │  │  Evidence    │
-│ L  │  │      imagery viewport              │  │  Review      │
-│    │  │      (cool neutral well)           │  │  queue       │
-│ 56 │  │                                    │  │  Ask panel   │
-│ px │  │                                    │  │  Trace       │
-│    │  └────────────────────────────────────┘  │              │
-│    │  Timeline strip ───────────────────────  │   380 px     │
-└────┴──────────────────────────────────────────┴──────────────┘
-  ↑                        ↑                          ↑
-quietest            most luminous              calm, information-dense
-```
-
-| Zone | Width | Content | Visual weight |
-|---|---|---|---|
-| **Rail** | 56 px fixed | Icon nav: Map, Search, Upload, Review, Audit | Lowest. 20 px line icons at `--ink-3`, active state gets an `--iris-700` 2 px left bar and `--iris-50` background |
-| **Stage** | flexible, min 640 px | The map or image canvas, plus the timeline strip below it | Highest. The cool well, full-bleed imagery |
-| **Context** | 380 px, collapsible to 48 px | Evidence, review queue, ask, trace | Medium. `--surface` cards on `--bg` |
-
-The stage is never narrower than 640 px. Below 1280 px viewport width the context panel collapses to a slide-over rather than shrinking the stage. **The evidence does not get squeezed to make room for chrome.**
-
-### 5.2 The timeline strip
-
-Fixed at the bottom of the stage, 64 px tall, `--surface` with a `--line` top border.
-
-- One dot per scene, positioned by date on a continuous (not ordinal) axis — **gaps must be visible as gaps.**
-- Usable scenes: filled `--orbit-700`, 8 px. Unusable: hollow `--ink-3`, 8 px, with a dotted outline. Hover shows the reason.
-- The two scenes currently being compared get an `--iris-700` ring, 14 px.
-- Selected change objects project a 1 px `--iris-300` vertical marker at their `first_supported` date.
-- `onset_interval` renders as a shaded `--iris-50` band between two dates, with hatched edges. **Uncertainty is drawn as a width, not hidden.**
-- ▶ PLAY animates the viewport date left to right at 400 ms per scene, with the ring travelling. Honours `prefers-reduced-motion` — see §8.
-
-The unusable dots are the point. A timeline that shows only usable scenes is a timeline that lies about coverage.
-
-### 5.3 Screen inventory
-
-| Screen | Rail icon | Zones used | Primary action |
-|---|---|---|---|
-| **Map** (A1, A5, A6, A7) | ◉ | all three | Analyse |
-| **Search** (A3, A4) | ⌕ | rail + stage (results grid) + context | Search |
-| **Upload** (B1–B4) | ↑ | rail + stage (canvas) + context (metadata, detections) | Upload image |
-| **Review** (A13) | ☰ | rail + context (full width list) + stage (preview) | Confirm / Reject |
-| **Audit** (A14, A15, A12 calibration) | ⛨ | rail + context full width | Export |
+Dark-specific: keep large-area fills ≥ `#0B0D10` (no pure black) to avoid halation; never place `--ink-3` text on `--panel-3`; amber-on-black passes AAA but **amber as a large fill needs `--amber-deep` text**, not black-on-amber at small sizes.
 
 ---
 
-## 6. Components
+## 9. Imagery and basemap on dark
 
-Every component below is specified. Build these; do not invent others without adding them here.
-
-### 6.1 The iris mark (logo)
-
-Three concentric arcs — `--iris-300` outer, `--iris-500` middle, `--iris-700` inner — plus a solid `--iris-900` pupil dot at the centre. Rendered as inline SVG, never as a raster image, never as an external file (offline).
-
-Two sizes: 32 px (rail header) and 20 px (favicon, inline lockup).
-
-**Animation:** on app load only, the three arcs contract inward to the pupil over 600 ms with `cubic-bezier(0.22, 1, 0.36, 1)` — the eye focusing. It plays **once per page load**. It does not loop.
-
-> ⚠️ **Do not animate a blink.** The name says it never blinks. A blinking logo directly contradicts the product promise and someone on the panel will notice.
-
-The pupil dot carries a very slow luminance pulse — opacity 1.0 → 0.82 → 1.0 over 4 s, infinite. This is the "never blinks" signal: continuous, unattended, always open. Disabled entirely under `prefers-reduced-motion`.
-
-### 6.2 The Analyse button — the primary CTA
-
-The only `--iris-700` filled button on the Map screen. 44 px tall, `--r-md`, `--t-body-strong`, `--ink-inverse` label, iris glyph to the left.
-
-On press: a ring contracts from the button edge to its centre over 180 ms (the aperture closing), then the map shows the scan pulse (§6.3).
-
-There is exactly **one** filled iris button per screen. Everything else is `--surface` with a `--line-strong` border.
-
-### 6.3 Scan pulse — the loading state
-
-**Not a spinner.** A ring expands outward from the centre of the region being analysed, `--iris-500` at 2 px, fading from 60% to 0% opacity as it grows from 0 to the region radius, over 1200 ms, repeating.
-
-A closing iris would read as blinking; an expanding scan reads as *looking*. That distinction matters here.
-
-Accompanied by a text status, never alone: *"Comparing 29 scenes…"*, *"Vectorising masks…"*, *"Suppressing false alarms…"*. **The status text must come from real job progress**, not a rotating list of plausible strings. A fake progress message is a lie in the same category as a fabricated number.
-
-### 6.4 Evidence card
-
-The most important component in the product. Vertical order, top to bottom:
-
-1. **The measurement.** `18.43 ha` at `--t-h2` 600, tabular. With a `MEASURED` chip immediately to its right.
-2. **The change type.** `Construction` at `--t-h3`, with its colour dot from §2.10.
-3. **The onset.** `First supported 9 Jun 2024` at `--t-small`, plus the bracket `±143 days` in `--ink-3`.
-4. **The confidence iris** (§6.5), 40 px, right-aligned.
-5. **The triptych thumbnail** — before / mask / after, 3 × 88 px wide, 1 px `--line` gaps.
-6. **Expand** → rule trace, five confidence components, sources, suppression context, processing history.
-
-Collapsed height ≤ 132 px. Expanded is scrollable within the panel.
-
-Selected card: `--iris-50` background, 2 px `--iris-700` left border. Its polygon on the map simultaneously gets a 3 px `--iris-700` stroke and a white inner halo. **Selection is bidirectional and always visible in both places.**
-
-### 6.5 The confidence iris — radial, not a bar
-
-A 40 px (compact) or 96 px (expanded) radial gauge built from **five concentric arc segments**, one per confidence component, arranged around a central pupil.
-
-```
-        ╭─────╮
-      ╭─┤ ▂▂▂ ├─╮        outermost arc  = detector_agreement
-    ╭─┤ │ ▄▄▄ │ ├─╮      second         = image_quality
-    │ │ │ ███ │ │ │      third          = registration
-    ╰─┤ │ ▀▀▀ │ ├─╯      fourth         = classification_margin
-      ╰─┤ ▔▔▔ ├─╯        innermost      = temporal_persistence
-        ╰──●──╯          pupil          = overall (geometric mean)
-```
-
-Each arc sweeps `score × 270°` from the 12 o'clock position, clockwise. Arc colour runs `--iris-300` (low) → `--iris-700` (high). The pupil is filled `--iris-900` and displays the overall score in `--t-micro` `--ink-inverse`, or beside the gauge at 40 px where it would not fit.
-
-Hovering an arc highlights it and shows `registration · 0.95` in a tooltip. In the expanded state, all five are listed below with their values and a one-line explanation each.
-
-**Why radial and not a bar:** the overall score is a *geometric mean*, so one bad component sinks the whole thing. A stacked bar hides that. Five arcs around a pupil show it — a single short arc is instantly visible as a gap in the ring, and the pupil visibly darkens. The geometry makes the maths legible.
-
-If `calibrated: false`, the gauge renders at 50% opacity with a dotted outer ring and the label *"uncalibrated"*. **Never show an uncalibrated confidence as if it were calibrated.**
-
-### 6.6 Detection overlay (canvas)
-
-Boxes and polygons drawn on a `<canvas>` over the image, in image pixel space, scaled to display size with `devicePixelRatio` handled explicitly so lines stay 1 device-pixel crisp.
-
-- **Track 1 / 2 (deterministic):** solid stroke, 2 px, class colour at 100%. Polygon fill at 35%.
-- **Track 3 (model):** dashed stroke `[6, 4]`, 2 px, class colour at 100%. No fill, or 12% fill.
-- Label chip at the box's top-left, outside the box where it fits: `building · 0.87`, `--t-micro`, `--surface` background at 92% opacity, 1 px class-colour border, `--r-sm`.
-- Score below 0.7 renders the chip border dotted and the label in `--ink-3`.
-- Hit-testing is **smallest-area-first** so a large `building_cluster` box never swallows a small `storage_tank` inside it.
-- Hover: stroke widens to 3 px and the corresponding list row highlights.
-- Every box carries a 1 px white inner halo so it stays legible over both dark water and bright sand.
-
-### 6.7 The suppression panel
-
-Header: **`312 suppressed`** at `--t-h2`, with `6 retained` beside it in `--ink-3`.
-
-Body: one row per `SuppressionReason`, each showing a dotted `--ink-3` chip, the count in tabular figures, and a proportional bar in `--surface-sunken`. Clicking a row expands three verbatim example reasons from the trace.
-
-**This panel is a headline feature, not a footnote.** Give it the same visual prominence as the change list. Showing what was thrown away is the single most persuasive thing in the demo.
-
-### 6.8 Capability notice
-
-Rendered whenever the Resolution Gate or a `VISUAL_ONLY` upload limits what the system can do. This is **not an error** and must not look like one.
-
-- `--iris-50` background, 1 px `--iris-300` border, `--r-md`, 16 px padding
-- An aperture icon (three arcs, `--iris-700`), 20 px, top-left
-- Heading at `--t-body-strong` in `--iris-900`: *"Resolution limit"* / *"No location data"*
-- Body at `--t-body` in `--ink-2`, using the **verbatim** copy from `feature-specs.md`
-- Where a partial answer exists, it renders **below** the notice, not instead of it
-
-Never use `--danger` red for a capability notice. Nothing has gone wrong; the system is correctly reporting what the data supports.
-
-### 6.9 Trace panel
-
-A collapsible tree, `--font-mono` at `--t-mono`, on `--surface-sunken`.
-
-- Nesting indicated by 1 px `--line` vertical guides with 8 px radius corners — **arcs, not right angles**, continuing the iris geometry at small scale.
-- Node type glyphs: `⌁` model call, `⛁` SQL, `⚖` verifier, `✕` rejection, `✓` pass
-- Verifier `FAIL` nodes render with a `--danger` left border and show both the rejected prose (struck through, `--ink-3`) and the template that replaced it.
-- Model request/response bodies are collapsed by default, expandable, and **shown verbatim** — including rejected boxes and their reasons.
-- Copy-to-clipboard on every node.
-
-### 6.10 Empty, loading, and error states
-
-Every data component has all three. **Empty is not error.**
-
-| State | Treatment |
-|---|---|
-| **Loading** | Skeleton in `--surface-sunken`, pulsing opacity 1 → 0.6 over 1.2 s. Shape matches the real content. Never a bare spinner. |
-| **Empty** | An **out-of-focus iris**: the three arcs rendered in `--line-strong` at 40% opacity, slightly blurred, with no pupil. Below it, the honest message and, where possible, a suggested next action as a real button. |
-| **Error** | `--danger` treatment, the error `code` in `--font-mono`, the `message` verbatim, the `trace_id` in `--t-micro` `--ink-3` and copyable, and a Retry button. **Never a stack trace.** |
-
-The out-of-focus iris for empty states is a deliberate metaphor: *nothing is in focus here yet.* It is also a graceful way to show a screen with no data without it looking broken.
-
-Empty-state copy is written in `feature-specs.md` and `lib/copy.ts`. Examples:
-
-- No changes found → *"No change above the threshold was detected in this window. That is a real result, not a failure — 1 834 candidates were generated and all were suppressed. See the suppression panel for why."*
-- No search results → *"Nothing matched. Try a wider date range, a larger area, or fewer filters."*
-- No uploads → *"Drop a satellite image here. GeoTIFF works best — I can read its location, resolution and date from the file."*
-
-### 6.11 Tables
-
-- Header: `--t-micro` uppercase `--ink-3`, `--surface-sunken` background, sticky
-- Rows: 1 px `--line` bottom border, no zebra striping (zebra competes with the semantic washes)
-- Numeric columns right-aligned, `tabular-nums`, `--font-mono` for IDs and coordinates
-- Hover: `--surface-hover`
-- Selected: `--iris-50` + 2 px `--iris-700` left border
-- Null cells render `—` at `--ink-3`. **Never `0`, `null`, `NaN`, or blank.**
-
----
-
-## 7. Motion
-
-| Token | Duration | Easing | Use |
-|---|---|---|---|
-| `--m-instant` | 80 ms | `ease-out` | Hover, press, focus |
-| `--m-fast` | 160 ms | `cubic-bezier(0.22, 1, 0.36, 1)` | Panel expand, chip appear |
-| `--m-base` | 260 ms | same | Card transitions, tab switch |
-| `--m-slow` | 600 ms | same | Iris focus on load, triptych open |
-| `--m-scan` | 1200 ms | `ease-out` | Scan pulse, looping |
-| `--m-pulse` | 4000 ms | `ease-in-out` | Pupil luminance, looping |
-
-Rules:
-
-- **Nothing moves that does not need to.** This is an instrument. Motion communicates state change, never decoration.
-- Map panning and zooming use MapLibre's own easing. Do not override it.
-- Never animate a number counting up. A measurement appears at its final value. Counting animations imply the number is approximate, which is exactly the wrong signal.
-- Never animate a polygon appearing with a bounce or scale. Fade at `--m-fast`, full stop.
-- The timeline PLAY is the one place with sustained motion, and it must be pausable and scrubbable.
-
----
-
-## 8. Accessibility — mandatory, not aspirational
-
-1. **WCAG 2.1 AA minimum, AAA for body text.** All tokens in §2.3 and §2.7 already meet this. Verify any new colour with a contrast check before adding it.
-2. **Colour is never the only signal.** Every semantic state pairs colour with a border style, a glyph, or a text label. Enforced by §2.7.
-3. **Greyscale test.** Screenshot the map in greyscale. Every land-cover class must still be distinguishable by its secondary mark (§2.8). If two collapse into one, change the mark, not the colour.
-4. **Keyboard.** Every control reachable and operable by keyboard. The review queue supports `j`/`k` to move, `c` to confirm, `r` to reject, `e` to expand. Focus is never trapped.
-5. **Focus ring.** 2 px `--iris-700`, 2 px offset, `--r-sm`. Visible on every interactive element. **Never `outline: none` without a replacement.**
-6. **`prefers-reduced-motion`.** Disables the pupil pulse, the load-time iris focus, the scan pulse (replaced by a static ring plus text), and skeleton shimmer. The app remains fully functional.
-7. **Screen reader.** Every map polygon has an `aria-label`: *"Construction change, 18.43 hectares, first supported 9 June 2024, confidence 0.86, measured."* Chips carry their text. The canvas overlay has a hidden DOM equivalent list.
-8. **Touch targets** ≥ 40 × 40 px, even though this is a desktop product.
-9. **No information conveyed by cursor hover alone.** Hover reveals detail; it never reveals the only copy of a fact.
-
----
-
-## 9. Basemap and imagery treatment
-
-The default OSM raster style is far too busy and too colourful — it fights the evidence layer.
-
-- **Basemap:** CARTO Positron, or a custom MapLibre style reduced to water, roads, and place labels at `--ink-3`. **No POI icons. No building footprints. No landuse colours.** The basemap is context, not content.
-- Basemap labels render *below* the evidence layer, at 70% opacity.
-- **Imagery:** true-colour Sentinel-2 (B04/B03/B02) with a 2–98% percentile stretch computed **per scene**, and the stretch parameters stored and shown in the metadata panel. Never a global auto-stretch that changes between views.
-- Imagery opacity defaults to 100% over the well, with a slider to blend against the basemap.
-- **Offline:** the basemap must come from a local PMTiles file or be absent entirely. Test the app with no basemap — it must still be fully usable, because at the finale it might be.
+Satellite true-colour is vivid and reads *better* on near-black than on paper — this is the one place the reversal is a pure win. Rules: imagery sits in `--well` with a 1 px `--line-strong` frame and a 24 px inner vignette (`radial-gradient` to transparent) so edges don't vibrate against the field; per-scene 2–98% percentile stretch, parameters stored and shown; basemap = reduced CARTO dark-matter style or local PMTiles dark style — **no POI icons, no landuse colour, labels at `--ink-3` 70%**; and the app must remain fully usable with **no basemap at all** (`OFFLINE=1` test).
 
 ---
 
 ## 10. Copy voice
 
-Short, plain, factual. Second person. Present tense.
-
-| ✅ | ❌ |
-|---|---|
-| *"No change above the threshold was detected."* | *"Sorry, we couldn't find anything!"* |
-| *"This image is 10 m per pixel."* | *"Insufficient resolution for this operation."* |
-| *"312 candidates were suppressed."* | *"AI-powered noise reduction applied."* |
-| *"First supported 9 Jun 2024"* | *"Construction likely began around mid-2024"* |
-| *"I don't know this image's resolution."* | *"Unable to determine GSD."* |
-
-Rules:
-
-- **Never** apologise. Never use "sorry", "oops", "unfortunately".
-- **Never** use "AI-powered", "smart", "intelligent", "advanced", "seamless", "revolutionary" in the UI. These words are marketing and they actively reduce trust in a tool whose whole claim is rigor.
-- **Never** hedge a measured number ("about 18 ha", "roughly 6 changes"). It was measured. State it.
-- **Do** hedge inferred things, explicitly: *"classified as construction based on a rise in built-up index and a fall in vegetation index."*
-- **Do** say "I don't know" where the system does not know. It is the most trust-building string in the product.
-- All copy lives in `frontend/src/lib/copy.ts`. **Nothing hardcoded in JSX** (`code-standards.md` §3.6). The verbatim messages in `feature-specs.md` are the source of truth; `copy.ts` mirrors them exactly.
+Unchanged from v1 (plain, second person, no apology, no "AI-powered/seamless/intelligent", never hedge a measured number, do hedge inferred ones, "I don't know" where true). Dossier *tags* may use the console shorthand (`TARGET: CONSTRUCTION // ID …`, `SEC 04·B`, `SATNAV//03`) because that is labelling, not prose. **Body sentences and every refusal message stay in the verbatim `feature-specs.md` strings, sentence case.** All copy lives in `lib/copy.ts`; nothing hardcoded in JSX.
 
 ---
 
-## 11. Dark mode
+## 11. Implementation rules
 
-**Not supported in v1. Do not build it.**
-
-This will come up, because imagery analysts often prefer a dark environment for inspecting photography, and because someone on the panel may ask. The answer is:
-
-> *"It's a light interface deliberately — long analytical sessions, printed and projected reports, and it keeps the satellite imagery as the only saturated thing on screen. A dark inspection mode is on the roadmap; the token architecture here supports it, since every colour is a semantic token rather than a literal value."*
-
-That answer is only true if §12 is followed. **Use tokens, never hex literals in components** — which is what makes the claim defensible rather than a bluff.
+1. Every colour, radius, shadow, duration and font size is a CSS custom property in `app/globals.css`; Tailwind maps to tokens. **No hex literals, no arbitrary values in components.** Lint enforces.
+2. `lib/palette.ts` (class maps, §2.5), `lib/copy.ts` (all strings), `lib/map-fx.ts` (all of §6), `components/icons.tsx` (inline SVG only). The iris lockup and reticle are React components, not images — external assets do not load at `OFFLINE=1`.
+3. Keyframes are declared once in `globals.css` with the §6 names: `scan-sweep`, `bracket-lock`, `tag-in`, `dot-pulse`, `marquee`, `ambient-scan`, `reticle-fade`.
+4. The prototype `brand/ui-prototype-intel.html` is the **visual source of truth**. When this file and the prototype disagree on a timing or a colour, the prototype wins and this file gets corrected.
+5. Screenshot every screen at 1280×800 and 1920×1080 into `docs/screenshots/` the day it is built; also greyscale and reduced-motion captures.
 
 ---
 
-## 12. Implementation rules
+## 12. Acceptance criteria
 
-1. **Every colour, spacing value, radius, shadow, duration, and font size is a CSS custom property** defined once in `frontend/src/app/globals.css`. Tailwind config maps to those tokens. **No hex literals, no `px` magic numbers, no `rgba()` in components.**
-2. `frontend/src/lib/palette.ts` exports the class-colour maps (§2.8–2.10) as typed records keyed by the enums in `data-contracts.md` §2. TypeScript must error if an enum value is missing a colour.
-3. `frontend/src/lib/copy.ts` exports every user-facing string. Mirrors `feature-specs.md` verbatim. A test asserts the two agree on the capability-notice strings.
-4. All icons are inline SVG from a single `components/icons.tsx`. **No icon-font, no external sprite, no CDN** — none of those survive `OFFLINE=1`.
-5. The iris mark is a React component taking `size` and `animated`, not an image file.
-6. Component states are exhaustive: `loading | empty | error | capability_notice | ok`. A component missing one is incomplete.
-7. **Every screen must be screenshotted at the end of the day it is built** and committed to `docs/screenshots/`. You will need them for slides, and you will not remember to take them later.
-8. Test at 1280 × 800 (the smallest plausible projector) and 1920 × 1080. Also test greyscale and `prefers-reduced-motion`.
-
----
-
-## 13. Design acceptance criteria
-
-- [ ] No component contains a hex literal or an arbitrary spacing value
-- [ ] The imagery viewport sits in the cool `--map-well` and never touches warm chrome directly
-- [ ] `MEASURED` and `INFERRED` are distinguishable with colour removed (border style + glyph)
-- [ ] All seven land-cover classes are distinguishable in greyscale via their secondary marks
-- [ ] Every number uses `tabular-nums`
-- [ ] Every null renders as `—`, never `0`
-- [ ] Track 3 detections are dashed, Tracks 1/2 solid, and the legend says so in words
-- [ ] A capability notice renders in iris tones, never red, with the verbatim copy from `feature-specs.md`
-- [ ] The confidence iris shows five arcs plus a pupil, and dims with an "uncalibrated" label when `calibrated: false`
-- [ ] The logo does not blink; the pupil pulses slowly
-- [ ] `prefers-reduced-motion` disables the pulse, the load focus, the scan loop, and skeleton shimmer
-- [ ] Every interactive element has a visible focus ring; the review queue is fully keyboard-operable
-- [ ] Every screen has loading, empty, and error states
-- [ ] The app is fully usable with no basemap tiles available
-- [ ] चक्षु renders correctly on the demo machine
-- [ ] All icons and fonts load with the network disabled
+- [ ] Every element occupies its §4 slot; no unslotted component ships
+- [ ] One amber focal point per viewport; two competing ambers is a bug
+- [ ] Imagery is the only continuous-tone colour region
+- [ ] M1–M10 implemented in `map-fx.ts` with the exact timings; reticle lag capped and attached
+- [ ] Lock-on tag shows a count-up only for `MEASURED` values
+- [ ] `MEASURED`/`INFERRED`/`UNVERIFIED` distinguishable with colour removed
+- [ ] Greyscale map test passes; dark halation avoided (no pure black fills)
+- [ ] Tabular numerals everywhere; no looping number animation
+- [ ] Full keyboard operability + visible amber focus ring; five-state components everywhere
+- [ ] Verbatim refusal/capability copy from `feature-specs.md`, in amber-wash not red
+- [ ] Usable with no basemap; all icons/fonts inline or self-hosted
+- [ ] `prefers-reduced-motion` disables M2/M8/M9/M10, snaps M1, instant M7
+- [ ] चक्षु renders on the demo machine

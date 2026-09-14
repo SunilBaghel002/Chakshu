@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppHeader } from './components/AppHeader';
+import { DataStreamMarquee } from './components/DataStreamMarquee';
+import { TacticalTelemetryBar } from './components/TacticalTelemetryBar';
+import { IconRail } from './components/IconRail';
+import { StatusLine } from './components/StatusLine';
+import { AmbientScanline } from './components/AmbientScanline';
 import { MapPane } from './components/MapPane';
 import { TimelineSlider } from './components/TimelineSlider';
 import { EvidenceDrawer } from './components/EvidenceDrawer';
 import { AskPanel } from './components/AskPanel';
 import { ReviewQueueModal } from './components/ReviewQueueModal';
 import { UploadModal } from './components/UploadModal';
-import { Calendar, ArrowLeftRight, Sparkles } from 'lucide-react';
+import { TemporalBar } from './components/TemporalBar';
 import {
   getAois,
   getScenes,
@@ -185,14 +190,56 @@ export const App: React.FC = () => {
   }, [visibleEvidenceList, selectedEvidence]);
 
   const currentAoi = aois.find((a) => a.id === selectedAoiId);
-  const aoiCoords = useMemo<[number, number]>(() => {
-    return currentAoi?.name.includes('Bhadla') ? [27.53, 71.91] : [28.1305, 77.7612];
-  }, [currentAoi?.name]);
+
+  // Compute center and bounds dynamically from AOI polygon geometry
+  const { aoiCoords, aoiBounds } = useMemo(() => {
+    const geom = currentAoi?.geom as { coordinates?: [number, number][][] } | undefined;
+    if (geom?.coordinates?.[0]) {
+      const ring = geom.coordinates[0];
+      let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+      for (const [lon, lat] of ring) {
+        if (lon < minLon) minLon = lon;
+        if (lon > maxLon) maxLon = lon;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+      }
+      return {
+        aoiCoords: [(minLat + maxLat) / 2, (minLon + maxLon) / 2] as [number, number],
+        aoiBounds: [[minLat, minLon], [maxLat, maxLon]] as [[number, number], [number, number]],
+      };
+    }
+    return { aoiCoords: [28.1725, 77.6125] as [number, number], aoiBounds: [[28.155, 77.580], [28.190, 77.645]] as [[number, number], [number, number]] };
+  }, [currentAoi]);
 
   const availableDates = Array.from(new Set(scenes.map((s) => s.acquired_at))).sort();
 
+  // Camera preset handler for TacticalTelemetryBar
+  const handlePreset = useCallback((preset: string) => {
+    // Presets will be consumed by MapPane via a ref/callback
+    const presetMap: Record<string, { center: [number, number]; zoom: number }> = {
+      runway: { center: [28.1695, 77.6080], zoom: 16 },
+      terminal: { center: [28.1765, 77.6160], zoom: 17 },
+      atc: { center: [28.1748, 77.6125], zoom: 18 },
+      full: { center: aoiCoords, zoom: 14 },
+    };
+    const p = presetMap[preset];
+    if (p) setPresetTarget(p);
+  }, [aoiCoords]);
+
+  const [presetTarget, setPresetTarget] = useState<{ center: [number, number]; zoom: number } | null>(null);
+
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0B0F19] text-slate-100 font-sans">
+    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
+      {/* SLOT-00: Data Stream Marquee */}
+      <DataStreamMarquee />
+
+      {/* ISRO/RAW Tactical Telemetry Bar */}
+      <TacticalTelemetryBar
+        aoiName={currentAoi?.name ?? 'Jewar Airport'}
+        onPreset={handlePreset}
+      />
+
+      {/* SLOT-01: Command Bar */}
       <AppHeader
         aois={aois}
         selectedAoiId={selectedAoiId}
@@ -206,119 +253,29 @@ export const App: React.FC = () => {
         usableScenes={scenes.filter((s) => s.usable).length || 29}
       />
 
-      {/* Date & Trigger Controls */}
-      <div className="bg-[#0D121F] border-b border-[#1F2937] px-4 py-2 flex items-center justify-between gap-3 text-xs flex-wrap z-20 shadow-md">
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold font-mono text-[11px] uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            1. Older Photo (Before):
-          </span>
-          <input
-            type="date"
-            value={beforeDate}
-            min="2021-01-01"
-            max="2026-12-31"
-            onChange={(e) => setBeforeDate(e.target.value)}
-            className="bg-[#111827] border border-slate-700 text-amber-300 font-mono font-semibold px-2 py-1 rounded text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-inner"
-          />
-          <div className="hidden sm:flex items-center gap-1 text-[11px]">
-            {['2021-01-15', '2022-05-20', '2023-08-10'].map((d) => (
-              <button
-                key={d}
-                onClick={() => setBeforeDate(d)}
-                className={`px-1.5 py-0.5 rounded font-mono transition-colors ${
-                  beforeDate === d
-                    ? 'bg-amber-500/30 text-amber-200 border border-amber-500/50 font-bold'
-                    : 'text-slate-400 hover:text-white bg-slate-800/40'
-                }`}
-              >
-                {d.split('-')[0]}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* SLOT-02: Temporal Bar */}
+      <TemporalBar
+        beforeDate={beforeDate}
+        afterDate={afterDate}
+        onBeforeDateChange={setBeforeDate}
+        onAfterDateChange={setAfterDate}
+        onSwapDates={handleSwapDates}
+        onRunAnalysis={handleRunAnalysis}
+        isAnalyzing={isAnalyzing}
+      />
 
-        {/* Center: Action Buttons & Presets */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRunAnalysis}
-            disabled={isAnalyzing}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow transition-all"
-            title="Execute bi-temporal classical CVA detection pipeline"
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-            <span>{isAnalyzing ? 'Detecting Changes...' : 'Detect Changes'}</span>
-          </button>
-
-          <button
-            onClick={handleSwapDates}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-all shadow"
-            title="Swap Before and After dates"
-          >
-            <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden sm:inline">Swap</span>
-          </button>
-
-          <div className="hidden lg:flex items-center gap-1.5 border-l border-slate-800 pl-2">
-            <span className="text-slate-500 text-[11px] font-mono">Presets:</span>
-            <button
-              onClick={() => { setBeforeDate('2021-01-15'); setAfterDate('2026-08-18'); }}
-              className="px-2 py-0.5 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/50 text-[11px] font-medium"
-            >
-              Full 5-Year Build
-            </button>
-            <button
-              onClick={() => { setBeforeDate('2021-01-15'); setAfterDate('2023-08-10'); }}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]"
-            >
-              Earthworks
-            </button>
-            <button
-              onClick={() => { setBeforeDate('2023-08-10'); setAfterDate('2026-08-18'); }}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]"
-            >
-              Runway & Terminal
-            </button>
-          </div>
-        </div>
-
-        {/* Right: Newest Observation After Date */}
-        <div className="flex items-center gap-2">
-          <span className="text-indigo-400 font-bold font-mono text-[11px] uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            2. Newer Photo (After):
-          </span>
-          <input
-            type="date"
-            value={afterDate}
-            min="2021-01-01"
-            max="2026-12-31"
-            onChange={(e) => setAfterDate(e.target.value)}
-            className="bg-[#111827] border border-slate-700 text-indigo-300 font-mono font-semibold px-2 py-1 rounded text-xs focus:outline-none focus:border-indigo-500 cursor-pointer shadow-inner"
-          />
-          <div className="hidden sm:flex items-center gap-1 text-[11px]">
-            {['2024-04-12', '2025-03-18', '2026-08-18'].map((d) => (
-              <button
-                key={d}
-                onClick={() => setAfterDate(d)}
-                className={`px-1.5 py-0.5 rounded font-mono transition-colors ${
-                  afterDate === d ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white bg-slate-800/40'
-                }`}
-              >
-                {d.split('-')[0]}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Map & Drawer Stage */}
+      {/* Main Stage: SLOT-05 Rail + SLOT-10 Map + SLOT-20 Dossier */}
       <div className="flex-1 flex overflow-hidden relative">
-        <main className="flex-1 flex flex-col relative overflow-hidden bg-[#070A10]">
+        {/* SLOT-05: Icon Rail */}
+        <IconRail activeView={activeView} onSelectView={setActiveView} />
+
+        {/* SLOT-10: Map Stage + SLOT-30: Timeline */}
+        <main className="flex-1 flex flex-col relative overflow-hidden" style={{ background: 'var(--well)' }}>
           <div className="flex-1 relative overflow-hidden">
             <MapPane
               selectedAoiId={selectedAoiId}
               aoiCoords={aoiCoords}
+              aoiBounds={aoiBounds}
               aoiName={currentAoi?.name ?? 'Jewar Airport'}
               evidenceList={visibleEvidenceList}
               selectedEvidenceId={selectedEvidence?.change_object_id ?? null}
@@ -334,6 +291,8 @@ export const App: React.FC = () => {
               onSelectBeforeDate={setBeforeDate}
               onSelectAfterDate={setAfterDate}
               onSwapDates={handleSwapDates}
+              presetTarget={presetTarget}
+              onPresetConsumed={() => setPresetTarget(null)}
             />
 
             {activeView === 'ask' && (
@@ -343,6 +302,7 @@ export const App: React.FC = () => {
             )}
           </div>
 
+          {/* SLOT-30: Timeline Strip */}
           <TimelineSlider
             scenes={scenes}
             beforeDate={beforeDate}
@@ -352,6 +312,7 @@ export const App: React.FC = () => {
           />
         </main>
 
+        {/* SLOT-20: Dossier */}
         {selectedEvidence && (
           <EvidenceDrawer
             evidence={selectedEvidence}
@@ -361,6 +322,15 @@ export const App: React.FC = () => {
           />
         )}
       </div>
+
+      {/* SLOT-40: Status Line */}
+      <StatusLine
+        jobState={isAnalyzing ? 'ANALYSING' : 'READY'}
+        lastAction={selectedEvidence ? `Inspecting ${selectedEvidence.change_type}` : 'AOI loaded'}
+      />
+
+      {/* M9: Ambient Scanline */}
+      <AmbientScanline />
 
       {/* Modals */}
       {activeView === 'review' && (
@@ -376,7 +346,7 @@ export const App: React.FC = () => {
         />
       )}
 
-      {activeView === 'upload' && detectionSet && (
+      {activeView === 'upload' && (
         <UploadModal
           detectionSet={detectionSet}
           onClose={() => setActiveView('map')}

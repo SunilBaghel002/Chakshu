@@ -12,7 +12,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import type { Evidence } from '../lib/types';
-import { getClassColor, PALETTE } from '../lib/palette';
+import { getClassColor } from '../lib/palette';
 import { ChangeCard } from './ChangeCard';
 
 interface ReviewQueueModalProps {
@@ -39,13 +39,11 @@ export const ReviewQueueModal: React.FC<ReviewQueueModalProps> = ({
   const [sortOption, setSortOption] = useState<SortOption>('area_desc');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
-  // Derive unique categories from evidenceList
   const categories = useMemo(() => {
     const set = new Set(evidenceList.map((e) => e.change_type));
     return ['all', ...Array.from(set)];
   }, [evidenceList]);
 
-  // Filter and Sort evidence items
   const filteredList = useMemo(() => {
     return evidenceList
       .filter((ev) => {
@@ -66,7 +64,6 @@ export const ReviewQueueModal: React.FC<ReviewQueueModalProps> = ({
       });
   }, [evidenceList, statusFilter, categoryFilter, sortOption]);
 
-  // Keep selected index within bounds
   useEffect(() => {
     if (selectedIndex >= filteredList.length) {
       setSelectedIndex(Math.max(0, filteredList.length - 1));
@@ -75,35 +72,17 @@ export const ReviewQueueModal: React.FC<ReviewQueueModalProps> = ({
 
   const currentItem = filteredList[selectedIndex];
 
-  // Keyboard navigation shortcuts: j, k, c, r, e, Escape
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') {
-        return;
-      }
+      if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') return;
 
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      } else if (e.key === 'j' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex((prev) => Math.min(prev + 1, Math.max(0, filteredList.length - 1)));
-      } else if (e.key === 'k' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex((prev) => Math.max(prev - 1, 0));
-      } else if (e.key === 'c' && currentItem) {
-        e.preventDefault();
-        onConfirm(currentItem.change_object_id);
-      } else if (e.key === 'r' && currentItem) {
-        e.preventDefault();
-        onReject(currentItem.change_object_id);
-      } else if (e.key === 'e' && currentItem) {
-        e.preventDefault();
-        onSelectEvidence(currentItem);
-        onClose();
-      }
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+      else if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); setSelectedIndex((prev) => Math.min(prev + 1, Math.max(0, filteredList.length - 1))); }
+      else if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); setSelectedIndex((prev) => Math.max(prev - 1, 0)); }
+      else if (e.key === 'c' && currentItem) { e.preventDefault(); onConfirm(currentItem.change_object_id); }
+      else if (e.key === 'r' && currentItem) { e.preventDefault(); onReject(currentItem.change_object_id); }
+      else if (e.key === 'e' && currentItem) { e.preventDefault(); onSelectEvidence(currentItem); onClose(); }
     },
     [filteredList.length, currentItem, onConfirm, onReject, onSelectEvidence, onClose]
   );
@@ -113,100 +92,105 @@ export const ReviewQueueModal: React.FC<ReviewQueueModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Summary counts
-  const counts = useMemo(() => {
-    return {
-      total: evidenceList.length,
-      pending: evidenceList.filter((e) => e.status === 'pending').length,
-      confirmed: evidenceList.filter((e) => e.status === 'confirmed').length,
-      rejected: evidenceList.filter((e) => e.status === 'rejected').length,
-    };
-  }, [evidenceList]);
+  const counts = useMemo(() => ({
+    total: evidenceList.length,
+    pending: evidenceList.filter((e) => e.status === 'pending').length,
+    confirmed: evidenceList.filter((e) => e.status === 'confirmed').length,
+    rejected: evidenceList.filter((e) => e.status === 'rejected').length,
+  }), [evidenceList]);
+
+  const getStatusStyle = (st: StatusFilter, isActive: boolean) => {
+    if (!isActive) return { background: 'transparent', color: 'var(--ink-3)', border: 'none' };
+    switch (st) {
+      case 'confirmed': return { background: 'var(--confirmed-fill)', color: 'var(--confirmed-text)', border: `1px solid var(--confirmed-border)` };
+      case 'rejected': return { background: 'var(--rejected-fill)', color: 'var(--rejected-text)', border: `1px solid var(--rejected-border)` };
+      default: return { background: 'var(--amber-wash)', color: 'var(--amber)', border: `1px solid var(--amber)` };
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md select-none animate-fadeIn">
-      <div className="bg-[#0F172A] border border-slate-700/80 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden text-slate-200">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 select-none"
+      style={{ background: 'rgba(11, 13, 16, 0.85)', backdropFilter: 'blur(8px)' }}
+    >
+      <div
+        className="w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden corner-ticks"
+        style={{ background: 'var(--panel)', border: '1px solid var(--line-strong)', borderRadius: 'var(--radius)' }}
+      >
         {/* Header */}
-        <div className="p-4 bg-[#111827] border-b border-slate-800 flex items-center justify-between">
+        <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--line)', background: 'var(--bg)' }}>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+            <div className="p-2" style={{ background: 'var(--amber-wash)', border: '1px solid var(--amber)', borderRadius: 'var(--radius)', color: 'var(--amber)' }}>
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white tracking-tight">Review Queue</h2>
-                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                  {filteredList.length} of {evidenceList.length} changes
+                <h2 className="t-h1" style={{ fontSize: 16 }}>REVIEW QUEUE</h2>
+                <span className="t-tag" style={{ padding: '2px 8px', background: 'var(--panel-2)', border: '1px solid var(--line)', color: 'var(--ink-2)', borderRadius: 'var(--radius-sm)', fontSize: 9 }}>
+                  {filteredList.length} / {evidenceList.length}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Rapid analyst triage: approve genuine ground changes or flag false alarms.
+              <p className="t-body" style={{ color: 'var(--ink-3)', fontSize: 11 }}>
+                Rapid analyst triage — approve genuine changes or flag false alarms.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-800/80 border border-slate-700 rounded-lg p-0.5 text-xs">
+            <div className="flex items-center p-0.5" style={{ background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: 'var(--radius)' }}>
               <button
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded ${viewMode === 'table' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                className="p-1.5 cursor-pointer"
+                style={{ background: viewMode === 'table' ? 'var(--amber-wash)' : 'transparent', color: viewMode === 'table' ? 'var(--amber)' : 'var(--ink-3)', borderRadius: 'var(--radius-sm)', border: 'none' }}
                 title="Table view"
               >
                 <List className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                title="Card grid view"
+                className="p-1.5 cursor-pointer"
+                style={{ background: viewMode === 'grid' ? 'var(--amber-wash)' : 'transparent', color: viewMode === 'grid' ? 'var(--amber)' : 'var(--ink-3)', borderRadius: 'var(--radius-sm)', border: 'none' }}
+                title="Card view"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
             </div>
-
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-            >
+            <button onClick={onClose} className="p-1.5 cursor-pointer" style={{ background: 'none', border: 'none', color: 'var(--ink-3)', borderRadius: 'var(--radius)' }}>
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Filter & Sort Controls Bar */}
-        <div className="px-4 py-2.5 bg-[#0B0F19] border-b border-slate-800 flex items-center justify-between gap-3 flex-wrap text-xs font-mono">
+        {/* Filter Bar */}
+        <div className="px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--line)' }}>
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Status Pills */}
-            <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1">
+            <div className="flex items-center gap-0.5 p-0.5" style={{ background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: 'var(--radius)' }}>
               {(['all', 'pending', 'confirmed', 'rejected'] as StatusFilter[]).map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase transition-colors ${
-                    statusFilter === st
-                      ? st === 'confirmed'
-                        ? 'bg-emerald-600 text-white'
-                        : st === 'rejected'
-                        ? 'bg-rose-600 text-white'
-                        : 'bg-indigo-600 text-white'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
+                  className="t-tag px-2 py-0.5 cursor-pointer transition-colors"
+                  style={{
+                    ...getStatusStyle(st, statusFilter === st),
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 9,
+                  }}
                 >
-                  {st} ({st === 'all' ? counts.total : counts[st]})
+                  {st.toUpperCase()} ({st === 'all' ? counts.total : counts[st]})
                 </button>
               ))}
             </div>
 
-            {/* Category dropdown */}
-            <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2 py-1 rounded-lg">
-              <Filter className="w-3 h-3 text-slate-400" />
+            <div className="flex items-center gap-1.5 px-2 py-1" style={{ background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: 'var(--radius)' }}>
+              <Filter className="w-3 h-3" style={{ color: 'var(--ink-3)' }} />
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer capitalize"
+                className="t-tag cursor-pointer focus:outline-none capitalize"
+                style={{ background: 'transparent', color: 'var(--ink-2)', border: 'none', fontSize: 10 }}
               >
                 {categories.map((c) => (
-                  <option key={c} value={c} className="bg-slate-900 text-slate-200 capitalize">
+                  <option key={c} value={c} style={{ background: 'var(--panel)' }}>
                     {c.replace('_', ' ')}
                   </option>
                 ))}
@@ -214,45 +198,45 @@ export const ReviewQueueModal: React.FC<ReviewQueueModalProps> = ({
             </div>
           </div>
 
-          {/* Sort Selector */}
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2 py-1 rounded-lg">
-            <ArrowUpDown className="w-3 h-3 text-indigo-400" />
-            <span className="text-slate-400 text-[11px]">SORT:</span>
+          <div className="flex items-center gap-1.5 px-2 py-1" style={{ background: 'var(--panel-2)', border: '1px solid var(--line)', borderRadius: 'var(--radius)' }}>
+            <ArrowUpDown className="w-3 h-3" style={{ color: 'var(--amber)' }} />
+            <span className="t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>SORT:</span>
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as SortOption)}
-              className="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer"
+              className="t-tag cursor-pointer focus:outline-none"
+              style={{ background: 'transparent', color: 'var(--ink-2)', border: 'none', fontSize: 10 }}
             >
-              <option value="area_desc" className="bg-slate-900 text-slate-200">Area (High to Low)</option>
-              <option value="area_asc" className="bg-slate-900 text-slate-200">Area (Low to High)</option>
-              <option value="conf_desc" className="bg-slate-900 text-slate-200">Confidence (High to Low)</option>
-              <option value="date_desc" className="bg-slate-900 text-slate-200">Date (Newest First)</option>
+              <option value="area_desc" style={{ background: 'var(--panel)' }}>Area ↓</option>
+              <option value="area_asc" style={{ background: 'var(--panel)' }}>Area ↑</option>
+              <option value="conf_desc" style={{ background: 'var(--panel)' }}>Confidence ↓</option>
+              <option value="date_desc" style={{ background: 'var(--panel)' }}>Date ↓</option>
             </select>
           </div>
         </div>
 
-        {/* Content Body: Table or Card Grid */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
           {filteredList.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-slate-500 font-mono text-xs">
-              <ShieldCheck className="w-8 h-8 mb-2 text-slate-600" />
-              <p>No changes match the selected filters.</p>
+            <div className="h-64 flex flex-col items-center justify-center" style={{ color: 'var(--ink-3)' }}>
+              <ShieldCheck className="w-8 h-8 mb-2" style={{ color: 'var(--line-strong)' }} />
+              <p className="t-mono" style={{ fontSize: 11 }}>No changes match filters.</p>
             </div>
           ) : viewMode === 'table' ? (
-            <table className="w-full text-left text-xs font-mono border-collapse">
+            <table className="w-full text-left t-mono border-collapse" style={{ fontSize: 11 }}>
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
-                  <th className="pb-2 pl-2">#</th>
-                  <th className="pb-2">Change ID</th>
-                  <th className="pb-2">Category</th>
-                  <th className="pb-2 text-right">Ground Area</th>
-                  <th className="pb-2 text-center">First Seen</th>
-                  <th className="pb-2 text-right">Confidence</th>
-                  <th className="pb-2 text-center">Status</th>
-                  <th className="pb-2 pr-2 text-right">Actions</th>
+                <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                  <th className="pb-2 pl-2 t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>#</th>
+                  <th className="pb-2 t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>ID</th>
+                  <th className="pb-2 t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>TYPE</th>
+                  <th className="pb-2 text-right t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>AREA</th>
+                  <th className="pb-2 text-center t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>DATE</th>
+                  <th className="pb-2 text-right t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>CONF</th>
+                  <th className="pb-2 text-center t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>STATUS</th>
+                  <th className="pb-2 pr-2 text-right t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>ACTIONS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody>
                 {filteredList.map((ev, idx) => {
                   const isSelected = idx === selectedIndex;
                   const color = getClassColor(ev.change_type);
@@ -260,73 +244,79 @@ export const ReviewQueueModal: React.FC<ReviewQueueModalProps> = ({
                     <tr
                       key={ev.change_object_id}
                       onClick={() => setSelectedIndex(idx)}
-                      className={`cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-indigo-950/40 border-l-2 border-indigo-500'
-                          : 'hover:bg-slate-800/40'
-                      }`}
+                      className="cursor-pointer transition-all"
+                      style={{
+                        borderBottom: '1px solid var(--line)',
+                        background: isSelected ? 'var(--amber-wash)' : 'transparent',
+                        borderLeft: isSelected ? '3px solid var(--amber)' : '3px solid transparent',
+                      }}
                     >
-                      <td className="py-2.5 pl-2 text-slate-500 text-[10px] tabular-nums">{idx + 1}</td>
-                      <td className="py-2.5 text-slate-300 font-semibold truncate max-w-[120px]" title={ev.change_object_id}>
-                        {ev.change_object_id.slice(0, 10)}...
+                      <td className="py-2.5 pl-2 tabular-nums" style={{ color: 'var(--ink-3)', fontSize: 10 }}>{idx + 1}</td>
+                      <td className="py-2.5 truncate" style={{ color: 'var(--ink-2)', maxWidth: 100, fontWeight: 600 }} title={ev.change_object_id}>
+                        {ev.change_object_id.slice(0, 10)}…
                       </td>
                       <td className="py-2.5">
                         <span
-                          className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                          className="t-tag"
                           style={{
-                            backgroundColor: `${color}25`,
-                            color: color,
+                            padding: '1px 6px',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 9,
+                            background: `${color}20`,
+                            color,
                             border: `1px solid ${color}50`,
                           }}
                         >
                           {ev.change_type.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="py-2.5 text-right font-bold text-white tabular-nums">
+                      <td className="py-2.5 text-right tabular-nums" style={{ color: 'var(--ink)', fontWeight: 700 }}>
                         {ev.measurement.area_label}
                       </td>
-                      <td className="py-2.5 text-center text-slate-300 tabular-nums">
+                      <td className="py-2.5 text-center tabular-nums" style={{ color: 'var(--ink-2)' }}>
                         {ev.temporal.first_supported || ev.sources.after.acquired_at}
                       </td>
-                      <td className="py-2.5 text-right text-emerald-400 font-semibold tabular-nums">
+                      <td className="py-2.5 text-right tabular-nums" style={{ color: 'var(--amber)', fontWeight: 600 }}>
                         {(ev.confidence.overall * 100).toFixed(0)}%
                       </td>
                       <td className="py-2.5 text-center">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] uppercase font-semibold ${
-                            ev.status === 'confirmed'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                              : ev.status === 'rejected'
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                          }`}
+                          className="t-tag"
+                          style={{
+                            padding: '1px 6px',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 9,
+                            background: ev.status === 'confirmed' ? 'var(--confirmed-fill)' : ev.status === 'rejected' ? 'var(--rejected-fill)' : 'var(--amber-wash)',
+                            color: ev.status === 'confirmed' ? 'var(--confirmed-text)' : ev.status === 'rejected' ? 'var(--rejected-text)' : 'var(--amber)',
+                            border: `1px solid ${ev.status === 'confirmed' ? 'var(--confirmed-border)' : ev.status === 'rejected' ? 'var(--rejected-border)' : 'var(--amber)'}`,
+                          }}
                         >
-                          {ev.status}
+                          {ev.status.toUpperCase()}
                         </span>
                       </td>
                       <td className="py-2.5 pr-2 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           <button
-                            onClick={() => {
-                              onSelectEvidence(ev);
-                              onClose();
-                            }}
-                            className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
-                            title="Inspect on map [e]"
+                            onClick={() => { onSelectEvidence(ev); onClose(); }}
+                            className="p-1 cursor-pointer transition-colors"
+                            style={{ background: 'var(--panel-2)', border: '1px solid var(--line)', color: 'var(--ink-2)', borderRadius: 'var(--radius-sm)' }}
+                            title="Inspect [e]"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => onConfirm(ev.change_object_id)}
-                            className="p-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-800/50"
-                            title="Confirm genuine change [c]"
+                            className="p-1 cursor-pointer transition-colors"
+                            style={{ background: 'var(--confirmed-fill)', border: '1px solid var(--confirmed-border)', color: 'var(--confirmed-text)', borderRadius: 'var(--radius-sm)' }}
+                            title="Confirm [c]"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => onReject(ev.change_object_id)}
-                            className="p-1 rounded bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800/50"
-                            title="Reject false alarm [r]"
+                            className="p-1 cursor-pointer transition-colors"
+                            style={{ background: 'var(--rejected-fill)', border: '1px solid var(--rejected-border)', color: 'var(--rejected-text)', borderRadius: 'var(--radius-sm)' }}
+                            title="Reject [r]"
                           >
                             <Ban className="w-3.5 h-3.5" />
                           </button>
@@ -344,11 +334,7 @@ export const ReviewQueueModal: React.FC<ReviewQueueModalProps> = ({
                   key={ev.change_object_id}
                   evidence={ev}
                   isSelected={idx === selectedIndex}
-                  onSelect={() => {
-                    setSelectedIndex(idx);
-                    onSelectEvidence(ev);
-                    onClose();
-                  }}
+                  onSelect={() => { setSelectedIndex(idx); onSelectEvidence(ev); onClose(); }}
                   onConfirm={onConfirm}
                   onReject={onReject}
                 />
@@ -357,33 +343,26 @@ export const ReviewQueueModal: React.FC<ReviewQueueModalProps> = ({
           )}
         </div>
 
-        {/* Footer with Discoverable Keyboard Shortcuts */}
-        <div className="p-3 bg-[#111827] border-t border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
-          <div className="flex items-center gap-2 text-slate-400 flex-wrap">
-            <Keyboard className="w-4 h-4 text-indigo-400 inline" />
-            <span className="text-[11px] text-slate-400">Shortcuts:</span>
-            <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[10px]">
-              <strong className="text-white">j</strong>/<strong>k</strong> Nav
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-800 text-emerald-300 text-[10px]">
-              <strong className="text-white">c</strong> Confirm
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-rose-950/70 border border-rose-800 text-rose-300 text-[10px]">
-              <strong className="text-white">r</strong> Reject
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-indigo-950/70 border border-indigo-800 text-indigo-300 text-[10px]">
-              <strong className="text-white">e</strong> Inspect
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[10px]">
-              <strong className="text-white">Esc</strong> Close
-            </span>
+        {/* Footer */}
+        <div className="p-3 flex items-center justify-between flex-wrap gap-2" style={{ borderTop: '1px solid var(--line)', background: 'var(--bg)' }}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Keyboard className="w-4 h-4" style={{ color: 'var(--amber)' }} />
+            <span className="t-tag" style={{ color: 'var(--ink-3)', fontSize: 9 }}>SHORTCUTS:</span>
+            {[
+              { key: 'j/k', label: 'Nav', bg: 'var(--panel-2)', color: 'var(--ink-2)', border: 'var(--line)' },
+              { key: 'c', label: 'Confirm', bg: 'var(--confirmed-fill)', color: 'var(--confirmed-text)', border: 'var(--confirmed-border)' },
+              { key: 'r', label: 'Reject', bg: 'var(--rejected-fill)', color: 'var(--rejected-text)', border: 'var(--rejected-border)' },
+              { key: 'e', label: 'Inspect', bg: 'var(--amber-wash)', color: 'var(--amber)', border: 'var(--amber)' },
+              { key: 'Esc', label: 'Close', bg: 'var(--panel-2)', color: 'var(--ink-2)', border: 'var(--line)' },
+            ].map(({ key, label, bg, color, border }) => (
+              <span key={key} className="t-tag px-1.5 py-0.5" style={{ background: bg, color, border: `1px solid ${border}`, borderRadius: 'var(--radius-sm)', fontSize: 9 }}>
+                <strong style={{ color: 'var(--ink)' }}>{key}</strong> {label}
+              </span>
+            ))}
           </div>
 
-          <button
-            onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
-          >
-            Done Reviewing
+          <button onClick={onClose} className="btn-primary" style={{ padding: '6px 16px', fontSize: 11 }}>
+            <span>DONE</span>
           </button>
         </div>
       </div>

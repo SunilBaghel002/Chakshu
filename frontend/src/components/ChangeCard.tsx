@@ -12,6 +12,9 @@ interface ChangeCardProps {
   className?: string;
 }
 
+/**
+ * ChangeCard — Grid-view card in Review Queue with Console Treatment
+ */
 export const ChangeCard: React.FC<ChangeCardProps> = ({
   evidence,
   isSelected = false,
@@ -28,72 +31,99 @@ export const ChangeCard: React.FC<ChangeCardProps> = ({
   return (
     <div
       onClick={() => onSelect?.(evidence)}
-      className={`relative rounded-xl p-3.5 transition-all cursor-pointer border ${
+      className={`relative p-3.5 transition-all cursor-pointer border corner-ticks ${
         isSelected
-          ? 'bg-slate-900/95 border-indigo-500 shadow-lg shadow-indigo-500/20 ring-1 ring-indigo-500'
-          : 'bg-[#111827]/90 hover:bg-slate-900 border-[#1F2937] hover:border-slate-700'
+          ? 'bg-[var(--panel2)] border-[var(--amber)] shadow-lg shadow-[rgba(240,180,95,0.1)]'
+          : 'bg-[var(--panel)] hover:bg-[var(--panel2)] border-[var(--line)] hover:border-[var(--line-strong)]'
       } ${className}`}
+      style={{
+        borderRadius: 'var(--r-sm)',
+      }}
     >
       {/* Top row: Change Type + Epistemic Chip + Status */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
-            className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+            className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono"
             style={{
-              backgroundColor: `${color}25`,
+              backgroundColor: `${color}18`,
               color: color,
-              border: `1px solid ${color}50`,
+              border: `1px solid ${color}40`,
+              borderRadius: 'var(--r-sm)',
             }}
           >
             {change_type.replace('_', ' ')}
           </span>
 
-          {/* Epistemic Chip (PRD 4 §3: MEASURED solid green, INFERRED dashed amber) */}
+          {/* Epistemic Chip */}
           <span
-            className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium flex items-center gap-1"
+            className="px-1.5 py-0.5 text-[9px] font-mono font-semibold flex items-center gap-1"
             style={{
-              backgroundColor: PALETTE.measuredBg,
-              color: PALETTE.measuredGreen,
+              backgroundColor: PALETTE.measuredFill,
+              color: PALETTE.measuredText,
               border: `1px solid ${PALETTE.measuredBorder}`,
+              borderRadius: 'var(--r-sm)',
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-measured)]"></span>
             MEASURED
           </span>
         </div>
 
         {/* Status indicator */}
         <span
-          className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase ${
-            status === 'confirmed'
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-              : status === 'rejected'
-              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-          }`}
+          className="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider"
+          style={{
+            borderRadius: 'var(--r-sm)',
+            backgroundColor:
+              status === 'confirmed'
+                ? 'var(--color-measured-fill)'
+                : status === 'rejected'
+                ? 'var(--color-rejected-fill)'
+                : 'var(--color-inferred-fill)',
+            color:
+              status === 'confirmed'
+                ? 'var(--color-measured-text)'
+                : status === 'rejected'
+                ? 'var(--color-rejected-text)'
+                : 'var(--color-inferred-text)',
+            border: `1px solid ${
+              status === 'confirmed'
+                ? 'rgba(47,191,113,0.3)'
+                : status === 'rejected'
+                ? 'rgba(229,72,77,0.3)'
+                : 'rgba(240,180,95,0.3)'
+            }`,
+          }}
         >
           {status}
         </span>
       </div>
 
       {/* Center section: Ground Area & Onset */}
-      <div className="grid grid-cols-2 gap-2 my-2 py-2 border-y border-slate-800/80">
+      <div
+        className="grid grid-cols-2 gap-2 my-2 py-2"
+        style={{
+          borderTop: '1px solid var(--line)',
+          borderBottom: '1px solid var(--line)',
+        }}
+      >
         <div>
-          <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
-            <Ruler className="w-3 h-3 text-indigo-400" />
+          <div className="flex items-center gap-1 text-[var(--ink3)] text-[10px] font-mono">
+            <Ruler className="w-3 h-3 text-[var(--amber)]" />
             <span>GROUND AREA</span>
           </div>
-          <span className="text-sm font-bold text-white font-mono tabular-nums mt-0.5 block">
+          <span className="text-sm font-bold text-[var(--ink)] font-mono tabular-nums mt-0.5 block">
             {measurement.area_label}
           </span>
         </div>
 
         <div>
-          <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
-            <Calendar className="w-3 h-3 text-amber-400" />
+          <div className="flex items-center gap-1 text-[var(--ink3)] text-[10px] font-mono">
+            <Calendar className="w-3 h-3 text-[var(--teal)]" />
             <span>FIRST SEEN</span>
           </div>
-          <span className="text-xs font-semibold text-slate-300 font-mono tabular-nums mt-0.5 block truncate">
+          <span className="text-xs font-semibold text-[var(--ink2)] font-mono tabular-nums mt-0.5 block truncate">
             {onsetDate}
           </span>
         </div>
@@ -102,18 +132,18 @@ export const ChangeCard: React.FC<ChangeCardProps> = ({
       {/* Confidence Bar */}
       <div className="mb-3">
         <div className="flex items-center justify-between text-[10px] font-mono mb-1">
-          <span className="text-slate-400 flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3 text-emerald-400" />
-            Confidence
+          <span className="text-[var(--ink3)] flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3 text-[var(--teal)]" />
+            CONFIDENCE
           </span>
-          <span className="text-emerald-400 font-bold tabular-nums">{confPct}%</span>
+          <span className="text-[var(--amber)] font-bold tabular-nums">{confPct}%</span>
         </div>
-        <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+        <div className="w-full h-1.5 bg-[var(--well)] overflow-hidden" style={{ borderRadius: 'var(--r-sm)' }}>
           <div
-            className="h-full rounded-full transition-all duration-300"
+            className="h-full transition-all duration-300"
             style={{
               width: `${confPct}%`,
-              backgroundColor: confPct > 80 ? '#10B981' : confPct > 60 ? '#F59E0B' : '#EF4444',
+              backgroundColor: confPct > 80 ? 'var(--color-measured)' : confPct > 60 ? 'var(--amber)' : 'var(--color-rejected)',
             }}
           />
         </div>
@@ -121,36 +151,41 @@ export const ChangeCard: React.FC<ChangeCardProps> = ({
 
       {/* Bottom Action Bar */}
       <div className="flex items-center justify-between pt-1">
-        <span className="text-[10px] font-mono text-slate-500 truncate max-w-[120px]" title={change_object_id}>
+        <span className="text-[10px] font-mono text-[var(--ink3)] truncate max-w-[120px]" title={change_object_id}>
           {change_object_id.slice(0, 8)}...
         </span>
 
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onSelect?.(evidence)}
-            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 bg-[var(--panel2)] hover:bg-[var(--line)] text-[var(--ink2)] hover:text-[var(--ink)] transition-colors"
+            style={{ borderRadius: 'var(--r-sm)', border: '1px solid var(--line)' }}
             title="Inspect on Map"
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onConfirm?.(change_object_id)}
-            className={`p-1.5 rounded transition-colors ${
-              status === 'confirmed'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-800/60'
-            }`}
+            className="p-1.5 transition-colors"
+            style={{
+              borderRadius: 'var(--r-sm)',
+              backgroundColor: status === 'confirmed' ? 'var(--color-measured)' : 'var(--color-measured-fill)',
+              color: status === 'confirmed' ? '#000' : 'var(--color-measured-text)',
+              border: '1px solid rgba(47,191,113,0.3)',
+            }}
             title="Confirm genuine change"
           >
             <Check className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onReject?.(change_object_id)}
-            className={`p-1.5 rounded transition-colors ${
-              status === 'rejected'
-                ? 'bg-rose-600 text-white'
-                : 'bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800/60'
-            }`}
+            className="p-1.5 transition-colors"
+            style={{
+              borderRadius: 'var(--r-sm)',
+              backgroundColor: status === 'rejected' ? 'var(--color-rejected)' : 'var(--color-rejected-fill)',
+              color: status === 'rejected' ? '#FFF' : 'var(--color-rejected-text)',
+              border: '1px solid rgba(229,72,77,0.3)',
+            }}
             title="Reject as false alarm"
           >
             <Ban className="w-3.5 h-3.5" />
