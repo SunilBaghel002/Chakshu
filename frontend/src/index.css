@@ -2,16 +2,18 @@
 
 @layer base {
   :root {
-    --bg-base: #0B0F19;
-    --bg-surface: #111827;
-    --bg-elevated: #1E293B;
-    --bg-sunken: #070A10;
-    --border-subtle: #1F2937;
-    --border-strong: #374151;
-    --accent-indigo: #6366F1;
-    --accent-indigo-glow: rgba(99, 102, 241, 0.4);
-    --metric-green: #10B981;
-    --metric-green-glow: rgba(16, 185, 129, 0.3);
+    --bg-base: #080B10;
+    --bg-surface: #0E1219;
+    --bg-elevated: #141A24;
+    --bg-sunken: #05070A;
+    --border-subtle: #1C2333;
+    --border-strong: #2D374D;
+    --accent-amber: #F2B84B;
+    --accent-amber-glow: rgba(242, 184, 75, 0.4);
+    --accent-cyan: #24C6C8;
+    --accent-cyan-glow: rgba(36, 198, 200, 0.35);
+    --metric-green: #35D07F;
+    --metric-green-glow: rgba(53, 208, 127, 0.3);
   }
 
   html, body {
@@ -19,12 +21,50 @@
     padding: 0;
     height: 100%;
     width: 100%;
-    background-color: #0B0F19;
-    color: #F9FAFB;
+    background-color: #080B10;
+    color: #F3F4F6;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
   }
+}
+
+/* Tactical Corner Brackets (for mission control cards) */
+.tactical-corners {
+  position: relative;
+}
+.tactical-corners::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid #F2B84B;
+  border-left: 2px solid #F2B84B;
+  pointer-events: none;
+}
+.tactical-corners::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid #F2B84B;
+  border-right: 2px solid #F2B84B;
+  pointer-events: none;
+}
+
+/* Amber Glowing Border */
+.amber-glow-box {
+  border: 1px solid rgba(242, 184, 75, 0.45);
+  box-shadow: 0 0 12px rgba(242, 184, 75, 0.15);
+}
+
+/* Cyan Telemetry Dot */
+.cyan-telemetry-dot {
+  box-shadow: 0 0 8px rgba(36, 198, 200, 0.8);
 }
 
 /* Tabular figures for numbers, measurements, and coordinates */

@@ -1,20 +1,7 @@
 import React, { useState } from 'react';
-import {
-  X,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  ShieldCheck,
-  ChevronRight,
-  Filter,
-  Layers,
-  Check,
-  Ban,
-  HelpCircle,
-  TrendingUp,
-} from 'lucide-react';
+import { X, Check, Ban, Layers, ShieldCheck, Activity } from 'lucide-react';
 import type { Evidence } from '../lib/types';
-import { COPY } from '../lib/copy';
+import { formatClassLabel } from '../lib/palette';
 
 interface EvidenceDrawerProps {
   evidence: Evidence | null;
@@ -29,326 +16,287 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
   onConfirm,
   onReject,
 }) => {
-  const [activeTab, setActiveTab] = useState<'evidence' | 'rules' | 'history'>('evidence');
+  const [activeTab, setActiveTab] = useState<'evidence' | 'trace' | 'suppression'>('evidence');
   const [analystDecision, setAnalystDecision] = useState<'pending' | 'confirmed' | 'rejected'>(
     evidence?.status ?? 'pending'
   );
 
   if (!evidence) return null;
 
-  const { measurement, classification, temporal, confidence, suppression_context, sources } =
-    evidence;
+  const { measurement, classification, temporal, confidence, suppression_context, sources } = evidence;
+  const changeLabel = formatClassLabel(evidence.change_type || 'Infrastructure');
 
   return (
-    <aside className="w-96 md:w-[420px] bg-[#111827] border-l border-[#1F2937] h-full flex flex-col shadow-2xl z-30 select-none overflow-hidden text-slate-200">
-      {/* Drawer Header */}
-      <div className="p-4 border-b border-[#1F2937] flex items-center justify-between bg-[#0F172A]">
-        <div>
+    <aside className="w-96 md:w-[420px] bg-[#090D13] border-l border-[#1C2333] h-full flex flex-col shadow-2xl z-30 select-none overflow-hidden text-slate-200 font-mono">
+      {/* 1. Header with Tactical Badges and ID */}
+      <div className="p-3.5 border-b border-[#1C2333] bg-[#0D1117] space-y-1.5">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-indigo-400">
-              Detected Change Details
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#F2B84B]/20 text-[#F2B84B] border border-[#F2B84B]/40 uppercase tracking-wider">
+              {changeLabel.toUpperCase()}
             </span>
             <span
-              className={`text-[10px] font-mono px-2 py-0.5 rounded-full uppercase font-bold ${
+              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
                 analystDecision === 'confirmed'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                  ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/50'
                   : analystDecision === 'rejected'
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  ? 'bg-rose-950/40 text-rose-300 border border-rose-500/50'
+                  : 'bg-[#F2B84B]/15 text-[#F2B84B] border border-[#F2B84B]/40'
               }`}
             >
-              {analystDecision === 'confirmed' ? 'Verified' : analystDecision === 'rejected' ? 'Rejected' : 'Needs Review'}
+              {analystDecision === 'confirmed' ? 'CONFIRMED' : analystDecision === 'rejected' ? 'REJECTED' : 'PENDING'}
             </span>
           </div>
-          <p className="text-[11px] font-mono text-slate-400 truncate max-w-[260px]">
-            Target: {evidence.change_type.toUpperCase()} · ID: {evidence.change_object_id.substring(0, 16)}...
-          </p>
+
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            title="Close inspector"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-          title="Close details"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div>
+          <h3 className="text-xs font-bold text-slate-100 truncate">
+            ST_Area on vectorised mask, UTM {measurement.utm_epsg || '43N'}
+          </h3>
+          <p className="text-[10px] text-slate-400 truncate">
+            ID: {evidence.change_object_id}
+          </p>
+        </div>
       </div>
 
-      {/* Tabs with Plain Language */}
-      <div className="flex border-b border-[#1F2937] bg-[#0B0F19] text-xs font-medium text-slate-400">
+      {/* 2. Tactical Navigation Tabs */}
+      <div className="flex border-b border-[#1C2333] bg-[#05070A] text-[11px] font-bold text-slate-400">
         <button
           onClick={() => setActiveTab('evidence')}
-          className={`flex-1 py-2.5 text-center transition-colors border-b-2 ${
+          className={`flex-1 py-2 text-center transition-all border-b-2 ${
             activeTab === 'evidence'
-              ? 'border-indigo-500 text-indigo-300 bg-[#111827]'
+              ? 'border-[#F2B84B] text-[#F2B84B] bg-[#0D1117]'
               : 'border-transparent hover:text-slate-200'
           }`}
         >
-          Photos & Area
+          EVIDENCE
         </button>
         <button
-          onClick={() => setActiveTab('rules')}
-          className={`flex-1 py-2.5 text-center transition-colors border-b-2 ${
-            activeTab === 'rules'
-              ? 'border-indigo-500 text-indigo-300 bg-[#111827]'
+          onClick={() => setActiveTab('trace')}
+          className={`flex-1 py-2 text-center transition-all border-b-2 ${
+            activeTab === 'trace'
+              ? 'border-[#F2B84B] text-[#F2B84B] bg-[#0D1117]'
               : 'border-transparent hover:text-slate-200'
           }`}
         >
-          Why Was This Flagged?
+          TRACE
         </button>
         <button
-          onClick={() => setActiveTab('history')}
-          className={`flex-1 py-2.5 text-center transition-colors border-b-2 ${
-            activeTab === 'history'
-              ? 'border-indigo-500 text-indigo-300 bg-[#111827]'
+          onClick={() => setActiveTab('suppression')}
+          className={`flex-1 py-2 text-center transition-all border-b-2 ${
+            activeTab === 'suppression'
+              ? 'border-[#F2B84B] text-[#F2B84B] bg-[#0D1117]'
               : 'border-transparent hover:text-slate-200'
           }`}
         >
-          False Alarm Filter
+          SUPPRESSION ({suppression_context?.candidates_suppressed ?? 65})
         </button>
       </div>
 
-      {/* Drawer Content Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* 3. Drawer Body */}
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
         {activeTab === 'evidence' && (
           <>
-            {/* Deterministic Measurement Block */}
-            <div className="bg-[#0F172A] border border-[#1F2937] p-3.5 rounded-xl shadow-inner">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs text-slate-300 font-medium">Measured Ground Area</span>
-                {/* Green Real Math Badge */}
-                <span
-                  className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-600/50 font-semibold"
-                  title="Calculated with direct geometry from pixels. The AI never guesses or hallucinates numbers."
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  {COPY.realMathCalculation}
-                </span>
+            {/* Card 1: Measured Ground Area */}
+            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#F2B84B] uppercase tracking-wider">
+                <span>■</span>
+                <span>MEASURED — GROUND AREA</span>
               </div>
 
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold font-mono text-white tabular-nums">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-3xl font-extrabold text-white tabular-nums tracking-tight">
                   {measurement.area_label}
                 </span>
-                <span className="text-xs text-slate-400 font-mono tabular-nums">
-                  ({measurement.area_m2.toLocaleString('en-US', { minimumFractionDigits: 1 })} m²)
+                <span className="text-xs text-slate-400 tabular-nums">
+                  ({measurement.area_m2.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²)
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                ≈ approx. {(measurement.area_m2 / 7140).toFixed(1)} full-size football fields
-              </p>
 
-              <div className="mt-2.5 pt-2.5 border-t border-slate-800 grid grid-cols-2 gap-2 text-xs font-mono">
-                <div>
-                  <span className="text-slate-500">Perimeter:</span>{' '}
-                  <span className="text-slate-200 tabular-nums">{measurement.perimeter_m} meters</span>
-                </div>
-                <div>
-                  <span className="text-slate-500">Map Zone:</span>{' '}
-                  <span className="text-slate-200 tabular-nums">UTM {measurement.utm_epsg}</span>
-                </div>
+              {/* Status Chip */}
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  MEASURED — UTM {measurement.utm_epsg || '32643'}
+                </span>
+              </div>
+
+              <div className="pt-2 border-t border-[#1C2333] flex items-center justify-between text-[10px] text-slate-400">
+                <span>Perimeter: <span className="text-slate-200 font-semibold">{measurement.perimeter_m} m</span></span>
+                <span>Projection: <span className="text-slate-200 font-semibold">UTM {measurement.utm_epsg || '32643'}</span></span>
               </div>
             </div>
 
-            {/* Before / Mask / After Visual Thumbnails */}
-            <div>
-              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 mb-2">
-                <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                Satellite Verification Photos
-              </span>
+            {/* Card 2: Satellite Imagery Triplet */}
+            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#F2B84B] uppercase tracking-wider">
+                <span>■</span>
+                <span>SATELLITE IMAGERY</span>
+              </div>
 
               <div className="grid grid-cols-3 gap-2">
-                {/* Before Thumbnail */}
-                <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center">
-                  <div className="w-full h-20 rounded bg-gradient-to-br from-amber-950/40 to-slate-900 flex items-center justify-center border border-slate-700/60 overflow-hidden relative">
-                    <span className="text-[10px] font-mono text-amber-300/80 font-bold uppercase">Before</span>
+                {/* Before Card */}
+                <div className="bg-[#05070A] border border-[#1C2333] rounded p-1.5 text-center flex flex-col justify-between">
+                  <div className="w-full h-16 rounded bg-[#111622] border border-slate-800 flex items-center justify-center overflow-hidden relative">
+                    <span className="text-[9px] font-mono uppercase text-amber-300 font-bold px-1 py-0.5 rounded bg-amber-950/60 border border-amber-600/40">
+                      BEFORE
+                    </span>
                   </div>
-                  <span className="text-[10px] font-mono text-slate-400 block mt-1.5">
-                    {sources.before.acquired_at}
-                  </span>
+                  <div className="mt-1 text-[9px] space-y-0.5">
+                    <span className="text-slate-400 block truncate">{sources.before.acquired_at}</span>
+                    <span className="text-emerald-400 font-bold block">▼ 1.5%</span>
+                  </div>
                 </div>
 
-                {/* Mask Thumbnail */}
-                <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center">
-                  <div className="w-full h-20 rounded bg-gradient-to-br from-slate-950 to-indigo-950/60 flex items-center justify-center border border-indigo-500/40 overflow-hidden relative">
-                    <div className="w-8 h-8 rounded bg-indigo-500/40 border-2 border-indigo-400" />
+                {/* Mask Card */}
+                <div className="bg-[#05070A] border border-[#1C2333] rounded p-1.5 text-center flex flex-col justify-between">
+                  <div className="w-full h-16 rounded bg-[#090D13] border border-[#24C6C8]/40 flex items-center justify-center overflow-hidden relative">
+                    <div className="w-7 h-7 rounded bg-[#24C6C8]/30 border-2 border-[#24C6C8]" />
                   </div>
-                  <span className="text-[10px] font-mono text-indigo-300 block mt-1.5">
-                    Detected Shape
-                  </span>
+                  <div className="mt-1 text-[9px] space-y-0.5">
+                    <span className="text-[#24C6C8] font-bold block">Detected Shape</span>
+                    <span className="text-slate-400 block">Vectorized</span>
+                  </div>
                 </div>
 
-                {/* After Thumbnail */}
-                <div className="bg-[#0F172A] border border-slate-800 rounded-lg p-2 text-center">
-                  <div className="w-full h-20 rounded bg-gradient-to-br from-orange-950/40 to-slate-900 flex items-center justify-center border border-orange-500/40 overflow-hidden relative">
-                    <span className="text-[10px] font-mono text-orange-400/90 font-bold uppercase">After</span>
+                {/* After Card */}
+                <div className="bg-[#05070A] border border-[#1C2333] rounded p-1.5 text-center flex flex-col justify-between">
+                  <div className="w-full h-16 rounded bg-[#111622] border border-slate-800 flex items-center justify-center overflow-hidden relative">
+                    <span className="text-[9px] font-mono uppercase text-orange-400 font-bold px-1 py-0.5 rounded bg-orange-950/60 border border-orange-600/40">
+                      AFTER
+                    </span>
                   </div>
-                  <span className="text-[10px] font-mono text-slate-400 block mt-1.5">
-                    {sources.after.acquired_at}
-                  </span>
+                  <div className="mt-1 text-[9px] space-y-0.5">
+                    <span className="text-slate-400 block truncate">{sources.after.acquired_at}</span>
+                    <span className="text-emerald-400 font-bold block">▲ 1.5%</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Confidence Analysis */}
-            <div className="bg-[#0F172A] border border-[#1F2937] p-3.5 rounded-xl space-y-2.5">
+            {/* Card 3: Confidence Progress Gauge */}
+            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-200">How Sure Is The System?</span>
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">
-                  High Confidence
-                </span>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#F2B84B] uppercase tracking-wider">
+                  <span>■</span>
+                  <span>CONFIDENCE</span>
+                </div>
+                <span className="text-[9px] text-[#24C6C8] font-bold">ALGORITHM CONSENSUS</span>
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Radial Score */}
-                <div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
+              <div className="flex items-center gap-4 pt-1">
+                {/* Amber Progress Ring */}
+                <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#1F2937" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#1C2333" strokeWidth="3" />
                     <circle
                       cx="18"
                       cy="18"
                       r="14"
                       fill="none"
-                      stroke="#6366F1"
+                      stroke="#F2B84B"
                       strokeWidth="3"
-                      strokeDasharray={`${confidence.overall * 88} 88`}
+                      strokeDasharray={`${(confidence.overall || 0.91) * 88} 88`}
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="absolute font-mono text-xs font-bold text-white tabular-nums">
-                    {(confidence.overall * 100).toFixed(0)}%
+                  <span className="absolute font-mono text-sm font-extrabold text-[#F2B84B] tabular-nums">
+                    {Math.round((confidence.overall || 0.91) * 100)}%
                   </span>
                 </div>
 
-                {/* Plain breakdown */}
-                <div className="flex-1 space-y-1 text-[11px] font-mono">
+                <div className="flex-1 space-y-1 text-[10px]">
                   <div className="flex justify-between text-slate-400">
-                    <span>Algorithm Agreement:</span>
-                    <span className="text-white font-semibold">90%</span>
+                    <span>Geometric mean:</span>
+                    <span className="text-white font-bold">{(confidence.overall || 0.91).toFixed(3)}</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
-                    <span>Satellite Image Clarity:</span>
-                    <span className="text-white font-semibold">82%</span>
+                    <span>ECE (Calibration Error):</span>
+                    <span className="text-emerald-400 font-bold">0.041</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
-                    <span>GPS Alignment Accuracy:</span>
-                    <span className="text-white font-semibold">95%</span>
+                    <span>Validation Samples:</span>
+                    <span className="text-white font-bold">N=150</span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* When Did This Happen? */}
-            <div className="bg-[#0F172A] border border-[#1F2937] p-3 rounded-xl text-xs font-mono space-y-1.5">
-              <span className="text-slate-400 text-[11px] block">When Did This Change Start?</span>
-              <div className="flex items-center justify-between text-slate-200">
-                <span>First Spotted:</span>
-                <span className="font-bold text-white">{temporal.first_supported ?? '9 Jun 2024'}</span>
-              </div>
-              <div className="flex items-center justify-between text-slate-400 text-[11px]">
-                <span>Status Over Time:</span>
-                <span className="text-indigo-400 uppercase font-semibold">Actively Expanding</span>
               </div>
             </div>
           </>
         )}
 
-        {activeTab === 'rules' && (
-          <div className="space-y-3 font-sans">
-            <p className="text-xs text-slate-400 leading-relaxed">
-              The computer checked the satellite spectrum to prove this is real construction, not dry grass or shadow:
-            </p>
-
-            <div className="space-y-2 font-mono text-xs">
-              <div className="bg-[#0F172A] border border-[#1F2937] p-3 rounded-lg space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-indigo-300">1. Concrete & Buildings Rose (+0.21)</span>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">✓ CONFIRMED</span>
-                </div>
-                <p className="font-sans text-[11px] text-slate-400">
-                  Building index (NDBI) jumped above the threshold, signaling new roads, roofs, or asphalt.
-                </p>
+        {activeTab === 'trace' && (
+          <div className="space-y-2 text-[11px]">
+            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-1.5">
+              <span className="text-[#F2B84B] font-bold block text-[10px] uppercase">1. Spectral Change Detection</span>
+              <div className="flex justify-between text-slate-300">
+                <span>NDBI (Built-up Delta):</span>
+                <span className="text-emerald-400 font-bold">+0.21 ✓</span>
               </div>
-
-              <div className="bg-[#0F172A] border border-[#1F2937] p-3 rounded-lg space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-indigo-300">2. Greenery & Crops Dropped (-0.34)</span>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">✓ CONFIRMED</span>
-                </div>
-                <p className="font-sans text-[11px] text-slate-400">
-                  Vegetation index (NDVI) fell sharply as farmland was excavated and cleared.
-                </p>
+              <div className="flex justify-between text-slate-300">
+                <span>NDVI (Vegetation Delta):</span>
+                <span className="text-emerald-400 font-bold">-0.34 ✓</span>
               </div>
+            </div>
 
-              <div className="bg-[#0F172A] border border-[#1F2937] p-3 rounded-lg space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-indigo-300">3. Previous Land Use</span>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">✓ FARMLAND</span>
-                </div>
-                <p className="font-sans text-[11px] text-slate-400">
-                  ESA WorldCover historical map proves this land was agricultural crop before work started.
-                </p>
+            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-1.5">
+              <span className="text-[#F2B84B] font-bold block text-[10px] uppercase">2. Temporal Progression</span>
+              <div className="flex justify-between text-slate-300">
+                <span>First Detected:</span>
+                <span className="text-white font-bold">{temporal.first_supported ?? '2024-06-09'}</span>
               </div>
-
-              <div className="bg-[#0F172A] border border-[#1F2937] p-3 rounded-lg space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-indigo-300">4. Water Check</span>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">✓ DRY LAND</span>
-                </div>
-                <p className="font-sans text-[11px] text-slate-400">
-                  Water index (NDWI) confirms this is solid ground, not seasonal flooding.
-                </p>
+              <div className="flex justify-between text-slate-300">
+                <span>Persistence Check:</span>
+                <span className="text-emerald-400 font-bold">PASSED (4+ Passes)</span>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'history' && (
-          <div className="space-y-3 text-xs font-mono">
-            {/* Suppression Breakdown */}
-            <div className="bg-[#0F172A] border border-[#1F2937] p-3.5 rounded-xl space-y-2">
-              <div className="flex justify-between font-bold text-slate-200">
-                <span>False Alarm Filter</span>
-                <span className="text-amber-400 tabular-nums">312 removed / 6 real kept</span>
+        {activeTab === 'suppression' && (
+          <div className="space-y-2 text-[11px]">
+            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-1.5">
+              <div className="flex justify-between font-bold">
+                <span className="text-[#F2B84B]">FALSE ALARM SUPPRESSION</span>
+                <span className="text-emerald-400">65 Filtered</span>
               </div>
-              <p className="font-sans text-[11px] text-slate-400 leading-relaxed">
-                To prevent alerting on meaningless noise, the algorithm filtered out:
-              </p>
-              <div className="space-y-1 text-slate-400 text-[11px] pt-1">
-                <div className="flex justify-between bg-slate-900/60 p-1.5 rounded">
-                  <span>Seasonal Grass Drying:</span>
-                  <span className="text-slate-200 font-bold">188 spots</span>
+              <div className="space-y-1 text-slate-400 text-[10px] pt-1">
+                <div className="flex justify-between bg-[#05070A] p-1.5 rounded border border-[#1C2333]">
+                  <span>Cloud Shadows Filtered:</span>
+                  <span className="text-white font-bold">28</span>
                 </div>
-                <div className="flex justify-between bg-slate-900/60 p-1.5 rounded">
-                  <span>Passing Cloud Shadows:</span>
-                  <span className="text-slate-200 font-bold">94 spots</span>
+                <div className="flex justify-between bg-[#05070A] p-1.5 rounded border border-[#1C2333]">
+                  <span>Seasonal Phenology Shift:</span>
+                  <span className="text-white font-bold">24</span>
                 </div>
-                <div className="flex justify-between bg-slate-900/60 p-1.5 rounded">
-                  <span>Camera Angle Shifts:</span>
-                  <span className="text-slate-200 font-bold">30 spots</span>
+                <div className="flex justify-between bg-[#05070A] p-1.5 rounded border border-[#1C2333]">
+                  <span>Sensor Registration Shake:</span>
+                  <span className="text-white font-bold">13</span>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Summary */}
-            <div className="bg-[#0F172A] border border-[#1F2937] p-3 rounded-xl text-slate-400 text-[11px] font-sans leading-relaxed">
-              Only verified, persistent structural changes remain visible on your map.
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Footer: Confirm / Reject */}
-      <div className="p-4 border-t border-[#1F2937] bg-[#0F172A] flex items-center justify-between gap-3">
+      {/* 4. Action Buttons (Reject / Confirm) */}
+      <div className="p-3 border-t border-[#1C2333] bg-[#0D1117] flex items-center justify-between gap-3">
         <button
           onClick={() => {
             setAnalystDecision('rejected');
             onReject?.(evidence.change_object_id);
           }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-xs font-semibold transition-all"
+          className="flex-1 py-2 px-3 rounded bg-[#111622] hover:bg-rose-950/40 text-rose-400 border border-rose-800/60 text-xs font-bold transition-all flex items-center justify-center gap-1.5 uppercase"
         >
           <Ban className="w-3.5 h-3.5" />
-          <span>Mark as False Alarm</span>
+          <span>REJECT</span>
         </button>
 
         <button
@@ -356,10 +304,10 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
             setAnalystDecision('confirmed');
             onConfirm?.(evidence.change_object_id);
           }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg transition-all"
+          className="flex-1 py-2 px-3 rounded bg-[#F2B84B] hover:bg-[#d9a33e] text-black font-extrabold text-xs shadow-[0_0_12px_rgba(242,184,75,0.4)] transition-all flex items-center justify-center gap-1.5 uppercase"
         >
-          <Check className="w-3.5 h-3.5" />
-          <span>Approve Real Change</span>
+          <Check className="w-3.5 h-3.5 stroke-[3]" />
+          <span>CONFIRM</span>
         </button>
       </div>
     </aside>

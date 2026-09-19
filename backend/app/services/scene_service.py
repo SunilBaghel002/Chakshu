@@ -59,7 +59,7 @@ class SceneService:
                                 sid = m.get("scene_id", scene_dir.name)
                                 if sid not in scenes:
                                     # Parse date from scene_id if possible
-                                    # e.g. S2A_JEWAR_20210315_SYNTH
+                                    # e.g. S2A_SCENE_20210315_SYNTH
                                     parts = sid.split("_")
                                     acq_date = "2024-01-01"
                                     for p in parts:

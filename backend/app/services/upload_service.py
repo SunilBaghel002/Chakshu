@@ -192,15 +192,48 @@ class UploadService:
                 tag_data = getattr(pil_img, "tag_v2", {})
                 # ModelPixelScaleTag is tag 33550
                 scale_tag = tag_data.get(33550)
+                # ModelTiepointTag is tag 33922
+                tiepoint_tag = tag_data.get(33922)
+
                 if scale_tag and len(scale_tag) >= 2:
                     sx, sy = float(scale_tag[0]), float(scale_tag[1])
                     derived_gsd = float(math.sqrt(abs(sx * sy)))
                     # If in geographic degrees (e.g. < 0.01), convert degrees to approx meters
                     if derived_gsd < 0.01:
                         derived_gsd *= 111320.0
+
                     is_georeferenced = True
                     crs_epsg = 4326
-                    bounds_4326 = [77.0, 28.0, 77.05, 28.05]
+
+                    # Attempt to compute actual bounds from tiepoint + scale + image size
+                    if tiepoint_tag and len(tiepoint_tag) >= 6:
+                        # Tiepoint format: [i, j, k, x, y, z]
+                        # i, j = pixel coordinates of the tiepoint
+                        # x, y = geographic coordinates of the tiepoint
+                        tp_i, tp_j = float(tiepoint_tag[0]), float(tiepoint_tag[1])
+                        tp_x, tp_y = float(tiepoint_tag[3]), float(tiepoint_tag[4])
+
+                        # Compute bounds from tiepoint + scale + image size
+                        # Origin (top-left) = tiepoint - (pixel * scale)
+                        origin_x = tp_x - tp_i * sx
+                        origin_y = tp_y + tp_j * sy  # Y increases downward in pixel space
+
+                        # Bounds: [min_lon, min_lat, max_lon, max_lat]
+                        min_lon = origin_x
+                        max_lon = origin_x + w * sx
+                        max_lat = origin_y
+                        min_lat = origin_y - h * sy
+
+                        # Sanity check: bounds should be valid geographic coordinates
+                        if (-180 <= min_lon <= 180 and -180 <= max_lon <= 180
+                                and -90 <= min_lat <= 90 and -90 <= max_lat <= 90
+                                and min_lon < max_lon and min_lat < max_lat):
+                            bounds_4326 = [min_lon, min_lat, max_lon, max_lat]
+                        else:
+                            log.info("GeoTIFF bounds computed but outside valid range, leaving as None")
+                    else:
+                        log.info("GeoTIFF has pixel scale but no tiepoint tag, bounds unavailable")
+
             except Exception as exc:
                 log.info("GeoTIFF tag extraction note: %s", exc)
 

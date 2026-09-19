@@ -219,7 +219,8 @@ def normalise_bbox(
     x1, y1, x2, y2 = parse_with_order(bbox_order)
     order_used = bbox_order
 
-    # If coordinates are inverted (e.g., ymax < ymin), normalize min and max
+    # A model occasionally emits an inverted pair. Normalize that pair before
+    # clamp validation; it remains pixel-space and cannot create geometry.
     if x2 < x1:
         x1, x2 = x2, x1
     if y2 < y1:

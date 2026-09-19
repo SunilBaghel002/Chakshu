@@ -6,13 +6,14 @@ import { EvidenceDrawer } from './components/EvidenceDrawer';
 import { AskPanel } from './components/AskPanel';
 import { ReviewQueueModal } from './components/ReviewQueueModal';
 import { UploadModal } from './components/UploadModal';
-import { Calendar, ArrowLeftRight } from 'lucide-react';
+import { SearchModal } from './components/SearchModal';
+import { ComparisonControlBar } from './components/ComparisonControlBar';
+import { Layers, Search, UploadCloud, CheckCircle2, MessageSquare } from 'lucide-react';
 import {
   getAois,
   getScenes,
   getChangeSummary,
   getEvidenceList,
-  getDetections,
   isMockMode,
   setMockMode,
   type AoiItem,
@@ -24,8 +25,8 @@ export const App: React.FC = () => {
   const [aois, setAois] = useState<AoiItem[]>([]);
   const [selectedAoiId, setSelectedAoiId] = useState<string>('');
   const [scenes, setScenes] = useState<SceneItem[]>([]);
-  const [currentScene, setCurrentScene] = useState<SceneItem | null>(null);
-  const [changeSummary, setChangeSummary] = useState<ChangeSummary | null>(null);
+  const [, setCurrentScene] = useState<SceneItem | null>(null);
+  const [, setChangeSummary] = useState<ChangeSummary | null>(null);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
   const [detectionSet, setDetectionSet] = useState<DetectionSet | null>(null);
@@ -35,7 +36,7 @@ export const App: React.FC = () => {
   const [afterDate, setAfterDate] = useState<string>('2026-08-18');
 
   // UI state
-  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask'>('map');
+  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask' | 'search'>('map');
   const [isMock, setIsMock] = useState<boolean>(isMockMode());
   const [sliderPos, setSliderPos] = useState<number>(50);
   const [isSwipeActive, setIsSwipeActive] = useState<boolean>(true);
@@ -60,7 +61,6 @@ export const App: React.FC = () => {
     if (!selectedAoiId) return;
 
     async function loadAoiData() {
-      // 1. Scenes
       const scenesRes = await getScenes(selectedAoiId);
       if (scenesRes.kind === 'ok' && scenesRes.data.length > 0) {
         setScenes(scenesRes.data);
@@ -74,25 +74,17 @@ export const App: React.FC = () => {
         }
       }
 
-      // 2. Summary
       const sumRes = await getChangeSummary(selectedAoiId);
       if (sumRes.kind === 'ok') {
         setChangeSummary(sumRes.data);
       }
 
-      // 3. Evidence list
       const evListRes = await getEvidenceList(selectedAoiId);
       if (evListRes.kind === 'ok') {
         setEvidenceList(evListRes.data);
         if (evListRes.data.length > 0 && evListRes.data[0]) {
           setSelectedEvidence(evListRes.data[0]);
         }
-      }
-
-      // 4. Detections
-      const detRes = await getDetections('jewar_crop');
-      if (detRes.kind === 'ok') {
-        setDetectionSet(detRes.data);
       }
     }
 
@@ -111,8 +103,7 @@ export const App: React.FC = () => {
     setAfterDate(temp);
   };
 
-  // Dynamic filtering of evidence based on selected afterDate:
-  // Shows changes detected up to the afterDate observation point
+  // Dynamic filtering of evidence based on selected afterDate
   const visibleEvidenceList = useMemo(() => {
     return evidenceList.filter((ev) => {
       const date = ev.temporal.first_supported || ev.sources.after.acquired_at;
@@ -144,15 +135,14 @@ export const App: React.FC = () => {
   }, [visibleEvidenceList, selectedEvidence]);
 
   const currentAoi = aois.find((a) => a.id === selectedAoiId);
-  // Centroids: Jewar Airport [28.1305, 77.7612], Bhadla Solar Park [27.53, 71.91]
   const aoiCoords: [number, number] =
     currentAoi?.name.includes('Bhadla') ? [27.53, 71.91] : [28.1305, 77.7612];
 
   const availableDates = Array.from(new Set(scenes.map((s) => s.acquired_at))).sort();
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0B0F19] text-slate-100 font-sans">
-      {/* Top Application Bar */}
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#080B10] text-slate-100 font-sans">
+      {/* Top Application Bar with Telemetry */}
       <AppHeader
         aois={aois}
         selectedAoiId={selectedAoiId}
@@ -162,122 +152,98 @@ export const App: React.FC = () => {
         isMock={isMock}
         onToggleMock={handleToggleMock}
         areaLabel={totalAreaLabel}
-        sceneCount={scenes.length || 36}
-        usableScenes={scenes.filter((s) => s.usable).length || 29}
+        sceneCount={scenes.length || 56}
+        usableScenes={scenes.filter((s) => s.usable).length || 56}
       />
 
       {/* Interactive Date & Comparison Controls Bar */}
-      <div className="bg-[#0D121F] border-b border-[#1F2937] px-4 py-2 flex items-center justify-between gap-3 text-xs flex-wrap z-20 shadow-md">
-        {/* Left: Baseline Before Date */}
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold font-mono text-[11px] uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            1. Older Photo (Before):
-          </span>
-          <input
-            type="date"
-            value={beforeDate}
-            min="2021-01-01"
-            max="2026-12-31"
-            onChange={(e) => setBeforeDate(e.target.value)}
-            className="bg-[#111827] border border-slate-700 text-amber-300 font-mono font-semibold px-2 py-1 rounded text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-inner hover:border-amber-500/70"
-          />
-          <div className="hidden sm:flex items-center gap-1 text-[11px]">
-            {['2021-01-15', '2022-05-20', '2023-08-10'].map((d) => (
-              <button
-                key={d}
-                onClick={() => setBeforeDate(d)}
-                className={`px-1.5 py-0.5 rounded font-mono transition-colors ${
-                  beforeDate === d
-                    ? 'bg-amber-500/30 text-amber-200 border border-amber-500/50 font-bold'
-                    : 'text-slate-400 hover:text-white bg-slate-800/40'
-                }`}
-              >
-                {d.split('-')[0]}
-              </button>
-            ))}
-          </div>
-        </div>
+      <ComparisonControlBar
+        beforeDate={beforeDate}
+        afterDate={afterDate}
+        scenes={scenes}
+        onSelectBeforeDate={setBeforeDate}
+        onSelectAfterDate={setAfterDate}
+        onSwapDates={handleSwapDates}
+        onDetectChanges={() => {
+          if (scenes.length > 0) {
+            const cur = scenes.find((s) => s.acquired_at === afterDate) || scenes[scenes.length - 1];
+            if (cur) setCurrentScene(cur);
+          }
+        }}
+      />
 
-        {/* Center: Swap Dates & Quick 1-Click Presets */}
-        <div className="flex items-center gap-2">
+      {/* Main Workspace: Left Sidebar + Satellite Map + Right Evidence Drawer */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Tactical Navigation Sidebar */}
+        <nav className="w-14 bg-[#080B10] border-r border-[#1C2333] flex flex-col items-center py-2 gap-3 z-20 select-none shrink-0">
           <button
-            onClick={handleSwapDates}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-all hover:border-indigo-400 shadow"
-            title="Swap Before and After dates"
+            onClick={() => setActiveView('map')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'map'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B] shadow-[0_0_10px_rgba(242,184,75,0.2)]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Satellite Map Workspace"
           >
-            <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Swap Dates</span>
+            <Layers className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">MAP</span>
           </button>
 
-          <div className="hidden lg:flex items-center gap-1.5 border-l border-slate-800 pl-2">
-            <span className="text-slate-500 text-[11px] font-mono">Presets:</span>
-            <button
-              onClick={() => {
-                setBeforeDate('2021-01-15');
-                setAfterDate('2026-08-18');
-              }}
-              className="px-2 py-0.5 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/50 text-[11px] font-medium transition-colors"
-            >
-              Full 5-Year Build
-            </button>
-            <button
-              onClick={() => {
-                setBeforeDate('2021-01-15');
-                setAfterDate('2023-08-10');
-              }}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] transition-colors"
-            >
-              Earthworks (2021-23)
-            </button>
-            <button
-              onClick={() => {
-                setBeforeDate('2023-08-10');
-                setAfterDate('2026-08-18');
-              }}
-              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] transition-colors"
-            >
-              Terminal & Paving (2023-26)
-            </button>
-          </div>
-        </div>
+          <button
+            onClick={() => setActiveView('search')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'search'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Search Location / Features"
+          >
+            <Search className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">SEARCH</span>
+          </button>
 
-        {/* Right: Newest Observation After Date */}
-        <div className="flex items-center gap-2">
-          <span className="text-indigo-400 font-bold font-mono text-[11px] uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            2. Newer Photo (After):
-          </span>
-          <input
-            type="date"
-            value={afterDate}
-            min="2021-01-01"
-            max="2026-12-31"
-            onChange={(e) => setAfterDate(e.target.value)}
-            className="bg-[#111827] border border-slate-700 text-indigo-300 font-mono font-semibold px-2 py-1 rounded text-xs focus:outline-none focus:border-indigo-500 cursor-pointer shadow-inner hover:border-indigo-500/70"
-          />
-          <div className="hidden sm:flex items-center gap-1 text-[11px]">
-            {['2024-04-12', '2025-03-18', '2026-08-18'].map((d) => (
-              <button
-                key={d}
-                onClick={() => setAfterDate(d)}
-                className={`px-1.5 py-0.5 rounded font-mono transition-colors ${
-                  afterDate === d
-                    ? 'bg-indigo-600 text-white font-bold'
-                    : 'text-slate-400 hover:text-white bg-slate-800/40'
-                }`}
-              >
-                {d.split('-')[0]}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+          <button
+            onClick={() => setActiveView('upload')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'upload'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Upload Aerial / Satellite Photo"
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">UPLOAD</span>
+          </button>
 
-      {/* Main Map & Drawer Stage */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Map Stage */}
-        <main className="flex-1 flex flex-col relative overflow-hidden bg-[#070A10]">
+          <button
+            onClick={() => setActiveView('review')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'review'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Review Detected Changes"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">REVIEW</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('ask')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'ask'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Ask AI Intelligence"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">ASK</span>
+          </button>
+        </nav>
+
+        {/* Map & Timeline Main Stage */}
+        <main className="flex-1 flex flex-col relative overflow-hidden bg-[#05070A]">
           <div className="flex-1 relative overflow-hidden">
             <MapPane
               aoiCoords={aoiCoords}
@@ -297,13 +263,6 @@ export const App: React.FC = () => {
               onSelectAfterDate={setAfterDate}
               onSwapDates={handleSwapDates}
             />
-
-            {/* Floating Ask Panel overlay if active */}
-            {activeView === 'ask' && (
-              <div className="absolute left-6 top-6 z-[500] drop-shadow-2xl">
-                <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
-              </div>
-            )}
           </div>
 
           {/* Bottom Timeline Scrubber */}
@@ -316,7 +275,7 @@ export const App: React.FC = () => {
           />
         </main>
 
-        {/* Slide-out Evidence Inspection Drawer */}
+        {/* Right Evidence Inspection Drawer */}
         {selectedEvidence && (
           <EvidenceDrawer
             evidence={selectedEvidence}
@@ -357,15 +316,29 @@ export const App: React.FC = () => {
         />
       )}
 
+      {/* Ask AI Centered Modal */}
+      {activeView === 'ask' && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none">
+          <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
+        </div>
+      )}
+
       {/* Single-Image Upload Modal */}
-      {activeView === 'upload' && detectionSet && (
+      {activeView === 'upload' && (
         <UploadModal
           detectionSet={detectionSet}
           onClose={() => setActiveView('map')}
-          onLoadSample={async (type) => {
-            const res = await getDetections(type);
-            if (res.kind === 'ok') setDetectionSet(res.data);
+          onDetectionSetUpdate={(newSet) => {
+            setDetectionSet(newSet);
           }}
+        />
+      )}
+
+      {/* OpenCLIP Semantic Vector Search Modal */}
+      {activeView === 'search' && (
+        <SearchModal
+          aoiId={selectedAoiId}
+          onClose={() => setActiveView('map')}
         />
       )}
     </div>

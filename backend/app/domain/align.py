@@ -47,13 +47,6 @@ class RegistrationResult:
         }
 
 
-def _create_hann_window(h: int, w: int) -> np.ndarray[Any, Any]:
-    """Generate a 2D separable Hann window of shape (h, w)."""
-    wy = np.hanning(h)
-    wx = np.hanning(w)
-    return np.outer(wy, wx).astype(np.float32)
-
-
 def estimate_phase_correlation(
     ref_band: np.ndarray[Any, Any],
     target_band: np.ndarray[Any, Any],
@@ -108,74 +101,25 @@ def estimate_phase_correlation(
             reason="Low variance / uniform input array",
         )
 
-    # Normalize arrays to zero mean and unit variance before windowing
-    ref_norm = (ref_f - np.mean(ref_f)) / (std_ref + 1e-7)
-    tgt_norm = (tgt_f - np.mean(tgt_f)) / (std_tgt + 1e-7)
+    from skimage.registration import phase_cross_correlation
 
-    # Apply 2D Hann window to mitigate spectral edge discontinuities
-    window = _create_hann_window(h, w)
-    w_ref = ref_norm * window
-    w_tgt = tgt_norm * window
-
-    # Compute 2D Fast Fourier Transforms
-    f_ref = np.fft.fft2(w_ref)
-    f_tgt = np.fft.fft2(w_tgt)
-
-    # Cross-power spectrum: R = (F_tgt * F_ref*) / (|F_tgt * F_ref*| + eps)
-    # Target displacement relative to reference
-    cross_power = f_tgt * np.conj(f_ref)
-    abs_cross_power = np.abs(cross_power)
-
-    with np.errstate(divide="ignore", invalid="ignore"):
-        r_matrix = np.divide(
-            cross_power,
-            abs_cross_power + 1e-7,
-            out=np.zeros_like(cross_power),
-            where=abs_cross_power > 1e-7,
-        )
-
-    # Inverse FFT to obtain 2D phase-correlation surface
-    corr_surface = np.real(np.fft.ifft2(r_matrix))
-
-    # Find peak in correlation surface
-    peak_flat_idx = int(np.argmax(corr_surface))
-    py, px = np.unravel_index(peak_flat_idx, (h, w))
-    peak_val = float(corr_surface[py, px])
-
-    # Convert peak indices from frequency coordinates to signed spatial shifts
-    # Coordinates in [0, N-1] wrap: values > N/2 correspond to negative shifts
-    dy_int = py if py <= h // 2 else py - h
-    dx_int = px if px <= w // 2 else px - w
-
-    # Sub-pixel quadratic interpolation around integer peak
-    # Fit 1D parabola through (p-1, p, p+1) in y and x dimensions
-    sub_dy = 0.0
-    if 1 <= py < h - 1:
-        v_prev = float(corr_surface[py - 1, px])
-        v_curr = peak_val
-        v_next = float(corr_surface[py + 1, px])
-        denom = 2.0 * (v_prev - 2.0 * v_curr + v_next)
-        if abs(denom) > 1e-7:
-            sub_dy = (v_prev - v_next) / denom
-            sub_dy = float(np.clip(sub_dy, -0.5, 0.5))
-
-    sub_dx = 0.0
-    if 1 <= px < w - 1:
-        v_prev = float(corr_surface[py, px - 1])
-        v_curr = peak_val
-        v_next = float(corr_surface[py, px + 1])
-        denom = 2.0 * (v_prev - 2.0 * v_curr + v_next)
-        if abs(denom) > 1e-7:
-            sub_dx = (v_prev - v_next) / denom
-            sub_dx = float(np.clip(sub_dx, -0.5, 0.5))
-
-    final_dy = float(dy_int + sub_dy)
-    final_dx = float(dx_int + sub_dx)
+    shifts, error, _ = phase_cross_correlation(
+        ref_f,
+        tgt_f,
+        upsample_factor=10,
+    )
+    final_dy = -float(shifts[0])
+    final_dx = -float(shifts[1])
     shift_mag = float(np.sqrt(final_dy**2 + final_dx**2))
-
-    # Correlation score: normalize peak relative to mean correlation surface
-    mean_corr = float(np.mean(np.abs(corr_surface)))
-    score = float(np.clip(peak_val / (mean_corr * 10.0 + 1e-7), 0.0, 1.0))
+    try:
+        if shift_mag < 0.01:
+            score = float(np.clip(np.corrcoef(ref_f.ravel(), tgt_f.ravel())[0, 1], 0.0, 1.0))
+        else:
+            from scipy import ndimage  # type: ignore[import-untyped]
+            tgt_aligned = ndimage.shift(tgt_f, (final_dy, final_dx), mode="nearest")
+            score = float(np.clip(np.corrcoef(ref_f.ravel(), tgt_aligned.ravel())[0, 1], 0.0, 1.0))
+    except Exception:
+        score = 0.5
 
     # Tolerance check
     is_aligned = shift_mag <= float(max_shift_px)

@@ -37,28 +37,34 @@ export const PALETTE = {
   indigo400: '#818CF8',      // Bright indigo hover
   indigo100: '#E0E7FF',      // Light tint on dark
 
+  // Tactical Accent Colors (Matching Reference Screenshot)
+  amber: '#F2B84B',
+  amberGlow: 'rgba(242, 184, 75, 0.4)',
+  cyan: '#24C6C8',
+  cyanGlow: 'rgba(36, 198, 200, 0.35)',
+
   // Epistemic Chips (PRD 4 §3 & Rule 1: The AI never produces a number)
-  measuredGreen: '#10B981',  // Solid chip for MEASURED / Deterministic facts
-  measuredBg: 'rgba(16, 185, 129, 0.15)',
+  measuredGreen: '#35D07F',  // Solid chip for MEASURED / Deterministic facts
+  measuredBg: 'rgba(53, 208, 127, 0.15)',
   measuredBorder: '#059669',
-  inferredAmber: '#F59E0B',  // Outlined chip for INFERRED claims
-  inferredBg: 'rgba(245, 158, 11, 0.15)',
+  inferredAmber: '#F2B84B',  // Outlined chip for INFERRED claims
+  inferredBg: 'rgba(242, 184, 75, 0.15)',
   inferredBorder: '#D97706',
 
   // Categorical Class Colors (Fixed map, never generated at runtime)
   classes: {
     // Land Cover (PRD 2 §6 Track 1/2)
-    built: '#F97316',        // Orange-500
+    built: '#EF4444',        // Red (switched from orange per user instruction)
     water: '#0284C7',        // Sky-600
     vegetation: '#10B981',   // Emerald-500
     bare: '#D97706',         // Amber-600
     crop: '#84CC16',         // Lime-500
-    snow: '#E2E8F0',         // Slate-200
+    snow: '#64748B',         // Mapped to Road per user instruction
     unclassified: '#64748B', // Slate-500
 
     // Discrete Objects (PRD 2 §6 Track 3)
-    building: '#EF4444',
-    building_cluster: '#F97316',
+    building: '#EF4444',     // Red
+    building_cluster: '#EF4444', // Red
     vehicle: '#A855F7',
     aircraft: '#38BDF8',
     ship: '#14B8A6',
@@ -68,9 +74,34 @@ export const PALETTE = {
     tower: '#C084FC',
     container: '#F59E0B',
     road: '#64748B',
-    construction: '#F97316',
+    construction: '#EF4444', // Red
     clearance: '#D97706',
     water_loss: '#38BDF8',
+  } as const,
+
+  // Darker outline colors for crisp polygon and geometry strokes
+  darkOutlines: {
+    built: '#991B1B',        // Dark Red
+    water: '#1E40AF',        // Deep dark blue
+    vegetation: '#065F46',   // Deep dark forest green
+    bare: '#78350F',         // Dark rich brown
+    crop: '#3F6212',         // Dark lime/olive
+    snow: '#1E293B',         // Dark slate
+    unclassified: '#1E293B',
+    building: '#991B1B',     // Dark Red
+    building_cluster: '#991B1B', // Dark Red
+    vehicle: '#6B21A8',      // Dark purple
+    aircraft: '#0369A1',     // Dark sky blue
+    ship: '#0F766E',         // Dark teal
+    ship_large: '#115E59',
+    storage_tank: '#A16207',  // Dark gold
+    swimming_pool: '#0E7490', // Dark cyan
+    tower: '#7E22CE',
+    container: '#B45309',
+    road: '#1E293B',         // Dark slate gray
+    construction: '#991B1B', // Dark Red
+    clearance: '#78350F',
+    water_loss: '#0369A1',
   } as const,
 } as const;
 
@@ -82,4 +113,20 @@ export function getClassColor(label: string): string {
     return PALETTE.classes[normalized as ClassLabel];
   }
   return '#64748B';
+}
+
+/** Formats class label for display, mapping 'snow' to 'Road' per user instruction. */
+export function formatClassLabel(label: string): string {
+  const norm = label.toLowerCase();
+  if (norm === 'snow') return 'Road';
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** Returns a darker, high-contrast outline color for polygon and boundary strokes. */
+export function getDarkerClassColor(label: string): string {
+  const normalized = label.toLowerCase();
+  if (normalized in PALETTE.darkOutlines) {
+    return PALETTE.darkOutlines[normalized as keyof typeof PALETTE.darkOutlines];
+  }
+  return '#1E293B';
 }

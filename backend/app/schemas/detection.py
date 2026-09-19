@@ -30,6 +30,27 @@ class CapabilityPermissions(BaseModel):
     temporal_analysis: bool = False
 
 
+class LandcoverClassStats(BaseModel):
+    """Statistics for an individual landcover class (Task T-4)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    pct: float
+    m2: float | None = None
+    ha: float | None = None
+
+
+class DetectionStats(BaseModel):
+    """Aggregated scene statistics including object counts and landcover area (Task T-4)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    total_objects: int
+    objects_by_class: dict[str, int] = Field(default_factory=dict)
+    total_area_m2: float | None = None
+    landcover_area: dict[str, LandcoverClassStats] = Field(default_factory=dict)
+
+
 class Upload(BaseModel):
     """Metadata and capability determination for an uploaded raster."""
 
@@ -59,6 +80,11 @@ class Upload(BaseModel):
     capability_notice: str | None = None
     checksum_sha256: str
     overview_url: str
+    annotated_url: str | None = None
+    explanation: str | None = None
+    detections: list[Detection] | None = None
+    coverage: CoverageSummary | None = None
+    stats: DetectionStats | dict[str, Any] | None = None
     created_at: str
 
 
@@ -150,12 +176,19 @@ class DetectionSet(BaseModel):
     coverage: CoverageSummary | None = None
     counts: CountsSummary
     rejections: RejectionsSummary
+    stats: DetectionStats | dict[str, Any] | None = None
     job_id: str | None = None
     trace_id: str | None = None
     mode: str | None = None
+    annotated_url: str | None = None
+    explanation: str | None = None
+    status: str | None = None
+    error: str | None = None
     blind_landcover_pct: dict[str, float] | None = None
     merged_landcover_pct: dict[str, float] | None = None
     merged_water_polygons: list[dict[str, Any]] | None = None
     reconciliation: list[dict[str, Any]] | None = None
     summary: str | None = None
+    track_status: dict[str, str] = Field(default_factory=dict)
+    artifact_version: str | None = None
 

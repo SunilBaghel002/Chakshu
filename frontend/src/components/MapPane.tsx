@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import type { Evidence, DetectionSet } from '../lib/types';
-import { PALETTE, getClassColor } from '../lib/palette';
+import { PALETTE, getClassColor, getDarkerClassColor } from '../lib/palette';
 import { SwipeCompare } from './SwipeCompare';
 import { Layers, ZoomIn, ZoomOut, Compass } from 'lucide-react';
 
@@ -80,14 +80,21 @@ export const MapPane: React.FC<MapPaneProps> = ({
     mapInstanceRef.current = map;
 
     // Ensure map tiles fill the container smoothly
-    setTimeout(() => {
-      map.invalidateSize();
+    const timer = setTimeout(() => {
+      if (mapInstanceRef.current) {
+        map.invalidateSize();
+      }
     }, 150);
 
-    const handleResize = () => map.invalidateSize();
+    const handleResize = () => {
+      if (mapInstanceRef.current) {
+        map.invalidateSize();
+      }
+    };
     window.addEventListener('resize', handleResize);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('resize', handleResize);
       map.remove();
       mapInstanceRef.current = null;
@@ -117,13 +124,14 @@ export const MapPane: React.FC<MapPaneProps> = ({
         const isSelected = id === selectedEvidenceId;
         const changeType = feature?.properties?.change_type || 'construction';
         const color = getClassColor(changeType);
+        const strokeColor = isSelected ? PALETTE.amber : getDarkerClassColor(changeType);
 
         return {
-          color: isSelected ? '#818CF8' : color,
-          weight: isSelected ? 3.5 : 2,
+          color: strokeColor,
+          weight: isSelected ? 3.5 : 2.5,
           opacity: 1,
           fillColor: color,
-          fillOpacity: isSelected ? 0.55 : 0.35,
+          fillOpacity: isSelected ? 0.65 : 0.48,
           dashArray: undefined,
         };
       },
@@ -189,15 +197,16 @@ export const MapPane: React.FC<MapPaneProps> = ({
       if (!det.geom_4326) return;
       const isTrack3 = det.track === 'object_model';
       const color = getClassColor(det.label);
+      const strokeColor = getDarkerClassColor(det.label);
 
       const boxLayer = L.geoJSON(det.geom_4326 as any, {
         style: {
-          color,
-          weight: 2,
+          color: strokeColor,
+          weight: 2.5,
           // Track 3 vision model boxes dashed [6, 4] per PRD 9 §6.6
           dashArray: isTrack3 ? '6, 4' : undefined,
           fillColor: color,
-          fillOpacity: isTrack3 ? 0.12 : 0.3,
+          fillOpacity: isTrack3 ? 0.22 : 0.45,
         },
       });
 
@@ -258,49 +267,76 @@ export const MapPane: React.FC<MapPaneProps> = ({
         onSwapDates={onSwapDates}
       />
 
-      {/* Floating Bottom Date Watermarks */}
-      {isSwipeActive && (
-        <>
-          <div className="absolute bottom-4 left-4 z-[350] pointer-events-none bg-[#0B0F19]/85 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-mono backdrop-blur-md text-amber-300 font-semibold shadow-2xl flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span>BEFORE: {beforeDate} (Old Baseline)</span>
+
+      {/* Top Map Tactical Overlays */}
+      <div className="absolute top-3 left-3 right-3 z-[400] flex items-center justify-between pointer-events-none">
+        {/* Left Badges */}
+        <div className="flex items-center gap-2 pointer-events-auto font-mono text-[11px]">
+          <div className="bg-[#090D13]/90 border border-[#F2B84B]/50 px-2.5 py-1 rounded text-[#F2B84B] font-bold shadow-xl backdrop-blur-md flex items-center gap-1.5">
+            <span>DATE A: {beforeDate} ({beforeDate.split('-')[0]})</span>
           </div>
 
-          <div className="absolute bottom-4 right-4 z-[350] pointer-events-none bg-[#0B0F19]/85 border border-indigo-500/40 px-3 py-1.5 rounded-lg text-xs font-mono backdrop-blur-md text-indigo-300 font-semibold shadow-2xl flex items-center gap-1.5">
-            <span>AFTER: {afterDate} (Newest Photo)</span>
-            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+          <div className="bg-[#090D13]/90 border border-[#F2B84B]/40 px-2 py-1 rounded text-[#F2B84B] text-[10px] font-bold shadow-xl backdrop-blur-md flex items-center gap-1">
+            <span>⌖</span>
+            <span>POLYGONS VISIBLE</span>
           </div>
-        </>
-      )}
+        </div>
+
+        {/* Center Satellite Pipeline & Sensor Toolbar */}
+        <div className="hidden lg:flex items-center gap-1 bg-[#090D13]/95 border border-[#1C2333] p-1 rounded-md shadow-2xl backdrop-blur-md pointer-events-auto font-mono text-[10px]">
+          <span className="px-2 py-0.5 rounded bg-[#111622] text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            HYBRID: TEMPORAL + GOOGLE HD REC
+          </span>
+          <span className="px-1.5 py-0.5 text-slate-400 hover:text-white cursor-pointer">
+            HIGH-RES TEMPORAL (0.5M)
+          </span>
+          <span className="px-1.5 py-0.5 text-slate-400 hover:text-white cursor-pointer">
+            SENTINEL-2 (10M)
+          </span>
+          <span className="px-1.5 py-0.5 text-slate-400 hover:text-white cursor-pointer">
+            GOOGLE HD
+          </span>
+          <button className="px-1.5 py-0.5 rounded bg-[#111622] text-[#24C6C8] font-bold border border-[#24C6C8]/40 ml-1">
+            DE-HAZE: ON
+          </button>
+          <button className="px-2 py-0.5 rounded bg-[#111622] hover:bg-[#F2B84B] text-slate-300 hover:text-black font-bold border border-[#1C2333] transition-colors ml-1">
+            INTEL
+          </button>
+        </div>
+
+        {/* Right Empty Spacer */}
+        <div className="w-20" />
+      </div>
 
       {/* Floating Tactical Zoom & Control Overlay */}
-      <div className="absolute right-4 top-16 z-[400] flex flex-col gap-2">
-        <div className="bg-[#111827]/90 rounded-md border border-[#374151] p-1 shadow-2xl flex flex-col gap-1 backdrop-blur-md">
+      <div className="absolute right-3 top-14 z-[400] flex flex-col gap-2">
+        <div className="bg-[#090D13]/95 rounded border border-[#1C2333] p-0.5 shadow-2xl flex flex-col gap-0.5 backdrop-blur-md">
           <button
             onClick={() => mapInstanceRef.current?.zoomIn()}
-            className="p-2 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition-colors"
+            className="p-2 rounded hover:bg-slate-800 text-slate-300 hover:text-[#F2B84B] transition-colors"
             title="Zoom in"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={() => mapInstanceRef.current?.zoomOut()}
-            className="p-2 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition-colors"
+            className="p-2 rounded hover:bg-slate-800 text-slate-300 hover:text-[#F2B84B] transition-colors"
             title="Zoom out"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={() => mapInstanceRef.current?.flyTo(aoiCoords, 14)}
-            className="p-2 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition-colors border-t border-slate-800"
+            className="p-2 rounded hover:bg-slate-800 text-slate-300 hover:text-[#F2B84B] transition-colors border-t border-slate-800"
             title="Center on AOI"
           >
-            <Compass className="w-4 h-4 text-indigo-400" />
+            <Compass className="w-4 h-4 text-[#F2B84B]" />
           </button>
         </div>
 
         {/* Tactical Coordinates Overlay */}
-        <div className="bg-[#0F172A]/90 border border-slate-700/80 px-2.5 py-1 rounded text-[10px] font-mono text-slate-300 shadow-xl backdrop-blur-md text-right">
+        <div className="bg-[#090D13]/95 border border-[#1C2333] px-2 py-1 rounded text-[9px] font-mono text-slate-300 shadow-xl backdrop-blur-md text-right">
           <div>LAT: {aoiCoords[0].toFixed(4)}° N</div>
           <div>LON: {aoiCoords[1].toFixed(4)}° E</div>
         </div>
