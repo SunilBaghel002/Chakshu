@@ -38,7 +38,7 @@ export const StatusLine: React.FC<StatusLineProps> = ({
           <span
             className="w-1.5 h-1.5 rounded-full"
             style={{
-              background: jobState === 'ANALYSING' ? 'var(--amber)' : jobState === 'ERROR' ? 'var(--danger)' : 'var(--success)',
+              background: jobState === 'ANALYSING' ? 'var(--signal)' : jobState === 'ERROR' ? 'var(--danger)' : 'var(--success)',
             }}
           />
           <span style={{ color: 'var(--ink-2)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
@@ -51,7 +51,7 @@ export const StatusLine: React.FC<StatusLineProps> = ({
 
       <button
         onClick={handleCopyTrace}
-        className="hover:text-amber-400 transition-colors cursor-pointer"
+        className="hover:text-[var(--signal)] transition-colors cursor-pointer"
         style={{ color: 'var(--ink-3)', background: 'none', border: 'none', fontFamily: 'inherit', fontSize: 'inherit' }}
         title="Copy trace ID"
       >

@@ -17,55 +17,65 @@
 }
 
 @theme {
-  --color-bg: #0B0D10;
-  --color-bg-grid: rgba(240, 180, 95, 0.055);
-  --color-panel: #121519;
-  --color-panel-2: #171B21;
-  --color-panel-3: #1E242B;
-  --color-well: #0E1114;
-  --color-line: #262C34;
-  --color-line-strong: #39424D;
+  --color-bg: #080C16;
+  --color-bg-grid: rgba(63, 169, 245, 0.06);
+  --color-panel: #0E1626;
+  --color-panel-2: #131D31;
+  --color-panel-3: #1A2740;
+  --color-well: #060910;
+  --color-line: #1E2B44;
+  --color-line-strong: #31435F;
 
   --color-tricolour-saffron: #FF9426;
   --color-tricolour-white: #FFFFFF;
   --color-tricolour-green: #138808;
+  --color-steel: #8FA3BC;
 
-  --color-ink: #EDEAE3;
-  --color-ink-2: #A6ADB5;
-  --color-ink-3: #6B7480;
-  --color-ink-ghost: rgba(237, 234, 227, 0.06);
+  --color-ink: #E9EFF8;
+  --color-ink-2: #9DAEC6;
+  --color-ink-3: #61738C;
+  --color-ink-ghost: rgba(233, 239, 248, 0.06);
 
-  --color-amber: #F0B45F;
-  --color-amber-hot: #F5C15C;
-  --color-amber-deep: #8A4B12;
-  --color-amber-wash: rgba(240, 180, 95, 0.12);
-  --color-teal: #35B8C0;
-  --color-teal-wash: rgba(53, 184, 192, 0.12);
+  --color-amber: #FF9426;
+  --color-amber-hot: #FFAA4D;
+  --color-amber-deep: #8A4208;
+  --color-amber-wash: rgba(255, 148, 38, 0.14);
+  --color-teal: #3FA9F5;
+  --color-teal-wash: rgba(63, 169, 245, 0.14);
 
-  --color-measured-fill: rgba(47, 191, 113, 0.12);
+  --color-signal: #FF9426;
+  --color-signal-hot: #FFAA4D;
+  --color-signal-deep: #8A4208;
+  --color-signal-ink: #1F1200;
+  --color-signal-wash: rgba(255, 148, 38, 0.14);
+  --color-ion: #3FA9F5;
+  --color-ion-hot: #6BC2FF;
+  --color-ion-wash: rgba(63, 169, 245, 0.14);
+
+  --color-measured-fill: rgba(47, 191, 113, 0.14);
   --color-measured-border: #2FBF71;
   --color-measured-text: #5AD79A;
-  --color-inferred-fill: rgba(240, 180, 95, 0.10);
-  --color-inferred-border: #F0B45F;
-  --color-inferred-text: #F0B45F;
+  --color-inferred-fill: rgba(255, 148, 38, 0.12);
+  --color-inferred-border: #FF9426;
+  --color-inferred-text: #FF9426;
   --color-unverified-fill: transparent;
-  --color-unverified-border: #6B7480;
-  --color-unverified-text: #A6ADB5;
-  --color-confirmed-fill: rgba(47, 191, 113, 0.12);
+  --color-unverified-border: #61738C;
+  --color-unverified-text: #9DAEC6;
+  --color-confirmed-fill: rgba(47, 191, 113, 0.14);
   --color-confirmed-border: #2FBF71;
   --color-confirmed-text: #5AD79A;
-  --color-rejected-fill: rgba(229, 72, 77, 0.12);
+  --color-rejected-fill: rgba(229, 72, 77, 0.14);
   --color-rejected-border: #E5484D;
   --color-rejected-text: #F2767B;
-  --color-suppressed-fill: rgba(107, 116, 128, 0.10);
-  --color-suppressed-border: #6B7480;
-  --color-suppressed-text: #A6ADB5;
+  --color-suppressed-fill: rgba(97, 115, 140, 0.12);
+  --color-suppressed-border: #61738C;
+  --color-suppressed-text: #9DAEC6;
 
   --color-success: #2FBF71;
-  --color-warning: #F0B45F;
+  --color-warning: #FF9426;
   --color-danger: #E5484D;
-  --color-info: #35B8C0;
-  --color-neutral: #6B7480;
+  --color-info: #3FA9F5;
+  --color-neutral: #61738C;
 
   --font-cond: "Bahnschrift", "DIN Alternate", "Franklin Gothic Medium", "Arial Narrow", "Inter", sans-serif;
   --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
@@ -105,39 +115,40 @@
 
 @layer base {
   :root {
-    /* ── §2.1 Base — near-black, slightly cool, never pure black ── */
-    --bg: #0B0D10;
-    --bg-grid: rgba(240,180,95,0.055);
-    --panel: #121519;
-    --panel-2: #171B21;
-    --panel-3: #1E242B;
-    --well: #0E1114;
-    --line: #262C34;
-    --line-strong: #39424D;
+    /* ── §2.1 Base — deep sovereign navy, never pure black and never grey-black ── */
+    --bg: #080C16;
+    --bg-grid: rgba(63, 169, 245, 0.06);
+    --panel: #0E1626;
+    --panel-2: #131D31;
+    --panel-3: #1A2740;
+    --well: #060910;
+    --line: #1E2B44;
+    --line-strong: #31435F;
 
-    /* ── §2.2 Ink ── */
-    --ink: #EDEAE3;
-    --ink-2: #A6ADB5;
-    --ink-3: #6B7480;
-    --ink-ghost: rgba(237,234,227,0.06);
+    /* ── §2.2 Ink — cool sovereign white ── */
+    --ink: #E9EFF8;
+    --ink-2: #9DAEC6;
+    --ink-3: #61738C;
+    --ink-ghost: rgba(233, 239, 248, 0.06);
 
-    /* ── §2.3 Accent — amber dossier family ── */
-    --amber: #F0B45F;
-    --amber-hot: #F5C15C;
-    --amber-deep: #8A4B12;
-    --amber-wash: rgba(240,180,95,0.12);
-    --teal: #35B8C0;
-    --teal-wash: rgba(53,184,192,0.12);
+    /* ── §2.3 Saffron (Attention) & Ion (Data Path) ── */
+    --amber: #FF9426;
+    --amber-hot: #FFAA4D;
+    --amber-deep: #8A4208;
+    --amber-wash: rgba(255, 148, 38, 0.14);
+    --amber-tag-bg: rgba(255, 148, 38, 0.18);
+    --teal: #3FA9F5;
+    --teal-wash: rgba(63, 169, 245, 0.14);
 
     /* ── v3 signal/ion aliases (PRD 9 §2.3, task 8.1 migration) ── */
     --signal: #FF9426;
     --signal-hot: #FFAA4D;
     --signal-deep: #8A4208;
     --signal-ink: #1F1200;
-    --signal-wash: rgba(255,148,38,0.13);
+    --signal-wash: rgba(255, 148, 38, 0.14);
     --ion: #3FA9F5;
     --ion-hot: #6BC2FF;
-    --ion-wash: rgba(63,169,245,0.12);
+    --ion-wash: rgba(63, 169, 245, 0.14);
 
     /* ── Tricolour tokens (PRD 9 §5.8) ── */
     --tricolour-saffron: #FF9426;
@@ -146,32 +157,32 @@
     --steel: #8FA3BC;
 
     /* ── §2.4 Semantic states ── */
-    --measured-fill: rgba(47,191,113,0.12);
+    --measured-fill: rgba(47, 191, 113, 0.14);
     --measured-border: #2FBF71;
     --measured-text: #5AD79A;
-    --inferred-fill: rgba(240,180,95,0.10);
-    --inferred-border: #F0B45F;
-    --inferred-text: #F0B45F;
+    --inferred-fill: rgba(255, 148, 38, 0.12);
+    --inferred-border: #FF9426;
+    --inferred-text: #FF9426;
     --unverified-fill: transparent;
-    --unverified-border: #6B7480;
-    --unverified-text: #A6ADB5;
-    --confirmed-fill: rgba(47,191,113,0.12);
+    --unverified-border: #61738C;
+    --unverified-text: #9DAEC6;
+    --confirmed-fill: rgba(47, 191, 113, 0.14);
     --confirmed-border: #2FBF71;
     --confirmed-text: #5AD79A;
-    --rejected-fill: rgba(229,72,77,0.12);
+    --rejected-fill: rgba(229, 72, 77, 0.14);
     --rejected-border: #E5484D;
     --rejected-text: #F2767B;
-    --suppressed-fill: rgba(107,116,128,0.10);
-    --suppressed-border: #6B7480;
-    --suppressed-text: #A6ADB5;
+    --suppressed-fill: rgba(97, 115, 140, 0.12);
+    --suppressed-border: #61738C;
+    --suppressed-text: #9DAEC6;
 
     /* Status colors */
     --success: #2FBF71;
-    --warning: #F0B45F;
+    --warning: #FF9426;
     --danger: #E5484D;
     --danger-ink: #150A0A;
-    --info: #35B8C0;
-    --neutral: #6B7480;
+    --info: #3FA9F5;
+    --neutral: #61738C;
 
     /* ── §3 Typography ── */
     --font-cond: "Bahnschrift", "DIN Alternate", "Franklin Gothic Medium",
@@ -823,4 +834,23 @@
   border: 1px solid rgba(99, 102, 241, 0.3);
   box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 15px rgba(99, 102, 241, 0.15);
 }
+
+/* Tricolour rule per PRD 9 §5.8 */
+.tricolour-rule {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #FF9426 0%, #FF9426 33.333%, #FFFFFF 33.333%, #FFFFFF 66.666%, #138808 66.666%, #138808 100%);
+}
+
+/* Defense Classification Strip (PRD 9 §5.7) */
+.classification-bar {
+  background: var(--well);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map, Search, Upload, CheckCircle2, ShieldCheck, HelpCircle, Settings } from 'lucide-react';
+import { Map, Search, Upload, CheckCircle2, ShieldCheck, HelpCircle, Settings, MessageSquare } from 'lucide-react';
 
 export type NavView = 'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit';
 
@@ -20,15 +20,16 @@ interface RailItem {
 
 /**
  * SLOT-05 — Vertical Icon Rail (56px wide x main)
- * Per PRD 10 §4 / L4:
+ * Per PRD 10 §4 / L4 & PRD 9 v3 Sovereign Console:
  * 05.1 MAP (G M)
  * 05.2 SEARCH (G F)
  * 05.3 UPLOAD (G U)
  * 05.4 REVIEW (G R)
- * 05.5 AUDIT (G A)
- * 05.6 divider (24x1, --line)
- * 05.7 HELP / KEYS (?)
- * 05.8 SETTINGS (bottom-anchored)
+ * 05.5 ASK (G Q)
+ * 05.6 AUDIT (G A)
+ * 05.7 divider (24x1, --line)
+ * 05.8 HELP / KEYS (?)
+ * 05.9 SETTINGS (bottom-anchored)
  */
 export const IconRail: React.FC<IconRailProps> = ({
   activeView,
@@ -41,6 +42,7 @@ export const IconRail: React.FC<IconRailProps> = ({
     { view: 'search', icon: <Search className="w-5 h-5" />, label: 'SEARCH', shortcut: 'G F' },
     { view: 'upload', icon: <Upload className="w-5 h-5" />, label: 'UPLOAD', shortcut: 'G U' },
     { view: 'review', icon: <CheckCircle2 className="w-5 h-5" />, label: 'REVIEW', shortcut: 'G R' },
+    { view: 'ask', icon: <MessageSquare className="w-5 h-5" />, label: 'ASK', shortcut: 'G Q' },
     { view: 'audit', icon: <ShieldCheck className="w-5 h-5" />, label: 'AUDIT', shortcut: 'G A' },
   ];
 
@@ -55,7 +57,7 @@ export const IconRail: React.FC<IconRailProps> = ({
         borderRight: '1px solid var(--line)',
       }}
     >
-      {/* Top 5 navigation items */}
+      {/* Top navigation items */}
       <div className="flex flex-col items-center gap-1 w-full">
         {topItems.map(({ view, icon, label, shortcut }) => {
           const isActive = activeView === view;
@@ -66,15 +68,20 @@ export const IconRail: React.FC<IconRailProps> = ({
               title={`${label} (${shortcut})`}
               className="relative w-10 h-10 flex flex-col items-center justify-center rounded cursor-pointer transition-colors"
               style={{
-                background: isActive ? 'var(--amber-wash)' : 'transparent',
-                color: isActive ? 'var(--amber)' : 'var(--ink-3)',
+                background: isActive ? 'var(--signal-wash)' : 'transparent',
+                color: isActive ? 'var(--signal)' : 'var(--ink-3)',
               }}
             >
               {/* Active 3px left bar */}
               {isActive && (
                 <span
                   className="absolute left-0 top-1 bottom-1"
-                  style={{ width: 3, background: 'var(--amber)', borderRadius: '0 2px 2px 0' }}
+                  style={{
+                    width: 3,
+                    background: 'var(--signal)',
+                    borderRadius: '0 2px 2px 0',
+                    boxShadow: '0 0 8px var(--signal)',
+                  }}
                 />
               )}
               {icon}
