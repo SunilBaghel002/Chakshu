@@ -275,10 +275,10 @@ Unchanged from v1 (plain, second person, no apology, no "AI-powered/seamless/int
 
 ## 11. Implementation rules
 
-1. Every colour, radius, shadow, duration and font size is a CSS custom property in `app/globals.css`; Tailwind maps to tokens. **No hex literals, no arbitrary values in components.** Lint enforces.
+1. Every colour, radius, shadow, duration and font size is a CSS custom property in `frontend/src/index.css` (on Vite — not `app/globals.css`, see `code-standards.md` §1.1); Tailwind v4 `@theme` maps to tokens. **No hex literals, no arbitrary values in components.** Lint enforces.
 2. `lib/palette.ts` (class maps, §2.5), `lib/copy.ts` (all strings), `lib/map-fx.ts` (all of §6), `components/icons.tsx` (inline SVG only). The iris lockup and reticle are React components, not images — external assets do not load at `OFFLINE=1`.
-3. Keyframes are declared once in `globals.css` with the §6 names: `scan-sweep`, `bracket-lock`, `tag-in`, `dot-pulse`, `marquee`, `ambient-scan`, `reticle-fade`.
-4. The prototype `brand/ui-prototype-intel.html` is the **visual source of truth**. When this file and the prototype disagree on a timing or a colour, the prototype wins and this file gets corrected.
+3. Keyframes are declared once in `index.css` with the §6 names: `scan-sweep`, `bracket-lock`, `tag-in`, `dot-pulse`, `marquee`, `ambient-scan`, `reticle-fade`.
+4. **⚠ `brand/ui-prototype-intel.html` does not exist in the repository** (checked 20 Sep 2026). §6 and §11.4 depend on it as the tie-breaker for M1–M10 timings. Until it is supplied, **this file is the sole source of truth for timings**, tasks 8.6/8.7 cannot claim their acceptance criterion, and §11.4's "prototype wins" rule is inoperative. Do not invent a prototype.
 5. Screenshot every screen at 1280×800 and 1920×1080 into `docs/screenshots/` the day it is built; also greyscale and reduced-motion captures.
 
 ---

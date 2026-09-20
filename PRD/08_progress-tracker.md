@@ -1,5 +1,9 @@
 # PRD 8 — Progress Tracker
 
+> **⚠ Status note, 20 Sep 2026.** Phase 8 Stage A (tasks 8.0–8.22) now exists in `build-order.md`.
+> It supersedes the Next.js assumptions in `Prompts.md` — see `05_code-standards.md` §1.1–§1.4 and
+> `17_build-guide.md`. **Phase 7 is deferred until the Phase 8 Stage-A gate passes.**
+
 > **Audience:** Claude Code and every human on the team.
 > **Status:** Authoritative for *state*. `build-order.md` is authoritative for *plan*. When they disagree, this file wins — it describes what is actually true.
 > **Depends on:** `build-order.md`, `ai-workflow-rules.md` §6

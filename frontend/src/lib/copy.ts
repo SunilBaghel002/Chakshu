@@ -80,3 +80,67 @@ export const COPY = {
 
   auditVerified: 'Audit log verified. Zero tampering detected.',
 } as const;
+
+/**
+ * The 8 disabled reason strings mandated by PRD 11 §1.5.
+ * Every disabled control carries a title + aria-describedby reason from this fixed list.
+ */
+export const DISABLED_REASONS = {
+  'no-aoi': 'SELECT AN AOI FIRST',
+  'no-dates': 'BOTH DATES REQUIRED',
+  'same-date': 'DATES MUST DIFFER',
+  'job-running': 'ANALYSIS IN PROGRESS',
+  'offline': 'UNAVAILABLE OFFLINE',
+  'no-selection': 'SELECT A TARGET FIRST',
+  'gate-failed': 'RESOLUTION BELOW 2 m — SEE NOTICE',
+  'permission': 'ADMIN ONLY',
+} as const;
+
+export type DisabledReasonCode = keyof typeof DISABLED_REASONS;
+
+export const BUTTON_COPY = {
+  detect: 'Detect changes',
+  detecting: 'Detecting',
+  confirm: 'Confirm',
+  confirming: 'Confirming',
+  swap: 'Swap',
+  swapping: 'Swapping',
+  exportReport: 'Export report',
+  exporting: 'Exporting',
+  rejectTarget: 'Reject target',
+  rejecting: 'Rejecting',
+  cancel: 'Cancel',
+  skip: 'Skip',
+  learnMore: 'Learn more',
+  copy: 'Copy',
+} as const;
+
+export const CONTACT_SHEET_COPY = {
+  title: 'CONTROLS CONTACT SHEET // PRD 11 §1 (K1)',
+  subtitle: 'DEV ONLY · SYSTEM INSTRUMENTATION · 7 VARIANTS × 3 SIZES × 7 STATES',
+  matrixTitle: '1. ALL 7 VARIANTS × 7 STATES',
+  sizesTitle: '2. SIZE SCALING (SM 28px · MD 36px · LG 44px)',
+  disabledReasonsTitle: '3. FIXED DISABLED REASON CODES (PRD 11 §1.5)',
+  shortcutsTitle: '4. SHORTCUT HINTS (VISIBLE AT ≥ 1440px)',
+  primaryOwnerTitle: '5. PRIMARY OWNER ASSERTION & VIEWPORT INVARIANT',
+  stateDefault: 'DEFAULT',
+  stateHover: 'HOVER',
+  stateActive: 'ACTIVE',
+  stateFocus: 'FOCUS',
+  stateDisabled: 'DISABLED',
+  stateLoading: 'LOADING',
+  stateSelected: 'SELECTED',
+  variantPrimary: 'PRIMARY',
+  variantSecondary: 'SECONDARY',
+  variantGhost: 'GHOST',
+  variantDangerOutline: 'DANGER OUTLINE',
+  variantDangerFilled: 'DANGER FILLED',
+  variantIconGhost: 'ICON GHOST',
+  variantBar: 'DOSSIER BAR',
+  sizeSm: 'SM (28px)',
+  sizeMd: 'MD (36px)',
+  sizeLg: 'LG (44px)',
+  returnToConsole: 'RETURN TO CONSOLE',
+} as const;
+
+

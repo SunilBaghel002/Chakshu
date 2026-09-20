@@ -23,7 +23,7 @@
 | 0.7 | `domain/bbox.py`: `normalise_bbox` per `data-contracts.md` §7 + **the synthetic-image verification test** | B3 |
 | 0.8 | `services/verifier.py` + the three mandatory verifier tests | C2 |
 | 0.9 | `services/trace.py` + the `Trace` schema | B9 |
-| 0.10 | `frontend/`: Next.js scaffold, `strict` tsconfig, eslint no-`any`, `lib/api.ts` with zod, `lib/copy.ts`, `lib/palette.ts`, `make types` generation | — |
+| 0.10 | `frontend/`: **Vite 6 + React 19** scaffold, `strict` tsconfig, eslint no-`any`, `lib/api.ts` with zod, `lib/copy.ts`, `lib/palette.ts`, `make types` generation | — |
 | 0.11 | **Every fixture file** from `data-contracts.md` §9, hand-written to match the schemas exactly | all |
 | 0.12 | The architecture purity check script, wired into `make check` | — |
 | 0.13 | `PROGRESS.md` initialised | — |
@@ -260,6 +260,85 @@ If a phase is running long, cut in this order. Never cut upward.
 **Never cut:** Phase 2, the suppression panel, the verifier, the Resolution Gate refusals, the trace, the audit log, the offline path, `EVALUATION_REPORT.md`, `MODEL_PROVENANCE.md`.
 
 Cutting any of those removes the thing that distinguishes this project from every other satellite-AI hackathon entry.
+
+---
+
+## Task sizing
+
+## Phase 8 — Public surface and console rebuild (Stage A)
+
+**Added 20 Sep 2026.** This phase did not exist when Phases 0–7 were written. It comes from one instruction: *the UI's positioning is bad, every button needs a place, and we need a landing page, a login, tracking, and an admin panel.*
+
+**Authoritative specs:** `ui-console.md` (L), `ui-controls.md` (K), `ux-rules.md` (X), `landing-page.md` (W), `auth.md` (S), `tracking.md` (T), `admin-panel.md` (D).
+
+### ⚠ Read this before starting Stage A
+
+**Stage A assumes a stack the build is not yet on.** `code-standards.md` §1.1–§1.4 supersedes older paths in the other PRDs:
+
+| Assumption in `Prompts.md` 1–8 | Reality on this build |
+|---|---|
+| Next.js `app/globals.css` | `frontend/src/index.css` |
+| `next.config.ts` rewrite | `server.proxy` in `frontend/vite.config.ts` |
+| Server components / `"use client"` | Neither exists. All client-side |
+| Server-side role check for `/admin` | **Must be enforced in FastAPI** — Vite has no server runtime |
+| MapLibre assumed present | Leaflet is present. **Tasks 8.20–8.21 replace it** |
+
+**Tasks 8.0–8.0c are prerequisites.** They are the gap the audit found, and 8.1–8.19 cannot be verified without them.
+
+### Stage 0 — stack corrections (prerequisites)
+
+| # | Task | Blocks | Est. |
+|---|---|---|---|
+| 8.0 | **Router.** Add `react-router-dom` v7 (gated dep, MIT). Routes `/`, `/console`, `/admin`, `/privacy`. Replace the `useState<'map'\|'review'\|…>` view union at `frontend/src/App.tsx:50`. | Everything that assumes screens | S |
+| 8.0a | **ESLint config + `lint` script.** None exists. Wire into `make check` — it currently does not lint the frontend at all. | 8.3 | S |
+| 8.0b | **Remove all 10 external requests** (`code-standards.md` §1.4): self-host Inter + JetBrains Mono in `frontend/public/fonts/`, drop the Leaflet CDN link and Google Fonts tags from `index.html`. | Gate 8 | S |
+| 8.0c | **Un-modal the screens.** `ReviewQueueModal`, `UploadModal`, `SearchModal`, `AskPanel` are modals over the map (`App.tsx:355,368,380,319`). `ux-rules.md` §9 bans this. Convert to slot content **after** 8.2. | 8.7, 8.8 | M |
+
+### Stage A — interface work
+
+| # | Task | Spec | Est. |
+|---|---|---|---|
+| 8.1 | All tokens in `frontend/src/index.css` + Tailwind v4 `@theme` mapping. **Add the missing sets:** `--s-*` (L1), `--h-ctl-*` (L1), `--r-ctl/panel/tag` (L1), `--w-rail/--w-dossier` (L1), and the full `--z-*` ladder (L2). | `ui-console.md` §1–§2 | M |
+| 8.2 | `components/layout/Slot.tsx` + `lib/slots.ts`. Throws in dev on an unregistered id. | `ui-console.md` §8.1–8.2 | M |
+| 8.3 | `components/ui/Button.tsx` — 7 variants × 3 sizes × 7 states, 8 disabled reason strings, `primaryOwner`. | `ui-controls.md` §1 | M |
+| 8.4 | Lint rules: ban arbitrary Tailwind values, numeric `z-index`, hex literals, hardcoded JSX strings. Plant-and-fail proof. | `ui-console.md` §8.4 | S |
+| 8.5 | `lib/shortcuts.ts` — the full map from `ux-rules.md` §6, conflict-checked in dev. | `ux-rules.md` §6 | M |
+| 8.6 | ConsoleShell on the grid: SLOT-00/01/02/05/10/20–26/30/40 at exact heights. Sticky footers (reflow ban). | `ui-console.md` §3–§4 | L |
+| 8.7 | Dossier SLOT-20–26 in fixed order + the other screens mapped onto the same slots. | `ui-console.md` §5 | L |
+| 8.8 | All five states for every data-bearing region; refusals in amber-wash. | `ux-rules.md` §4 | L |
+| 8.9 | Landing page `/` — sectors, hero, six deep links, one primary per scroll. | `landing-page.md` | L |
+| 8.10 | Guest sessions: middleware, cookie, `session`/`visit` DDL, `POST /api/v1/events` → always 204. | `auth.md` S1 | M |
+| 8.11 | `lib/track.ts` — queue, `sendBeacon`, `trackOnce`/`trackAgg`; `map.hover` aggregated ≤1/5 s. | `tracking.md` T | M |
+| 8.12 | `/privacy` with verbatim copy + MaxMind attribution. | `tracking.md` §8 | S |
+| 8.13 | `/admin` — OVERVIEW + VISITORS + detail timeline. **Role check server-side.** | `admin-panel.md` D1–D9 | L |
+| 8.14 | `scripts/seed_telemetry.py` with the `DEMO DATA` badge; refuses `ENV=prod` without `--force`. | `admin-panel.md` | S |
+
+### Stage A2 — map engine replacement (forced by `code-standards.md` §1.3)
+
+| # | Task | Why | Est. |
+|---|---|---|---|
+| 8.20 | Replace Leaflet with **MapLibre GL JS 5**: rewrite `MapPane.tsx`, `useMapPolygons.ts`. `navigationControl: false`; `attributionControl: {compact: true}` relocated bottom-left. | Three specs depend on MapLibre-only APIs | L |
+| 8.21 | Rewrite `lib/map-fx.ts` against MapLibre: M1 reticle, M2 sweep, **M3 lock-on**, M4 sector grid via canvas layer. Delete the six providers in `satelliteProviders.ts`. | M3 is the signature interaction | L |
+| 8.22 | Local basemap: MapLibre style JSON from `api/tiles.py`; PMTiles or local raster. Verify `OFFLINE=1` with no basemap at all. | `ui-context.md` §9 | M |
+
+**8.20–8.22 replace `Prompts.md` 3 (which assumed MapLibre was already in place).** Do not run Prompt 3 before them.
+
+### 🚪 Phase 8 Stage-A gate
+
+- [ ] Every control exists at its `ui-console.md` §4/§5 slot, position, size and variant; nothing unlisted renders
+- [ ] Exactly one `primary` per viewport, enforced by `primaryOwner`; test: dossier open → assert 1
+- [ ] No `z-index` or spacing literal outside the §1/§2 tokens; lint fails on a planted violation
+- [ ] Panel footers do not move across three body content lengths
+- [ ] All five states captured for every data-bearing region; refusals amber-wash, never red
+- [ ] Click counts in `ux-rules.md` §5 met and recorded in `PROGRESS.md`
+- [ ] Latency budgets in `ux-rules.md` §2 measured p50/p95 and recorded in `PROGRESS.md` §I
+- [ ] **Zero external requests** — verified with the network physically disabled, not by grep alone
+- [ ] 1024/1280/1440/1920 captures committed; < 1024 shows the notice
+- [ ] The 90-second judge path (`ux-rules.md` §8) runs end-to-end with the network off
+- [ ] Guest session created silently; a 60 s / 40-interaction session produces ≤12 ingest requests
+- [ ] `/admin` returns 401 for guest, 403 for analyst — **tested against the API, not the UI**
+
+**Phase 7 is deferred until this gate passes** (user directive, 20 Sep 2026). Phase 8 does not depend on Phase 7.
 
 ---
 
