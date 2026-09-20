@@ -72,7 +72,7 @@ def parse_utm_epsg(utm_epsg: int) -> tuple[int, bool]:
         return utm_epsg - 32600, True
     if 32701 <= utm_epsg <= 32760:
         return utm_epsg - 32700, False
-    # Default fallback to Zone 43 North (Northern India / Jewar)
+    # Default fallback to Zone 43 North (Northern India)
     return 43, True
 
 

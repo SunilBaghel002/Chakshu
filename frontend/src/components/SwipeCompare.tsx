@@ -7,13 +7,12 @@ interface SwipeCompareProps {
   onSliderChange: (newPos: number) => void;
   isSwipeActive: boolean;
   onToggleSwipe: () => void;
-  beforeDate: string;
-  afterDate: string;
+  beforeDate?: string;
+  afterDate?: string;
   availableDates?: string[];
   onSelectBeforeDate?: (date: string) => void;
   onSelectAfterDate?: (date: string) => void;
   onSwapDates?: () => void;
-  onDragMove?: (newPos: number) => void;
 }
 
 export const SwipeCompare: React.FC<SwipeCompareProps> = ({
@@ -21,41 +20,9 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
   onSliderChange,
   isSwipeActive,
   onToggleSwipe,
-  beforeDate,
-  afterDate,
-  availableDates = [],
-  onSelectBeforeDate,
-  onSelectAfterDate,
-  onSwapDates,
-  onDragMove,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const dividerRef = useRef<HTMLDivElement>(null);
-  const percentTagRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
-  const lastPctRef = useRef(sliderPos);
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!isDraggingRef.current) {
-      lastPctRef.current = sliderPos;
-      if (dividerRef.current) dividerRef.current.style.left = `${sliderPos}%`;
-      if (percentTagRef.current) percentTagRef.current.textContent = `${Math.round(sliderPos)}%`;
-    }
-  }, [sliderPos]);
-
-  // Ensure active dates are always present in dropdown options
-  const beforeOptions = React.useMemo(() => {
-    const dates = new Set(availableDates);
-    if (beforeDate) dates.add(beforeDate);
-    return Array.from(dates).sort();
-  }, [availableDates, beforeDate]);
-
-  const afterOptions = React.useMemo(() => {
-    const dates = new Set(availableDates);
-    if (afterDate) dates.add(afterDate);
-    return Array.from(dates).sort();
-  }, [availableDates, afterDate]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     isDraggingRef.current = true;
@@ -67,76 +34,38 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
       if (!isDraggingRef.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-      const pct = Math.round((x / rect.width) * 1000) / 10;
-      lastPctRef.current = pct;
-
-      if (dividerRef.current) {
-        dividerRef.current.style.left = `${pct}%`;
-      }
-      if (percentTagRef.current) {
-        percentTagRef.current.textContent = `${Math.round(pct)}%`;
-      }
-      onDragMove?.(pct);
-
-      if (!rafRef.current) {
-        rafRef.current = requestAnimationFrame(() => {
-          onSliderChange(pct);
-          rafRef.current = null;
-        });
-      }
-    },
-    [onSliderChange, onDragMove]
-  );
-
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent) => {
-      if (!isDraggingRef.current) return;
-      isDraggingRef.current = false;
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-      onSliderChange(lastPctRef.current);
-      try {
-        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-      } catch {
-        // ignore
-      }
+      const pct = (x / rect.width) * 100;
+      onSliderChange(Math.round(pct * 10) / 10);
     },
     [onSliderChange]
   );
 
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    isDraggingRef.current = false;
+    try {
+      (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
     const handleGlobalUp = () => {
-      if (isDraggingRef.current) {
-        isDraggingRef.current = false;
-        if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
-          rafRef.current = null;
-        }
-        onSliderChange(lastPctRef.current);
-      }
+      isDraggingRef.current = false;
     };
     window.addEventListener('pointerup', handleGlobalUp);
     return () => window.removeEventListener('pointerup', handleGlobalUp);
-  }, [onSliderChange]);
+  }, []);
 
   if (!isSwipeActive) {
     return (
-      <div className="absolute top-4 left-3 z-[400]">
+      <div className="absolute top-4 left-4 z-[400]">
         <button
           onClick={onToggleSwipe}
-          className="flex items-center gap-2 px-3.5 py-2 t-tag cursor-pointer transition-colors"
-          style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--amber)',
-            color: 'var(--amber)',
-            borderRadius: 'var(--radius)',
-            fontSize: 10,
-          }}
+          className="flex items-center gap-2 bg-[#090D13]/95 hover:bg-[#111622] text-slate-100 px-3 py-1.5 rounded border border-[#F2B84B]/40 shadow-2xl text-xs font-mono font-semibold backdrop-blur-md transition-all"
         >
-          <Columns className="w-4 h-4" />
-          <span>ENABLE SPLIT VIEW</span>
+          <Columns className="w-3.5 h-3.5 text-[#F2B84B]" />
+          <span>ACTIVATE SPLIT COMPARE</span>
         </button>
       </div>
     );
@@ -300,39 +229,21 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
           boxShadow: '0 0 12px rgba(240, 180, 95, 0.6)',
         }}
       >
-        {/* Draggable Handle */}
+        {/* Tactical Center Draggable Handle */}
         <div
           onPointerDown={handlePointerDown}
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center cursor-ew-resize pointer-events-auto transition-transform hover:scale-110 active:scale-95"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'var(--panel)',
-            border: '2px solid var(--amber)',
-            boxShadow: '0 0 16px rgba(240, 180, 95, 0.5)',
-          }}
-          title="Drag to wipe between Before and After"
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#090D13] border-2 border-[#F2B84B] shadow-[0_0_16px_rgba(242,184,75,0.6)] flex items-center justify-center cursor-ew-resize pointer-events-auto hover:scale-110 active:scale-95 transition-transform"
+          title="Drag left or right to wipe between Before and After"
         >
-          <div className="flex items-center gap-1" style={{ color: 'var(--amber)', fontSize: 10, fontWeight: 700 }}>
+          <div className="flex items-center gap-0.5 text-[9px] font-extrabold text-[#F2B84B]">
             <span>◀</span>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--amber)' }} />
+            <div className="w-0.5 h-2.5 bg-[#F2B84B] rounded-full mx-0.5" />
             <span>▶</span>
           </div>
         </div>
 
-        {/* Percentage tag */}
-        <div
-          ref={percentTagRef}
-          className="absolute bottom-6 -translate-x-1/2 t-mono tabular-nums pointer-events-none px-2 py-0.5"
-          style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            color: 'var(--ink-2)',
-            borderRadius: 'var(--radius)',
-            fontSize: 10,
-          }}
-        >
+        {/* Bottom Percentage Tag */}
+        <div className="absolute bottom-4 -translate-x-1/2 bg-[#090D13] border border-[#1C2333] text-[#F2B84B] px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tabular-nums shadow-xl pointer-events-none">
           {Math.round(sliderPos)}%
         </div>
       </div>

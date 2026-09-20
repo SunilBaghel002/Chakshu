@@ -125,3 +125,4 @@ async def get_aoi_summary(aoi_id: str) -> ChangeSummary:
         data["aoi_id"] = aoi_id
         return ChangeSummary.model_validate(data)
     raise NotFoundError(f"Change summary for AOI '{aoi_id}' not found.")
+

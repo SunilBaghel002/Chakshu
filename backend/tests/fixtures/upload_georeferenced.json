@@ -1,8 +1,8 @@
 {
   "upload": {
     "id": "c4a91b2c-88df-4a11-9a72-f192b3c4d5e6",
-    "filename": "jewar_2026_crop.tif",
-    "title": "Jewar Airport Runway Crop 2026",
+    "filename": "sample_optical_10m_crop.tif",
+    "title": "Optical Survey 10m Ground Sample",
     "status": "GEOREFERENCED",
     "width_px": 2048,
     "height_px": 2048,
@@ -16,7 +16,7 @@
     "acquired_at": "2026-08-03",
     "acquired_source": "metadata",
     "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
-    "aoi_name": "Jewar Airport",
+    "aoi_name": "Survey Area",
     "capability_tier": "T3_MEDIUM",
     "capabilities": {
       "object_classes": ["building_cluster", "ship_large", "storage_tank", "road"],

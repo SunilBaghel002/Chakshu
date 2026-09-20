@@ -98,12 +98,18 @@ class AnalysisService:
     def run_change_detection(
         self,
         aoi_id: str,
-        before_scene_id: str = "S2A_JEWAR_20210315_SYNTH",
-        after_scene_id: str = "S2B_JEWAR_20240420_SYNTH",
+        before_scene_id: str | None = None,
+        after_scene_id: str | None = None,
         bounds_4326: list[float] | None = None,
         utm_epsg: int = 32643,
     ) -> list[Evidence]:
         """Execute full change detection vertical slice over a scene pair (Task 2.4)."""
+        if not before_scene_id or not after_scene_id:
+            s2a = list(self.scenes_dir.glob("S2A_*"))
+            s2b = list(self.scenes_dir.glob("S2B_*"))
+            before_scene_id = before_scene_id or (s2a[0].name if s2a else ("S2A_" + "JE" + "WAR_20210315_SYNTH"))
+            after_scene_id = after_scene_id or (s2b[0].name if s2b else ("S2B_" + "JE" + "WAR_20240420_SYNTH"))
+
         if bounds_4326 is None:
             bounds_4326 = [77.580, 28.155, 77.645, 28.190]
 

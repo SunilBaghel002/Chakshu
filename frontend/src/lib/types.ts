@@ -11,6 +11,7 @@ export * from './types/detection';
 export * from './types/summary';
 export * from './types/ask';
 export * from './types/aoi';
+export * from './types/analysis';
 
 // Type aliases for prompt and frontend convenience
 import type { Answer } from './types/ask';

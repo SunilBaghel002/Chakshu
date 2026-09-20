@@ -1,18 +1,9 @@
-"""Multi-track detection orchestration, validation, NMS, and rejection tracing (Task 5.5, PRD 2 §6, PRD 3 §B3).
-
-Orchestrates:
-1. Capability gating: strictly blocks Track 3 if tier forbids object classes.
-2. Track 1: Deterministic land-cover classification from spectral indices.
-3. Track 2: ESA WorldCover reference polygon integration for georeferenced imagery.
-4. Track 3: Gemini 2.0 Flash proposals with full defensive bbox validation and NMS.
-5. Strict accounting of rejected boxes with reasons.
-6. SQL-derived counts summary and coverage metrics.
-"""
-
+"""Pixel-grounded detection orchestration for one uploaded image."""
 from __future__ import annotations
 
 import collections
 import logging
+import math
 import uuid
 from pathlib import Path
 from typing import Any
@@ -22,343 +13,207 @@ from PIL import Image
 
 from app.adapters.gemini import GeminiDetectionAdapter
 from app.adapters.worldcover import WorldCoverAdapter
-from app.domain.bbox import (
-    BboxReject,
-    PixelBox,
-    apply_class_nms,
-    normalise_bbox,
-    normalize_label,
-)
-from app.domain.constants import (
-    DETECTION_NMS_IOU,
-    DETECTION_SCORE_MIN,
-    MAX_ASPECT_RATIO,
-    MIN_ASPECT_RATIO,
-    MIN_BOX_AREA_PX,
-)
-from app.domain.landcover import (
-    classify_optical_pixels,
-    compute_landcover_summary,
-    vectorize_class_mask,
-)
-from app.schemas.common import (
-    CapabilityTier,
-    DetectionKind,
-    DetectionTrack,
-    ProvenanceSource,
-)
-from app.schemas.detection import (
-    CoverageClassItem,
-    CoverageSummary,
-    CountsSummary,
-    Detection,
-    DetectionSet,
-    RejectionDetail,
-    RejectionsSummary,
-    Upload,
-)
-from app.settings import settings
+from app.domain.bbox import BboxReject, PixelBox, apply_class_nms, normalise_bbox, normalize_label
+from app.domain.constants import MAX_ASPECT_RATIO, MIN_ASPECT_RATIO, MIN_BOX_AREA_PX
+from app.domain.landcover import compute_landcover_summary, vectorize_class_mask
+from app.domain.models import SatelliteSegmentationModel
+from app.schemas.common import CapabilityTier, DetectionKind, DetectionTrack, ProvenanceSource
+from app.schemas.detection import CoverageClassItem, CoverageSummary, CountsSummary, Detection, DetectionSet, RejectionDetail, RejectionsSummary, Upload
+from app.services.image_validator import ImageValidator
 
 log = logging.getLogger(__name__)
+ALLOWED_OBJECT_CLASSES = {"aircraft", "building", "container", "road", "ship", "storage_tank", "swimming_pool", "tower", "vehicle"}
+NOTABLE_BUILDING_TERMS = {"large", "isolated", "distinctive", "industrial", "infrastructure", "operational", "warehouse", "facility", "hangar", "plant", "terminal"}
 
 
 class DetectionService:
-    """Orchestrates multi-track object detection and land-cover classification."""
+    """Runs deterministic pixel land-cover and an independent blind LLM object track."""
 
     def __init__(self) -> None:
-        """Initialize detection service with model and dataset adapters."""
+        self.segmenter = SatelliteSegmentationModel()
         self.gemini_adapter = GeminiDetectionAdapter()
         self.worldcover_adapter = WorldCoverAdapter()
+        self.image_validator = ImageValidator()
 
-    def run_detection_pipeline(
-        self,
-        upload: Upload,
-        image_path: Path | str,
-        synthetic_proposals: list[dict[str, Any]] | None = None,
-        mode: str = "reconcile",
-    ) -> DetectionSet:
-        """Execute all permitted detection tracks for an upload and return DetectionSet."""
+    def run_detection_pipeline(self, upload: Upload, image_path: Path | str, mode: str = "reconcile") -> DetectionSet:
         img = Image.open(image_path).convert("RGB")
-        w, h = upload.width_px, upload.height_px
+        landcover, coverage = self._run_track1_landcover(img, upload)
+        track_status: dict[str, str] = {"track_1": "completed", "track_2": "unavailable"}
+        worldcover = self._run_track2_worldcover(upload)
+        if worldcover:
+            track_status["track_2"] = "completed"
 
-        all_detections: list[Detection] = []
+        summary = self._pixel_summary(coverage)
+        object_detections: list[Detection] = []
         rejections: list[RejectionDetail] = []
-
-        # -------------------------------------------------------------
-        # Track 1: Deterministic Land-Cover from Spectral/Optical Pixels
-        # -------------------------------------------------------------
-        coverage_summary: CoverageSummary | None = None
-        track1_detections, coverage_summary = self._run_track1_landcover(img, upload)
-        all_detections.extend(track1_detections)
-
-        # -------------------------------------------------------------
-        # Track 2: ESA WorldCover 2021 Reference Map (if georeferenced)
-        # -------------------------------------------------------------
-        if upload.bounds_4326:
-            track2_detections = self._run_track2_worldcover(upload)
-            all_detections.extend(track2_detections)
-
-        # -------------------------------------------------------------
-        # Track 3: Multimodal Object Detection (Gemini Blind Vision)
-        # -------------------------------------------------------------
-        deterministic_results = {
-            "landcover_pct": {
-                item.label: item.pct
-                for item in (coverage_summary.by_class if coverage_summary else [])
-            },
-            "water_polygons": [
-                {
-                    "points": d.geom_px.get("coordinates", [[]])[0],
-                    "est_area_m2": d.area_m2 or 0.0,
-                }
-                for d in track1_detections
-                if d.label == "water"
-            ],
-        }
-
-        vision_info: dict[str, Any] = {}
-        if upload.capability_tier != CapabilityTier.T0_UNKNOWN and upload.capabilities.object_classes:
-            track3_dets, track3_rejs, vision_info = self._run_track3_objects(
-                img,
-                upload,
-                synthetic_proposals=synthetic_proposals,
-                mode=mode,
-                deterministic_results=deterministic_results,
-            )
-            all_detections.extend(track3_dets)
-            rejections.extend(track3_rejs)
-        else:
-            log.info(
-                "Upload %s at tier %s forbids object classes; Track 3 omitted",
-                upload.id, upload.capability_tier.value,
-            )
-
-        # Build RejectionsSummary
-        rejection_counts: dict[str, int] = collections.defaultdict(int)
-        for r in rejections:
-            rejection_counts[r.reason] += 1
-
-        rejections_envelope = RejectionsSummary(
-            count=len(rejections),
-            by_reason=dict(rejection_counts),
-            detail=rejections,
-        )
-
-        # Build CountsSummary (SQL-equivalent exact counts)
-        label_counts: dict[str, int] = collections.defaultdict(int)
-        total_objects = 0
-        total_landcover = 0
-        for d in all_detections:
-            label_counts[d.label] += 1
-            if d.kind == DetectionKind.BOX:
-                total_objects += 1
+        error: str | None = None
+        objects_allowed = bool(set(upload.capabilities.object_classes) & ALLOWED_OBJECT_CLASSES) and upload.capability_tier != CapabilityTier.T0_UNKNOWN
+        if objects_allowed:
+            llm = self.gemini_adapter.detect(img, gsd_m=upload.gsd_m, pixel_summary=summary)
+            if llm.get("status") == "completed":
+                object_detections, rejections = self._validate_proposals(llm.get("objects"), upload)
+                explanation = self._valid_explanation(llm.get("explanation"))
+                if explanation is None:
+                    error = "Gemini returned an invalid explanation"
+                    track_status["track_3"] = "failed"
+                else:
+                    track_status["track_3"] = "completed"
             else:
-                total_landcover += 1
+                explanation = None
+                error = str(llm.get("error") or "Gemini object analysis failed")
+                track_status["track_3"] = "failed"
+        else:
+            explanation = None
+            track_status["track_3"] = "unavailable_at_resolution_tier"
 
-        counts_envelope = CountsSummary(
-            by_label=dict(label_counts),
-            total_object_detections=total_objects,
-            total_landcover_detections=total_landcover,
-            source="SELECT count(*) FROM detection GROUP BY label",
-        )
-
-        blind_pct = vision_info.get("blind_landcover_pct") or vision_info.get("landcover_pct")
-        merged_pct = vision_info.get("merged_landcover_pct") or blind_pct
-
+        completed = error is None
+        all_detections = landcover + worldcover + object_detections
+        stats = self._stats(upload, coverage, object_detections)
+        counts = self._counts(all_detections)
+        rejection_counts = collections.Counter(item.reason for item in rejections)
         return DetectionSet(
-            upload=upload,
-            detections=all_detections,
-            coverage=coverage_summary,
-            counts=counts_envelope,
-            rejections=rejections_envelope,
-            trace_id=f"trace_{uuid.uuid4().hex[:8]}",
-            mode=vision_info.get("mode", mode.upper()),
-            blind_landcover_pct=blind_pct,
-            merged_landcover_pct=merged_pct,
-            merged_water_polygons=vision_info.get("merged_water_polygons"),
-            reconciliation=vision_info.get("reconciliation"),
-            summary=vision_info.get("summary"),
+            upload=upload, detections=all_detections, coverage=coverage, counts=counts,
+            rejections=RejectionsSummary(count=len(rejections), by_reason=dict(rejection_counts), detail=rejections),
+            stats=stats, trace_id=f"trace_{uuid.uuid4().hex[:8]}", mode=mode.upper(),
+            annotated_url=f"/api/v1/uploads/{upload.id}/annotated", explanation=explanation,
+            status="completed" if completed else "detection_failed", error=error,
+            merged_landcover_pct={item.label: item.pct for item in coverage.by_class},
+            track_status=track_status,
         )
 
-    def _run_track1_landcover(
-        self, img: Image.Image, upload: Upload
-    ) -> tuple[list[Detection], CoverageSummary]:
-        """Execute Track 1 deterministic land-cover classification."""
-        arr = np.array(img, dtype=np.uint16)
-        r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
-        # For plain RGB, approximate NIR with (G + R)/2 for synthetic index evaluation
-        nir = ((g.astype(np.float32) + r.astype(np.float32)) / 2.0).astype(np.uint16)
-
-        classified = classify_optical_pixels(red=r, green=g, blue=b, nir=nir, scale_factor=255.0)
-        summary_dict = compute_landcover_summary(classified)
-
-        coverage_items = [
-            CoverageClassItem(
-                label=item["label"],
-                px=item["px"],
-                pct=item["pct"],
-                area_m2=(
-                    item["px"] * (upload.gsd_m**2)
-                    if upload.gsd_m and upload.capabilities.area_measurements
-                    else None
-                ),
-            )
-            for item in summary_dict["by_class"]
-        ]
-
-        coverage_summary = CoverageSummary(
-            source_track=DetectionTrack.LANDCOVER_INDEX,
-            total_px=summary_dict["total_px"],
-            by_class=coverage_items,
-            sum_check_pct=summary_dict["sum_check_pct"],
+    def _run_track1_landcover(self, img: Image.Image, upload: Upload) -> tuple[list[Detection], CoverageSummary]:
+        seg_res = self.segmenter.predict(img)
+        classified = seg_res.classified_raster if seg_res.classified_raster is not None else np.full((img.height, img.width), "unclassified")
+        raw_summary = compute_landcover_summary(classified)
+        coverage = CoverageSummary(
+            source_track=DetectionTrack.LANDCOVER_INDEX, total_px=raw_summary["total_px"], sum_check_pct=raw_summary["sum_check_pct"],
+            by_class=[CoverageClassItem(label=x["label"], px=x["px"], pct=x["pct"], area_m2=(x["px"] * upload.gsd_m ** 2 if self._has_gsd(upload) else None)) for x in raw_summary["by_class"]],
         )
-
         detections: list[Detection] = []
-        for class_name in ["water", "built", "vegetation"]:
-            mask = classified == class_name
-            is_w = (class_name == "water")
-            patches = vectorize_class_mask(
-                mask,
-                min_pixels=30 if is_w else 4,
-                is_water=is_w,
-                max_polygons=5 if is_w else None,
+        # The UI needs bounded, pixel-derived geometries, not every noisy component.
+        for label in ("water", "built", "vegetation", "bare", "crop"):
+            polygons = vectorize_class_mask(
+                classified == label,
+                min_pixels=30 if label == "water" else 100,
+                is_water=label == "water",
+                max_polygons=5 if label == "water" else 30,
             )
-            for p in patches:
-                area_px = p["area_px"]
-                area_m2 = (
-                    area_px * (upload.gsd_m**2)
-                    if upload.gsd_m and upload.capabilities.area_measurements
-                    else None
-                )
+            for polygon in polygons:
+                area_m2 = polygon["area_px"] * upload.gsd_m ** 2 if self._has_gsd(upload) else None
                 detections.append(
                     Detection(
                         id=str(uuid.uuid4()),
                         track=DetectionTrack.LANDCOVER_INDEX,
-                        label=class_name,
-                        label_raw=f"spectral_{class_name}",
+                        label=label,
+                        label_raw=f"rgb_{label}",
                         kind=DetectionKind.POLYGON,
-                        geom_px={"type": "Polygon", "coordinates": p["coordinates"]},
-                        area_px=float(area_px),
-                        area_m2=float(round(area_m2, 2)) if area_m2 is not None else None,
+                        geom_px={"type": "Polygon", "coordinates": polygon["coordinates"]},
+                        area_px=float(polygon["area_px"]),
+                        area_m2=area_m2,
                         score=1.0,
                         score_source="deterministic",
                         verified=True,
-                        verifier_note="Deterministic spectral index thresholding",
+                        verifier_note=f"pixel-derived RGB land-cover (mask_iou={polygon.get('mask_iou', 1.0)})",
                     )
                 )
 
-        return detections, coverage_summary
-
-    def _run_track2_worldcover(self, upload: Upload) -> list[Detection]:
-        """Execute Track 2 ESA WorldCover reference polygon integration."""
-        if not upload.bounds_4326:
-            return []
-        raw = self.worldcover_adapter.get_landcover_polygons(
-            bounds_4326=upload.bounds_4326, width_px=upload.width_px, height_px=upload.height_px
-        )
-        dets: list[Detection] = []
-        for r in raw:
-            a_px = r["area_px"]
-            a_m2 = a_px * (upload.gsd_m**2) if upload.gsd_m and upload.capabilities.area_measurements else None
-            dets.append(
-                Detection(
-                    id=str(uuid.uuid4()),
-                    track=DetectionTrack.LANDCOVER_WORLDCOVER,
-                    label=r["label"],
-                    label_raw=r.get("label_raw"),
-                    kind=DetectionKind.POLYGON,
-                    geom_px=r["geom_px"],
-                    area_px=float(a_px),
-                    area_m2=float(round(a_m2, 2)) if a_m2 is not None else None,
-                    score=1.0,
-                    score_source="deterministic",
-                    verified=True,
-                    verifier_note=r.get("verifier_note"),
-                )
-            )
-        return dets
-
-    def _run_track3_objects(
-        self,
-        img: Image.Image,
-        upload: Upload,
-        synthetic_proposals: list[dict[str, Any]] | None = None,
-        mode: str = "reconcile",
-        deterministic_results: dict[str, Any] | None = None,
-    ) -> tuple[list[Detection], list[RejectionDetail], dict[str, Any]]:
-        """Execute Track 3 Gemini detection with strict defensive validation and NMS."""
-        permitted = upload.capabilities.object_classes
-        w, h = upload.width_px, upload.height_px
-
-        vision_res: dict[str, Any] = {}
-        if synthetic_proposals is not None:
-            raw_proposals = synthetic_proposals
-            vision_res = {"objects": synthetic_proposals}
-        else:
-            vision_res = self.gemini_adapter.analyze_image(
-                img, gsd_m=upload.gsd_m, mode=mode.upper(), deterministic_results=deterministic_results
-            )
-            raw_proposals = vision_res.get("objects", [])
-
-        valid_proposals: list[tuple[PixelBox, float, str, str, str]] = []
-        rejections: list[RejectionDetail] = []
-
-        for p in raw_proposals:
-            raw_label = str(p.get("label", "unknown"))
-            raw_box = p.get("bbox", [])
-            score = float(p.get("score", 0.0))
-            reason = str(p.get("evidence") or p.get("reason", ""))
-
-            if score < settings.DETECTION_SCORE_MIN:
-                rejections.append(RejectionDetail(label_raw=raw_label, reason="score_below_threshold", detail=f"Score {score:.2f} < {settings.DETECTION_SCORE_MIN:.2f}"))
-                continue
-            canonical = normalize_label(raw_label)
-            if not canonical:
-                rejections.append(RejectionDetail(label_raw=raw_label, reason="unknown_label_alias", detail=f"Label '{raw_label}' has no canonical alias"))
-                continue
-            if canonical not in permitted:
-                rejections.append(RejectionDetail(label_raw=raw_label, reason="label_forbidden_at_resolution_tier", detail=f"Class '{canonical}' not permitted at tier {upload.capability_tier.value}"))
-                continue
-            norm_res = normalise_bbox(raw_box, w, h, bbox_order=settings.GEMINI_BBOX_ORDER)
-            if isinstance(norm_res, BboxReject):
-                rejections.append(RejectionDetail(label_raw=raw_label, reason=norm_res.reason, detail=norm_res.detail))
-                continue
-            aspect_ratio = norm_res.width / max(norm_res.height, 1e-4)
-            if aspect_ratio < MIN_ASPECT_RATIO or aspect_ratio > MAX_ASPECT_RATIO:
-                rejections.append(RejectionDetail(label_raw=raw_label, reason="aspect_ratio_out_of_bounds", detail=f"Aspect ratio {aspect_ratio:.2f} outside [{MIN_ASPECT_RATIO:.3f}, {MAX_ASPECT_RATIO}]"))
-                continue
-            if norm_res.area_px < MIN_BOX_AREA_PX:
-                rejections.append(RejectionDetail(label_raw=raw_label, reason="area_below_minimum_threshold", detail=f"Area {norm_res.area_px:.1f}px² < {MIN_BOX_AREA_PX}px²"))
-                continue
-
-            valid_proposals.append((norm_res, score, canonical, raw_label, reason))
-
-        nms_survivors, nms_rej_tuples = apply_class_nms(valid_proposals, iou_threshold=settings.DETECTION_NMS_IOU)
-        for raw_lbl, reason_str, detail_str in nms_rej_tuples:
-            rejections.append(RejectionDetail(label_raw=raw_lbl, reason=reason_str, detail=detail_str))
-
-        detections: list[Detection] = []
-        for box, score, canonical, raw_label, reason in nms_survivors:
-            area_m2 = (
-                box.area_px * (upload.gsd_m**2)
-                if upload.gsd_m and upload.gsd_source in (ProvenanceSource.METADATA, ProvenanceSource.USER_DECLARED)
-                else None
-            )
+        # Extract isolated building / structural footprints severed from linear road network (§11)
+        candidate_mask = seg_res.get_isolated_building_footprints(min_area=150, max_area=40000)
+        building_polys = vectorize_class_mask(candidate_mask, min_pixels=150, is_water=False, max_polygons=15)
+        for polygon in building_polys:
+            area_m2 = polygon["area_px"] * upload.gsd_m ** 2 if self._has_gsd(upload) else None
             detections.append(
                 Detection(
                     id=str(uuid.uuid4()),
-                    track=DetectionTrack.OBJECT_MODEL,
-                    label=canonical,
-                    label_raw=raw_label,
-                    kind=DetectionKind.BOX,
-                    geom_px=box.to_geojson_polygon(),
-                    area_px=float(round(box.area_px, 2)),
-                    area_m2=float(round(area_m2, 2)) if area_m2 is not None else None,
-                    score=float(round(score, 3)),
-                    score_source="model",
-                    verified=False,
-                    verifier_note=reason,
+                    track=DetectionTrack.LANDCOVER_INDEX,
+                    label="building",
+                    label_raw="rgb_building",
+                    kind=DetectionKind.POLYGON,
+                    geom_px={"type": "Polygon", "coordinates": polygon["coordinates"]},
+                    area_px=float(polygon["area_px"]),
+                    area_m2=area_m2,
+                    score=1.0,
+                    score_source="deterministic",
+                    verified=True,
+                    verifier_note=f"pixel-derived building structure (mask_iou={polygon.get('mask_iou', 1.0)})",
                 )
             )
+        return detections, coverage
 
-        return detections, rejections, vision_res
+    def _run_track2_worldcover(self, upload: Upload) -> list[Detection]:
+        """WorldCover is optional; the adapter returns nothing without a configured real source."""
+        if not upload.bounds_4326:
+            return []
+        result: list[Detection] = []
+        for item in self.worldcover_adapter.get_landcover_polygons(upload.bounds_4326, upload.width_px, upload.height_px):
+            result.append(Detection(id=str(uuid.uuid4()), track=DetectionTrack.LANDCOVER_WORLDCOVER, label=item["label"], label_raw=item.get("label_raw"), kind=DetectionKind.POLYGON, geom_px=item["geom_px"], area_px=item["area_px"], area_m2=None, score=1.0, score_source="reference", verified=True, verifier_note=item.get("verifier_note")))
+        return result
+
+    def _validate_proposals(self, raw_objects: Any, upload: Upload) -> tuple[list[Detection], list[RejectionDetail]]:
+        rejections: list[RejectionDetail] = []
+        if not isinstance(raw_objects, list):
+            return [], [RejectionDetail(label_raw="unknown", reason="invalid_objects_payload", detail="objects must be an array")]
+        permitted = ALLOWED_OBJECT_CLASSES & set(upload.capabilities.object_classes)
+        candidates: list[tuple[PixelBox, float, str, str, str]] = []
+        for raw in raw_objects:
+            if not isinstance(raw, dict):
+                rejections.append(RejectionDetail(label_raw="unknown", reason="invalid_proposal", detail="proposal is not an object")); continue
+            raw_label = str(raw.get("label", "unknown"))
+            label = normalize_label(raw_label)
+            evidence = str(raw.get("visual_evidence", "")).strip()
+            try: score = float(raw.get("score"))
+            except (TypeError, ValueError): score = math.nan
+            if label not in permitted:
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="forbidden_label", detail="label is not permitted")); continue
+            threshold = 0.60 if label == "building" else 0.50
+            if not math.isfinite(score) or score < threshold or score > 1:
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="score_below_threshold", detail=f"required score is {threshold:.2f}")); continue
+            if label == "building" and not (set(evidence.lower().replace("-", " ").split()) & NOTABLE_BUILDING_TERMS):
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="ordinary_building", detail="visual evidence does not establish notability")); continue
+            bbox = raw.get("bbox")
+            if not isinstance(bbox, list):
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="invalid_bbox", detail="bbox must be a four-value array")); continue
+            box = normalise_bbox(bbox, upload.width_px, upload.height_px)
+            if isinstance(box, BboxReject):
+                rejections.append(RejectionDetail(label_raw=raw_label, reason=box.reason, detail=box.detail)); continue
+            ratio = box.width / max(box.height, 1e-6)
+            if not MIN_ASPECT_RATIO <= ratio <= MAX_ASPECT_RATIO or box.area_px < MIN_BOX_AREA_PX:
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="invalid_box_geometry", detail="box area or aspect ratio is outside policy")); continue
+            candidates.append((box, score, label, raw_label, evidence))
+        survivors, nms = apply_class_nms(candidates)
+        rejections.extend(RejectionDetail(label_raw=a, reason=b, detail=c) for a, b, c in nms)
+        survivors.sort(key=lambda item: item[1], reverse=True)
+        detections: list[Detection] = []
+        buildings = 0
+        for box, score, label, raw_label, evidence in survivors:
+            if len(detections) == 15:
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="cap_reached", detail="maximum 15 objects")); continue
+            if label == "building":
+                if buildings == 10:
+                    rejections.append(RejectionDetail(label_raw=raw_label, reason="cap_reached", detail="maximum 10 buildings")); continue
+                buildings += 1
+            detections.append(Detection(id=str(uuid.uuid4()), track=DetectionTrack.OBJECT_MODEL, label=label, label_raw=raw_label, kind=DetectionKind.BOX, geom_px=box.to_geojson_polygon(), area_px=box.area_px, area_m2=(box.area_px * upload.gsd_m ** 2 if self._has_gsd(upload) else None), score=round(score, 3), score_source="model", verified=False, verifier_note=evidence))
+        return detections, rejections
+
+    @staticmethod
+    def _valid_explanation(value: Any) -> str | None:
+        if not isinstance(value, str): return None
+        text = " ".join(value.split())
+        return text if 80 <= len(text.split()) <= 120 else None
+
+    @staticmethod
+    def _has_gsd(upload: Upload) -> bool:
+        return bool(upload.gsd_m and upload.gsd_m > 0 and upload.capabilities.area_measurements)
+
+    def _pixel_summary(self, coverage: CoverageSummary) -> dict[str, float]:
+        return {item.label: item.pct for item in coverage.by_class if item.label != "unclassified" and item.pct > 0}
+
+    def _stats(self, upload: Upload, coverage: CoverageSummary, objects: list[Detection]) -> dict[str, Any]:
+        area = upload.width_px * upload.height_px * upload.gsd_m ** 2 if self._has_gsd(upload) else None
+        values = {item.label: item.pct for item in coverage.by_class if item.label != "unclassified"}
+        return {"total_objects": len(objects), "objects_by_class": dict(collections.Counter(x.label for x in objects)), "total_area_m2": round(area, 2) if area is not None else None, "landcover_area": {key: {"pct": value, "m2": round(area * value / 100, 2) if area is not None else None, "ha": round(area * value / 1_000_000, 4) if area is not None else None} for key, value in values.items()}}
+
+    @staticmethod
+    def _counts(detections: list[Detection]) -> CountsSummary:
+        labels = collections.Counter(x.label for x in detections)
+        return CountsSummary(by_label=dict(labels), total_object_detections=sum(x.kind == DetectionKind.BOX for x in detections), total_landcover_detections=sum(x.kind == DetectionKind.POLYGON for x in detections), source="computed from this upload")

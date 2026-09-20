@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import type { Evidence, DetectionSet } from '../lib/types';
+import { getClassColor, getDarkerClassColor } from '../lib/palette';
 import { useMapPolygons } from '../lib/useMapPolygons';
 import { SwipeCompare } from './SwipeCompare';
 import { MapCursorInspector } from './MapCursorInspector';
@@ -41,6 +42,7 @@ interface MapPaneProps {
  * SLOT-10 — Map Stage (the well)
  * Cool-neutral --well background, 1px --line-strong frame, corner ticks.
  * Integrates ghost numeral, vignette, and dot grid.
+ * Combines satellite imagery layers, swipe comparison, change polygons, and object detections.
  */
 export const MapPane: React.FC<MapPaneProps> = ({
   selectedAoiId,
@@ -68,6 +70,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const beforeTileLayerRef = useRef<L.TileLayer | null>(null);
   const afterTileLayerRef = useRef<L.TileLayer | null>(null);
+  const detectionsLayerRef = useRef<L.LayerGroup | null>(null);
   const prevAoiIdRef = useRef<string | null>(null);
 
   const [imageryMode, setImageryMode] = useState<ImageryMode>('hybrid_optimum');
@@ -132,50 +135,37 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
     // Dark-matter labels at --ink-3 70%
     const cartoLabels = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
-      { maxZoom: 18, opacity: 0.5 }
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
+      { maxZoom: 18, opacity: 0.6 }
     );
     cartoLabels.addTo(map);
 
-    const handleMouseMove = (e: L.LeafletMouseEvent) => {
-      const cEl = coordRef.current;
-      if (cEl) {
-        cEl.classList.remove('hidden');
-        const latSpan = cEl.querySelector('[data-lat]');
-        const lngSpan = cEl.querySelector('[data-lng]');
-        if (latSpan) latSpan.textContent = `${e.latlng.lat.toFixed(4)}° N`;
-        if (lngSpan) lngSpan.textContent = `${e.latlng.lng.toFixed(4)}° E`;
+    mapInstanceRef.current = map;
+
+    // Ensure map tiles fill the container smoothly
+    const timer = setTimeout(() => {
+      if (mapInstanceRef.current) {
+        map.invalidateSize();
       }
-      const iEl = inspectorRef.current;
-      if (iEl && !iEl.classList.contains('hidden')) {
-        const cx = Math.min(e.containerPoint.x + 16, window.innerWidth - 260);
-        const cy = Math.min(e.containerPoint.y + 16, window.innerHeight - 180);
-        iEl.style.left = `${cx}px`;
-        iEl.style.top = `${cy}px`;
+    }, 150);
+
+    const handleResize = () => {
+      if (mapInstanceRef.current) {
+        map.invalidateSize();
       }
     };
-
-    map.on('mousemove', handleMouseMove);
-
-    map.on('mouseout', () => {
-      if (coordRef.current) coordRef.current.classList.add('hidden');
-      if (inspectorRef.current) inspectorRef.current.classList.add('hidden');
-      setHoveredEvidence(null);
-    });
-    mapInstanceRef.current = map;
-    prevAoiIdRef.current = selectedAoiId ?? null;
-    setTimeout(() => map.invalidateSize(), 150);
-
-    const handleResize = () => map.invalidateSize();
     window.addEventListener('resize', handleResize);
+
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('resize', handleResize);
       map.remove();
       mapInstanceRef.current = null;
       beforeTileLayerRef.current = null;
       afterTileLayerRef.current = null;
+      detectionsLayerRef.current = null;
     };
-  }, []);
+  }, [aoiCoords]);
 
   // Dynamically update satellite tile layers when beforeDate, afterDate, or imageryMode changes
   useEffect(() => {
@@ -296,6 +286,59 @@ export const MapPane: React.FC<MapPaneProps> = ({
     beforeDate,
     afterDate,
   });
+
+  // Render Object Detection Bounding Boxes (Track 1/2 solid vs Track 3 dashed)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (detectionsLayerRef.current) {
+      map.removeLayer(detectionsLayerRef.current);
+      detectionsLayerRef.current = null;
+    }
+
+    if (!detectionSet || !detectionSet.detections.length) return;
+
+    const group = L.layerGroup();
+
+    detectionSet.detections.forEach((det) => {
+      if (!det.geom_4326) return;
+      const isTrack3 = det.track === 'object_model';
+      const color = getClassColor(det.label);
+      const strokeColor = getDarkerClassColor(det.label);
+
+      const boxLayer = L.geoJSON(det.geom_4326 as any, {
+        style: {
+          color: strokeColor,
+          weight: 2.5,
+          dashArray: isTrack3 ? '6, 4' : undefined,
+          fillColor: color,
+          fillOpacity: isTrack3 ? 0.22 : 0.45,
+        },
+      });
+
+      // Label Chip Marker at top-left of box
+      const coords = (det.geom_4326 as any).coordinates?.[0]?.[0];
+      if (coords && coords.length >= 2) {
+        const marker = L.marker([coords[1], coords[0]], {
+          icon: L.divIcon({
+            className: 'custom-det-chip',
+            html: `<div style="background: rgba(17, 24, 39, 0.92); border: 1px solid ${color}; color: #F9FAFB; font-size: 10px; font-family: monospace; padding: 2px 4px; border-radius: 3px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
+              ${det.label} · ${det.score.toFixed(2)}
+            </div>`,
+            iconSize: [80, 20],
+            iconAnchor: [0, 24],
+          }),
+        });
+        group.addLayer(marker);
+      }
+
+      group.addLayer(boxLayer);
+    });
+
+    group.addTo(map);
+    detectionsLayerRef.current = group;
+  }, [detectionSet]);
 
   return (
     <div
