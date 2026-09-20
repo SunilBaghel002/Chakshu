@@ -44,12 +44,26 @@ export const PALETTE = {
   cyanGlow: 'rgba(36, 198, 200, 0.35)',
 
   // Epistemic Chips (PRD 4 §3 & Rule 1: The AI never produces a number)
+  measured: '#2FBF71',
   measuredGreen: '#35D07F',  // Solid chip for MEASURED / Deterministic facts
   measuredBg: 'rgba(53, 208, 127, 0.15)',
+  measuredFill: 'rgba(47, 191, 113, 0.12)',
+  measuredText: '#5AD79A',
   measuredBorder: '#059669',
+  inferred: '#F0B45F',
   inferredAmber: '#F2B84B',  // Outlined chip for INFERRED claims
   inferredBg: 'rgba(242, 184, 75, 0.15)',
+  inferredFill: 'rgba(240, 180, 95, 0.10)',
+  inferredText: '#F0B45F',
   inferredBorder: '#D97706',
+  unverified: '#6B7480',
+  unverifiedText: '#A6ADB5',
+  confirmed: '#2FBF71',
+  confirmedText: '#5AD79A',
+  rejected: '#E5484D',
+  rejectedFill: 'rgba(229, 72, 77, 0.12)',
+  rejectedText: '#F2767B',
+  neutral: '#6B7480',
 
   // Categorical Class Colors (Fixed map, never generated at runtime)
   classes: {

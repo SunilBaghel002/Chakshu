@@ -40,7 +40,11 @@ class TileService:
 
     def __init__(self, data_dir: Path | str = "data") -> None:
         """Initialize tile service with tiles and masks storage paths."""
-        self.data_dir = Path(data_dir)
+        repo_root = Path(__file__).resolve().parents[3]
+        target = Path(data_dir)
+        if not target.is_absolute() and not target.exists() and (repo_root / data_dir).exists():
+            target = repo_root / data_dir
+        self.data_dir = target
         self.tiles_dir = self.data_dir / "tiles"
         self.masks_dir = self.data_dir / "masks"
         self.evidence_dir = self.data_dir / "evidence"
@@ -49,7 +53,9 @@ class TileService:
         """Retrieve 256x256 PNG true-color tile for a given scene and coordinates."""
         scene_dir = self.tiles_dir / scene_id
         if not scene_dir.exists():
-            # Check if any scene directory matches or has synthetic data
+            # Check if synthetic demo scene
+            if "SYNTH" in scene_id:
+                return generate_fallback_rgb_tile(scene_id)
             raise NotFoundError(f"Scene tiles directory for '{scene_id}' not found.")
 
         # 1. Look for direct coordinate match (x_y.png or z_x_y.png)

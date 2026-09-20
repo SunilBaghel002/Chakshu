@@ -27,6 +27,7 @@ from fastapi.responses import JSONResponse
 try:
     from app.api.aoi import router as aoi_router
     from app.api.ask import router as ask_router
+    from app.api.changes import router as changes_router
     from app.api.jobs import router as jobs_router
     from app.api.scenes import router as scenes_router
     from app.api.search import router as search_router
@@ -37,6 +38,7 @@ try:
 except ImportError:
     from .api.aoi import router as aoi_router
     from .api.ask import router as ask_router
+    from .api.changes import router as changes_router
     from .api.jobs import router as jobs_router
     from .api.scenes import router as scenes_router
     from .api.search import router as search_router
@@ -126,6 +128,7 @@ def create_app() -> FastAPI:
     app.include_router(aoi_router, prefix="/api/v1")
     app.include_router(scenes_router, prefix="/api/v1")
     app.include_router(tiles_router, prefix="/api/v1")
+    app.include_router(changes_router, prefix="/api/v1")
     app.include_router(search_router, prefix="/api/v1")
     app.include_router(uploads_router, prefix="/api/v1")
     app.include_router(ask_router, prefix="/api/v1")

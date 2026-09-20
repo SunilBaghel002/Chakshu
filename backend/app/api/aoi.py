@@ -107,58 +107,5 @@ async def list_scenes_for_aoi(
     return SceneListResponse(items=items, total=len(items))
 
 
-@router.get(
-    "/{aoi_id}/changes",
-    summary="List detected changes and evidence for an AOI",
-)
-async def list_changes_for_aoi(aoi_id: str) -> list[dict[str, Any]]:
-    """Query verified change detection evidence objects for an AOI."""
-    import json
-    from pathlib import Path
 
-    fixture_path = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "evidence_list.json"
-    if fixture_path.exists():
-        with open(fixture_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return [e for e in data if e.get("aoi_id") == aoi_id] or data
-    return []
-
-
-@router.get(
-    "/changes/{change_object_id}",
-    summary="Get single change evidence object by ID",
-)
-async def get_change_evidence(change_object_id: str) -> dict[str, Any]:
-    """Retrieve complete evidence dossier for a specific change polygon."""
-    import json
-    from pathlib import Path
-
-    from app.exceptions import NotFoundError
-
-    fixture_path = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "evidence_single.json"
-    if fixture_path.exists():
-        with open(fixture_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data
-    raise NotFoundError(f"Evidence for change {change_object_id} not found.")
-
-
-@router.get(
-    "/{aoi_id}/summary",
-    summary="Get multi-year change summary for an AOI",
-)
-async def get_aoi_change_summary(aoi_id: str) -> dict[str, Any]:
-    """Retrieve aggregate change metrics, narrative facts, and timeline summary."""
-    import json
-    from pathlib import Path
-
-    fixture_path = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "change_summary.json"
-    if fixture_path.exists():
-        with open(fixture_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "aoi_id": aoi_id,
-        "narrative_facts": [],
-        "headline": "No change summary recorded yet.",
-    }
 

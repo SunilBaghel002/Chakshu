@@ -33,7 +33,7 @@ COLLECTION_NAME = "sentinel-2-c1-l2a"
 DEMO_AOIS: dict[str, dict[str, Any]] = {
     "jewar": {
         "name": "Noida International Airport, Jewar",
-        "bbox": [77.72, 28.10, 77.80, 28.16],
+        "bbox": [77.580, 28.155, 77.645, 28.190],
         "utm_epsg": 32643,
     },
     "bhadla": {
