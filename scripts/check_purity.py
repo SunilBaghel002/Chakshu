@@ -136,8 +136,15 @@ def main() -> int:
     domain_errors = check_domain_purity()
     frontend_errors = check_frontend_fetch_isolation()
     size_errors = check_file_line_limits()
+    try:
+        if str(REPO_ROOT) not in sys.path:
+            sys.path.insert(0, str(REPO_ROOT))
+        from scripts.lint_ui import check_ui_lint
+        ui_lint_errors = check_ui_lint()
+    except Exception as e:
+        ui_lint_errors = [f"Failed to run UI lint: {e}"]
 
-    all_errors = domain_errors + frontend_errors + size_errors
+    all_errors = domain_errors + frontend_errors + size_errors + ui_lint_errors
 
     if all_errors:
         print(

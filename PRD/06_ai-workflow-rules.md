@@ -39,7 +39,7 @@ Do not invent:
 
 **If you are not certain something exists, check.** Read the installed package source, run `python -c "import x; help(x.y)"`, search the repo, or ask the human. Guessing an API and writing 200 lines against it is the single most expensive mistake you can make here, because it fails at runtime in a way that looks like a logic bug.
 
-This applies with special force to: `rasterio`, `GDAL`, `open_clip`, `shapely` 2.x vs 1.x, `pydantic` v1 vs v2, `google-genai` vs `google.generativeai` (these are different SDKs with different APIs), MapLibre GL JS 4 vs 5, Next.js App Router.
+This applies with special force to: `rasterio`, `GDAL`, `open_clip`, `shapely` 2.x vs 1.x, `pydantic` v1 vs v2, `google-genai` vs `google.generativeai` (these are different SDKs with different APIs), and **MapLibre GL JS 5 vs Leaflet** — a full rewrite of `map-fx.ts` and `useMapPolygons.ts`, not a patch (`code-standards.md` §1.3).
 
 ### Rule 2 — The AI never produces a number
 

@@ -5,8 +5,30 @@
 
 Last updated: 2026-09-12 11:30 IST by Claude / Antigravity
 
+## A0. Phase 8 correction — 20 Sep 2026 (frontend audit)
+
+**Why:** an audit of the built frontend against `PRD/09`–`12` found the build is not on the stack
+the specs assumed. Four reversals recorded in `PRD/05_code-standards.md` §1.1–§1.4.
+
+| Finding | Evidence | Decision |
+|---|---|---|
+| Framework was assumed Next.js 15 | `05_code-standards.md:20` vs `frontend/package.json` | **Stay on Vite 6.** Phases 0–6 are gated on it |
+| No router | `App.tsx:50` `useState<'map'\|'review'\|…>` | Add `react-router-dom` v7 (task 8.0) |
+| Map engine is Leaflet 1.9.4 | `frontend/package.json:14` | **Replace with MapLibre GL JS 5** (8.20–8.22) |
+| Review/Upload/Search/Ask are **modals over the map** | `App.tsx:319,355,368,380` | Banned by `ux-rules.md` §9 — un-modal (8.0c) |
+| 129 hex literals, non-token colours (`#4ade80`, `#85B8FF`) | `SwipeCompare.tsx:225`, `SuppressionPanel.tsx:69` | Removed by 8.1–8.4 |
+| z-index `9999 / 550 / 500 / 400 / 300 / 200` | `AmbientScanline.tsx:13`, `MapPane.tsx:98-130` | Replaced by the `--z-*` ladder (8.1) |
+| **Ten external requests** (Google Fonts ×3, unpkg CSS, 6 tile providers) | `index.html:10-14`, `satelliteProviders.ts` | Violates `OFFLINE=1` — task 8.0b |
+| No ESLint config; `make check` skips the frontend | no `eslintrc`; `Makefile` | Task 8.0a; `fe-check` target added |
+| `Slot.tsx`, `slots.ts`, `shortcuts.ts`, `Button.tsx` all absent | — | Tasks 8.2, 8.3, 8.5 |
+
+**Matches, and not to be rebuilt:** the colour/ink/accent/semantic token layer (51 properties) and
+the motion tokens are faithful to `ui-context.md` §2/§7. The gap is structural, not chromatic.
+
+**Sequencing decision (user, 20 Sep 2026):** Phase 8 Stage A runs **before** Phase 7.
+
 ## A. Current phase
-Phase 6 — The Question Layer (Tasks 6.1 to 6.11 complete; Phase 5 & 6 Gates PASSED).
+Phase 8 Stage A — Interface Work (Tasks 8.1, 8.3, 8.4 complete; Stage A ongoing).
 
 ## B. Gate log
 | Phase | Gate | Result | Date | Evidence |
@@ -83,10 +105,13 @@ Phase 6 — The Question Layer (Tasks 6.1 to 6.11 complete; Phase 5 & 6 Gates PA
 - [x] 6.9 Single-image VQA shapes: Inventory, Count, Area, Presence, Location, Comparative, and Capability refusal handled deterministically — 2026-09-20 — verified: `test_phase6_gate.py`
 - [x] 6.10 Structured text grounding: Exact match over detections/landcover first before model invocation — 2026-09-20 — verified: `test_phase6_gate.py`
 - [x] 6.11 Captioning template: Factual captioning conforming to PRD 3 §B6 — 2026-09-20 — verified: `services/render.py`
+- [x] 8.1 Design Tokens & Tailwind v4 Theme: Added full `--s-*`, `--h-ctl-*`, `--r-*`, `--w-*`, `--pad-panel*`, and `--z-*` ladder into `frontend/src/index.css` and mirrored in `app/globals.css`, mapped via `@theme` — 2026-09-20 — verified: `npm run build`, `npm run typecheck`
+- [x] 8.3 Button component: `components/ui/Button.tsx` rendering 7 variants × 3 sizes × 7 states, 8 disabled reason strings (`DISABLED_REASONS`), shortcut `<kbd>` hints at ≥1440px, gerund loading label + indeterminate bar, and `primaryOwner` assertion — 2026-09-20 — verified: 9 unit tests in `Button.test.tsx` pass cleanly
+- [x] 8.4 UI console lint rules & Contact Sheet: Ban arbitrary Tailwind values, numeric z-index, hex literals, hardcoded JSX strings in `scripts/lint_ui.py` wired into `scripts/check_purity.py` (`make check`); planted 4-violation scratch file verified failure and removal; dev contact sheet route `/controls` rendered and captured at `docs/screenshots/controls.png` — 2026-09-20 — verified: `make check`, plant-and-fail test, visual screenshot
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- None (Phase 5 & 6 complete).
+- Phase 8 Stage A interface tasks.
 
 
 ## E. Blocked / needs human decision
@@ -142,6 +167,29 @@ Phase 6 — The Question Layer (Tasks 6.1 to 6.11 complete; Phase 5 & 6 Gates PA
 |---|---|---|---|
 | 2026-09-12 | Phase 0 skeleton on development-sunil | Committing to main | Team workflow: user pushes from development-sunil |
 | 2026-09-12 | PowerShell make.ps1 companion to Makefile | Makefile only | Native execution support on Windows without mingw/msys dependency |
+
+## K0. Next actions — Phase 8 Stage A (supersedes K below, which is stale)
+
+Per user directive 20 Sep 2026: **Phase 8 before Phase 7.** Full task list and gate in
+`PRD/07_build-order.md` Phase 8; practical guide in `PRD/17_build-guide.md`.
+
+1. **8.0** Router: `react-router-dom` v7; routes `/`, `/console`, `/admin`, `/privacy` — S
+2. **8.0a** ESLint config + wire `fe-check` into `make check` — S
+3. **8.0b** Remove all ten external requests; self-host fonts — S
+4. **8.1** Missing tokens: `--s-*`, `--h-ctl-*`, `--r-*`, `--w-*`, `--z-*` ladder — M
+5. **8.2** `Slot.tsx` + `slots.ts` — M
+6. **8.3** `Button.tsx` (7×3×7, 8 reason strings, `primaryOwner`) — M
+7. **8.4** Lint bans + plant-and-fail proof — S
+8. **8.0c** Un-modal the four screens onto slots — M
+9. **8.5** `shortcuts.ts` — M
+10. **8.6** ConsoleShell on the grid + sticky footers — L
+11. **8.7** Dossier SLOT-20–26 + other screens — L
+12. **8.8** Five states everywhere; amber-wash refusals — L
+13. **8.20–8.22** MapLibre replacement + `map-fx` M1–M4 + local basemap — L·L·M
+14. **8.9–8.14** Landing, sessions, tracking, `/privacy`, `/admin`, seed script
+
+**Blocked:** 8.21/8.7 cannot claim "matches the prototype" — `brand/ui-prototype-intel.html` is not
+in the repo. Needs either the file or an amendment to `ui-context.md` §11.4. Raise, do not decide.
 
 ## K. Next actions
 1. 1.6 `/api/v1/jobs` polling + BackgroundTasks wiring

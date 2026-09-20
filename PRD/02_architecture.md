@@ -12,7 +12,7 @@ One web app. One backend. One database. No microservices, no message queue, no s
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  BROWSER — Next.js 15 + MapLibre GL                                  │
+│  BROWSER — Vite 6 + React 19 + MapLibre GL JS 5                      │
 │                                                                      │
 │  MapPane · SwipeCompare · Timeline · Search · ReviewQueue ·          │
 │  EvidencePanel · AskPanel · TracePanel · UploadPanel · AuditScreen   │
@@ -146,11 +146,19 @@ Chakshu/
 │       └── golden/               # exact JSON snapshots of API responses
 ├── frontend/
 │   ├── package.json
+│   ├── index.html                # the mount document; static meta tags
+│   ├── vite.config.ts            # dev server + /api proxy (the same-origin rewrite)
 │   ├── src/
-│   │   ├── app/                  # Next.js routes
+│   │   ├── App.tsx               # router: /, /console, /admin, /privacy
 │   │   ├── components/
+│   │   │   ├── ui/               # Button.tsx — the only button renderer
+│   │   │   └── layout/           # Slot.tsx — the only slot renderer
 │   │   ├── lib/api.ts            # the ONLY place fetch() appears
 │   │   ├── lib/types.ts          # generated from backend OpenAPI
+│   │   ├── lib/slots.ts          # slot registry (ui-console.md §8.2)
+│   │   ├── lib/shortcuts.ts      # one map of every shortcut
+│   │   ├── index.css             # all tokens; NOT app/globals.css
+│   │   ├── public/fonts/         # self-hosted; no CDN (code-standards §1.4)
 │   │   └── fixtures/             # fake responses, shape-identical to real
 │   └── tests/
 └── scripts/

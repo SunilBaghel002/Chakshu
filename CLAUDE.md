@@ -29,6 +29,7 @@ Then pick up the next unblocked task from `build-order.md` and follow the task p
 
 ```bash
 make check      # lint + types + all tests + purity check + audit verify. Run before claiming any task is done.
+make fe-check   # frontend: tsc --noEmit + eslint + vitest
 make test       # pytest
 make test-fast  # unit only, no DB
 make offline    # full suite with OFFLINE=1 — the no-network path
@@ -38,6 +39,22 @@ make freeze     # regenerate pinned dependency lock files
 ```
 
 `make check` passing is the definition of done. Not `pytest`. All of it.
+
+> ⚠ **`make check` does not currently check the frontend.** `architecture.md` §8 gate 7 requires
+> `tsc --noEmit` and `eslint` on the frontend, but there is no ESLint config yet and the target is
+> not wired in. **Run `make fe-check` too.** See `build-order.md` task 8.0a.
+
+## Stack — read `PRD/05_code-standards.md` §1 before touching the frontend
+
+The frontend is **Vite 6 + React 19 (SPA)**, not Next.js. The map engine is **MapLibre GL JS 5** —
+Leaflet is present and is being replaced. There is **no server runtime**, so every authorisation
+check lives in FastAPI. Reconciliation details: `code-standards.md` §1.1–§1.4.
+
+⚠ **The docs are at `PRD/` with numeric prefixes** (`PRD/09_ui-context.md`). Every `prd/…` path in
+this file and in the PRDs resolves case-insensitively on Windows but **breaks on Linux CI**.
+
+⚠ **`brand/ui-prototype-intel.html` does not exist in this repo**, though `ui-context.md` §6/§11.4
+name it as the visual source of truth and the tie-breaker for M1–M10 timings. Do not invent it.
 
 ## Environment
 

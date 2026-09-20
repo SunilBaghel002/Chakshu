@@ -17,13 +17,70 @@
 | NumPy | 2.x | |
 | rasterio / GDAL | latest stable via conda-forge | Install with conda, never pip, on the first attempt |
 | Node | 20 LTS | |
-| Next.js | 15 | App Router |
+| Vite | 6.x | **Reversal 20 Sep 2026** — see §1.1. Not Next.js |
 | React | 19 | |
+| MapLibre GL JS | 5.x | Map rendering. **Not Leaflet** — see §1.2 |
 | TypeScript | 5.x, `strict: true` | |
 | Postgres | 17 + PostGIS 3.4 + pgvector 0.8 | Docker only |
 | Tailwind | 4 | |
 
 > ⚠️ **Verify actual current versions with `pip index` / `npm view` before pinning.** Do not assume the versions above are still latest, and do not upgrade past them without a reason.
+
+### 1.1 Framework — Vite SPA, not Next.js (reversal, 20 Sep 2026)
+
+An earlier version of this file pinned **Next.js 15 App Router**. That is reversed. **The frontend is a Vite 6 + React 19 single-page application.**
+
+**Why:** Phases 0–6 were built and gated on Vite. `frontend/package.json`, `frontend/vite.config.ts`, and every component in `frontend/src/components/` assume it. `PROGRESS.md` §B records Phases 0–6 as PASS on that stack. Migrating to Next.js mid-build would invalidate six gated phases to gain routing the app does not need.
+
+**What this changes, concretely — read this before following any older path in the PRDs:**
+
+| Next.js thing the other PRDs say | On Vite, do this instead |
+|---|---|
+| `frontend/next.config.ts` rewrites (§2 of `auth.md`) | `server.proxy` in `frontend/vite.config.ts` — already present for `/api` |
+| `frontend/src/app/` route files | `frontend/src/App.tsx` + a router (§1.3) |
+| `app/globals.css` | `frontend/src/index.css` |
+| `"use client"` directives | Not applicable. Everything is client-side already |
+| Server components | Not available. Data fetching is in `lib/api.ts` + hooks |
+| `next/image` | A plain `<img>` with explicit `width`/`height` |
+| Next.js Metadata API (`app/layout.tsx` export) | Static tags in `frontend/index.html` |
+| Server-side role checks (`auth.md` S4, `admin-panel.md`) | **FastAPI enforces all authorisation.** Vite has no server runtime |
+
+**That last row is a security rule, not a convenience.** With no server runtime, there is no server component to gate `/admin`. Every permission check must live in the backend (guest → 401, analyst → 403). A client-side `if (role !== 'admin') return null` is **not** a gate — it is a suggestion, and it must never be the only check.
+
+### 1.2 Routing
+
+The build needs four URLs — `/`, `/console`, `/admin`, `/privacy` — and view switching inside the console. Use **`react-router-dom` v7** (declarative mode).
+
+Before adding it, run `npm view react-router-dom version` and record the resolved version in `package.json` per the pinning rule. This is a **gated dependency addition** (§11): the licence is MIT, and it is the only router the build may use.
+
+Do not hand-roll routing. The current `useState<'map'|'review'|...>` union at `frontend/src/App.tsx:50` is what turns screens into modals.
+
+### 1.3 Map library — MapLibre GL JS, not Leaflet (reversal, 20 Sep 2026)
+
+**MapLibre GL JS 5.x is the map engine.** Leaflet 1.9.4 is what the code currently uses and it is **to be replaced**, not kept.
+
+**Why this one is a real requirement, not a preference:** three specs depend on MapLibre-specific APIs that Leaflet does not have.
+
+| Spec requirement | Source | Needs |
+|---|---|---|
+| `navigationControl: false` — the zoom stack replaces it | `ui-console.md` §4 SLOT-12 | MapLibre constructor option |
+| `attributionControl: {compact: true}`, relocated to bottom-left | `ui-console.md` §4 SLOT-10 | MapLibre constructor option |
+| Basemap = dark style with no POI icons, labels at `--ink-3` 70% | `ui-context.md` §9 | Style-spec control |
+| `setPaintProperty` / `circle-radius` on the *hovered* feature | `ui-context.md` §6 M3, M4 | Data-driven styling |
+| Canvas-composited sector grid, no DOM per cell | `ui-context.md` §6 M4 | WebGL layer |
+| Glyph and sprite self-hosting for `OFFLINE=1` | `ui-context.md` §9, §11 | Style spec |
+
+`frontend/src/lib/map-fx.ts` (M1–M10) and `frontend/src/lib/useMapPolygons.ts` are both written against Leaflet and **both must be rewritten**. Budget for it; do not patch around it. `frontend/src/lib/satelliteProviders.ts` holds ten external tile URLs that this migration must also remove — see §1.4.
+
+### 1.4 No external requests, ever
+
+`OFFLINE=1` means **no outbound HTTP whatsoever** (`architecture.md` §8). The current frontend violates this in ten places. All ten must go:
+
+- Google Fonts (3 links), Leaflet CDN CSS — `frontend/index.html:10,12,13,14`
+- Six tile providers — `frontend/src/lib/satelliteProviders.ts:164,181,198,228,249,264`
+- CARTO label tiles — `frontend/src/components/MapPane.tsx:135`
+
+Replacements: self-hosted font files in `frontend/public/fonts/`; a MapLibre style JSON served by the backend's `api/tiles.py`; PMTiles or a local raster source for basemap. **No CDN, no analytics, no embed.**
 
 **Pinning rule:** `requirements.txt` and `package-lock.json` are committed and frozen. `make freeze` regenerates them. **Nobody edits them by hand.** Adding a dependency is a gated action — see §11.
 
@@ -87,13 +144,13 @@ One logger per module, named `__name__`. Structured context via `extra={...}`, n
 1. **No `any`. No `as` casts** except when narrowing from `unknown` after a runtime check. ESLint enforces both.
 2. **Validate at the boundary.** Every API response goes through a zod schema in `lib/api.ts` before it reaches a component. `lib/types.ts` is generated from OpenAPI; zod schemas are hand-written to match and cross-checked by a test.
 3. **`fetch` appears in exactly one file** — `lib/api.ts`. Components import typed functions.
-4. **Server components by default.** Add `"use client"` only where there is genuine interactivity (the map, the slider, the ask panel).
+4. **Route-level code splitting.** Screens are routes (§1.2); the map and its WebGL payload load with `/console` only. Nothing else changes this rule.
 5. **No business logic in components.** A component receives data and renders it. Computation lives in `lib/`.
 6. **No hardcoded strings in JSX.** All user-facing copy goes in `lib/copy.ts`. This is what makes the verbatim error messages in `feature-specs.md` auditable in one place.
 7. **Colours from `lib/palette.ts` only.** Per-class colours are a fixed map. Never generate colours at runtime, never let a model choose one.
 8. **Handle three states in every data component:** loading, empty, error. **Empty is not error.** A "no changes found" state with an explanation is a complete UI.
 9. **Null means unknown.** Render `—`. Never render `0` for a null area. Add a test for this.
-10. **Images:** always `next/image` or an explicit `<img>` with `width`/`height`. Never let an unsized image cause layout shift.
+10. **Images:** an explicit `<img>` with `width`/`height`, or a sized container. Never let an unsized image cause layout shift. (`next/image` is not available — §1.1.)
 11. **Accessibility:** the map needs keyboard operability for the review queue; every button has an accessible name; colour is never the only signal (paired with a label or icon).
 
 ---

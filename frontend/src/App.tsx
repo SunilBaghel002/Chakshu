@@ -32,7 +32,18 @@ import {
   enforceMinGapForAfter,
 } from './lib/satelliteProviders';
 
+import { ContactSheet } from './components/ContactSheet';
+
 export const App: React.FC = () => {
+  const isControlsRoute =
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/controls' ||
+      window.location.pathname === '/dev/controls' ||
+      window.location.search.includes('view=controls'));
+
+  if (isControlsRoute) {
+    return <ContactSheet />;
+  }
   const [aois, setAois] = useState<AoiItem[]>([]);
   const [selectedAoiId, setSelectedAoiId] = useState<string>('');
   const [scenes, setScenes] = useState<SceneItem[]>([]);
