@@ -211,14 +211,9 @@ class AnalysisService:
             if not gate_res.passed:
                 continue
 
-            class_res = classify_change(
-                d_ndvi=m_d_ndvi,
-                d_ndbi=m_d_ndbi,
-                d_ndwi=m_d_ndwi,
-                prior_landcover="crop",
-                ndwi_after=m_ndwi_a,
-                aspect_ratio=asp_ratio,
-                isoperimetric_quotient=iso_quot,
+            class_res = classify_change(                d_ndvi=m_d_ndvi, d_ndbi=m_d_ndbi, d_ndwi=m_d_ndwi,
+                prior_landcover="crop", ndwi_after=m_ndwi_a,
+                aspect_ratio=asp_ratio, isoperimetric_quotient=iso_quot,
             )
             evaluated_candidates.append((poly, meas, class_res))
 
@@ -234,11 +229,7 @@ class AnalysisService:
             (ev_dir / "mask.png").write_bytes(mask_png)
 
             ev = build_evidence(
-                change_id=change_id,
-                aoi_id=aoi_id,
-                poly=poly,
-                meas=meas,
-                cd_res=cd_res,
+                change_id=change_id, aoi_id=aoi_id, poly=poly, meas=meas, cd_res=cd_res,
                 reg=reg, meta_before=meta_before, meta_after=meta_after,
                 before_scene_id=before_scene_id, after_scene_id=after_scene_id,
                 total_retained=len(evaluated_candidates), classification_res=class_res,

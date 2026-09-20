@@ -112,27 +112,17 @@ export const App: React.FC = () => {
     setIsMock(next);
   };
 
-  const handleSelectBeforeDate = useCallback(
-    (newBefore: string) => {
-      const { before, after } = enforceMinGapForBefore(newBefore, afterDate);
-      setBeforeDate(before);
-      if (after !== afterDate) {
-        setAfterDate(after);
-      }
-    },
-    [afterDate]
-  );
+  const handleSelectBeforeDate = useCallback((newBefore: string) => {
+    const { before, after } = enforceMinGapForBefore(newBefore, afterDate);
+    setBeforeDate(before);
+    if (after !== afterDate) setAfterDate(after);
+  }, [afterDate]);
 
-  const handleSelectAfterDate = useCallback(
-    (newAfter: string) => {
-      const { before, after } = enforceMinGapForAfter(newAfter, beforeDate);
-      setAfterDate(after);
-      if (before !== beforeDate) {
-        setBeforeDate(before);
-      }
-    },
-    [beforeDate]
-  );
+  const handleSelectAfterDate = useCallback((newAfter: string) => {
+    const { before, after } = enforceMinGapForAfter(newAfter, beforeDate);
+    setAfterDate(after);
+    if (before !== beforeDate) setBeforeDate(before);
+  }, [beforeDate]);
 
   const handleSwapDates = () => {
     const temp = beforeDate;
@@ -141,9 +131,7 @@ export const App: React.FC = () => {
   };
 
   const handleConfirmEvidence = async (id: string) => {
-    setEvidenceList((prev) =>
-      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
-    );
+    setEvidenceList((prev) => prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e)));
     if (selectedEvidence?.change_object_id === id) {
       setSelectedEvidence((prev) => (prev ? { ...prev, status: 'confirmed' } : null));
     }
@@ -151,9 +139,7 @@ export const App: React.FC = () => {
   };
 
   const handleRejectEvidence = async (id: string) => {
-    setEvidenceList((prev) =>
-      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
-    );
+    setEvidenceList((prev) => prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e)));
     if (selectedEvidence?.change_object_id === id) {
       setSelectedEvidence((prev) => (prev ? { ...prev, status: 'rejected' } : null));
     }

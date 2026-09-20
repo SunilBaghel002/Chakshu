@@ -246,3 +246,38 @@ export async function askQuestion(question: string, aoiId?: string, uploadId?: s
   const fallback = lower.includes('vehicle') || lower.includes('car') || lower.includes('weather') ? (answerUnsupportedFixture as unknown as Answer) : (answerPolishedFixture as unknown as Answer);
   return safeFetch('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, aoi_id: aoiId, upload_id: uploadId }) }, fallback);
 }
+
+export async function triggerAoiAnalyse(aoiId: string): Promise<ApiResult<JobResponse>> {
+  return safeFetch(`/aoi/${aoiId}/analyse`, {
+    method: 'POST',
+  });
+}
+
+export interface DecisionRecord {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  note: string | null;
+  actor: string;
+  recorded_at: string;
+}
+
+export async function submitDecision(
+  entityType: string,
+  entityId: string,
+  action: 'confirm' | 'reject',
+  note?: string
+): Promise<ApiResult<DecisionRecord>> {
+  return safeFetch('/decisions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      entity_type: entityType,
+      entity_id: entityId,
+      action,
+      note,
+    }),
+  });
+}
+
