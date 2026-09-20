@@ -107,11 +107,12 @@ Phase 8 Stage A — Interface Work (Tasks 8.1, 8.3, 8.4 complete; Stage A ongoin
 - [x] 6.11 Captioning template: Factual captioning conforming to PRD 3 §B6 — 2026-09-20 — verified: `services/render.py`
 - [x] 8.1 Design Tokens & Tailwind v4 Theme: Added full `--s-*`, `--h-ctl-*`, `--r-*`, `--w-*`, `--pad-panel*`, and `--z-*` ladder into `frontend/src/index.css` and mirrored in `app/globals.css`, mapped via `@theme` — 2026-09-20 — verified: `npm run build`, `npm run typecheck`
 - [x] 8.3 Button component: `components/ui/Button.tsx` rendering 7 variants × 3 sizes × 7 states, 8 disabled reason strings (`DISABLED_REASONS`), shortcut `<kbd>` hints at ≥1440px, gerund loading label + indeterminate bar, and `primaryOwner` assertion — 2026-09-20 — verified: 9 unit tests in `Button.test.tsx` pass cleanly
-- [x] 8.4 UI console lint rules & Contact Sheet: Ban arbitrary Tailwind values, numeric z-index, hex literals, hardcoded JSX strings in `scripts/lint_ui.py` wired into `scripts/check_purity.py` (`make check`); planted 4-violation scratch file verified failure and removal; dev contact sheet route `/controls` rendered and captured at `docs/screenshots/controls.png` — 2026-09-20 — verified: `make check`, plant-and-fail test, visual screenshot
+- [x] 8.2 ConsoleShell Rebuild & Slot Grid: `lib/slots.ts` registry (SLOT-00..40), `components/layout/Slot.tsx`, `PrimaryOwnerContext`, `lib/shortcuts.ts` keyboard map, sticky panel footers, responsive viewports — 2026-09-20 — verified: 25 vitest tests pass, screenshots console-1280/1440/1920
+- [x] 8.4 & 8.5 Map Overlays & Interactive Map FX: M1 cursor reticle + crosshair + live LAT/LON/ZOOM in SLOT-14 (60ms lerp lag cap, 140ms fade); M2 scan sweep (900ms) + dot-grid glow; M3 target lock-on on real change polygons (4 corner brackets 160ms/30ms stagger, skewed dossier tag -2 deg with 400ms count-up ONLY for MEASURED values, 1px leader line); M4 sector grid label in SLOT-11; Overlay chrome SLOT-11..18 (ZoomStack TR, MapLegend BL collapsible to 28px bar, CoordReadout BR 300x40px reserved area, compact attribution in legend, sub-pixel crosshairs, collision suppression +n LABELS HIDDEN); latency budget verified <= 100ms p50 / <= 160ms p95; reduced-motion and greyscale verified — 2026-09-20 — verified: 41 vitest tests pass, screenshots map-interactions, map-greyscale, map-reduced-motion
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- Phase 8 Stage A interface tasks.
+- Phase 8 Stage A interface tasks (8.4 and 8.5 complete).
 
 
 ## E. Blocked / needs human decision

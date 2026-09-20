@@ -156,4 +156,37 @@ export const CONSOLE_COPY = {
   escHint: 'Esc to dismiss',
 } as const;
 
+export const MAP_OVERLAY_COPY = {
+  legendTitle: 'LEGEND',
+  legendCollapsed: 'LEGEND ▸',
+  legendExpanded: 'LEGEND ▾',
+  tracksHeader: 'PROVENANCE TRACKS',
+  trackSolidLabel: 'Tracks 1/2 solid',
+  trackSolidDesc: 'measured from pixels',
+  trackDashedLabel: 'Track 3 dashed',
+  trackDashedDesc: 'identified by model',
+  classesHeader: 'LAND COVER & TARGETS',
+  labelsHidden: (count: number): string => `+${count} LABELS HIDDEN`,
+  labelsAllVisible: 'ALL LABELS VISIBLE',
+  attributionText: '© OpenStreetMap · © CARTO · Sentinel-2 L2A ESA',
+  zoomInTitle: 'Zoom in (+)',
+  zoomOutTitle: 'Zoom out (-)',
+  homeTitle: 'Home AOI (H)',
+  fitAoiTitle: 'Fit AOI bounds (F)',
+  measureTitle: 'Measure tool (M)',
+  targetPrefix: 'TARGET:',
+  clickToInspect: 'CLICK TO INSPECT',
+  measuredChip: 'MEASURED — UTM 43N',
+  inferredChip: 'INFERRED — TRACK 3',
+  unverifiedChip: 'UNVERIFIED',
+  polygonsVisible: 'POLYGONS VISIBLE',
+  hoverToInspect: 'HOVER TO INSPECT',
+  latPrefix: 'LAT:',
+  lonPrefix: 'LON:',
+  prdCollisionRef: 'PRD 9 §5.1',
+} as const;
+
+
+
+
 
