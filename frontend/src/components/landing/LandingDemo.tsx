@@ -5,12 +5,15 @@ import { LANDING_COPY } from '../../lib/landingCopy';
  * W2.5 · THE DEMO — full-bleed, --well background, min-height 70vh
  * Specs: PRD 13 §2 W2.5
  *
- * Interactive swipe with draggable handle and fixture data readout.
- * Left overlay panel with instructions.
+ * Interactive swipe with authentic Jewar Airport satellite imagery:
+ * - Before: 2021 pre-construction agricultural baseline
+ * - After: 2026 operational airport with Runway 10/28 tarmac and Terminal 1
+ * - Live change polygon over the detected runway infrastructure
+ * - Draggable handle and live fixture data readout panel.
  */
 export const LandingDemo: React.FC = () => {
   const [splitPos, setSplitPos] = useState(50);
-  const [hoveredTarget, setHoveredTarget] = useState<string | null>(null);
+  const [hoveredTarget, setHoveredTarget] = useState<string | null>('chg_jewar_runway_01');
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
@@ -30,9 +33,10 @@ export const LandingDemo: React.FC = () => {
   }, []);
 
   const fixtureData = {
+    target: LANDING_COPY.demoTargetLabel,
     area: '120.4 ha',
-    type: 'CONSTRUCTION',
-    confidence: '91%',
+    type: LANDING_COPY.demoTypeLabel,
+    confidence: LANDING_COPY.demoConfidenceValue,
     onset: 'OCT 2021 – MAR 2022',
   };
 
@@ -52,78 +56,79 @@ export const LandingDemo: React.FC = () => {
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
           >
-            {/* "Before" side — simulated satellite view (left) */}
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, rgba(26,58,42,1) 0%, rgba(45,90,58,1) 30%, rgba(58,107,74,1) 60%, rgba(74,124,90,1) 100%)',
-              }}
-            >
-              {/* Grid overlay to simulate fields */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
-                  backgroundSize: '40px 40px',
-                }}
+            {/* "Before" side — authentic 2021 satellite view (farmland) */}
+            <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+              <img
+                src="/imagery/jewar_before_satellite.jpg"
+                alt={LANDING_COPY.demoBeforeBadge}
+                className="w-full h-full object-cover select-none pointer-events-none"
               />
               <div
-                className="absolute top-4 left-4 font-mono text-[var(--ink-2)]"
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: 'rgba(8,12,22,0.15)' }}
+              />
+              <div
+                className="absolute top-4 left-4 font-mono text-[var(--ink)] bg-[var(--panel)]/80 px-2.5 py-1 border border-[var(--line)] rounded-[var(--r-tag)] backdrop-blur-sm"
                 style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
               >
-                BEFORE · 2021
+                {LANDING_COPY.demoBeforeBadge}
               </div>
             </div>
 
-            {/* "After" side — simulated construction (right, clipped) */}
+            {/* "After" side — authentic 2026 operational airport (clipped by splitPos) */}
             <div
-              className="absolute inset-0"
-              style={{
-                clipPath: `inset(0 0 0 ${splitPos}%)`,
-                background: 'linear-gradient(135deg, rgba(42,42,26,1) 0%, rgba(90,74,45,1) 30%, rgba(138,112,64,1) 60%, rgba(176,144,80,1) 100%)',
-              }}
+              className="absolute inset-0 overflow-hidden"
+              style={{ clipPath: `inset(0 0 0 ${splitPos}%)` }}
             >
-              {/* Construction pattern */}
-              <div
-                className="absolute"
-                style={{
-                  top: '20%', left: '25%', width: '50%', height: '60%',
-                  background: 'rgba(180,160,120,0.4)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
+              <img
+                src="/imagery/jewar_after_satellite.jpg"
+                alt={LANDING_COPY.demoAfterBadge}
+                className="w-full h-full object-cover select-none pointer-events-none"
               />
               <div
-                className="absolute top-4 right-4 font-mono text-[var(--ink-2)]"
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: 'rgba(8,12,22,0.1)' }}
+              />
+              <div
+                className="absolute top-4 right-4 font-mono text-[var(--signal)] bg-[var(--panel)]/80 px-2.5 py-1 border border-[var(--signal)]/40 rounded-[var(--r-tag)] backdrop-blur-sm"
                 style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
               >
-                AFTER · 2025
+                {LANDING_COPY.demoAfterBadge}
               </div>
             </div>
 
-            {/* Change polygon overlay — visible on both sides */}
+            {/* Change polygon overlay — precisely over the Runway 10/28 tarmac and terminal complex */}
             <div
-              className="absolute cursor-pointer"
+              className="absolute cursor-pointer transition-all duration-150"
               style={{
-                top: '25%', left: '30%', width: '35%', height: '45%',
-                border: hoveredTarget ? '2px solid var(--signal)' : '1.5px solid rgba(255,148,38,0.6)',
-                background: hoveredTarget ? 'rgba(255,148,38,0.2)' : 'rgba(255,148,38,0.08)',
+                top: '55%',
+                left: '12%',
+                width: '74%',
+                height: '36%',
+                border: hoveredTarget ? '2px solid var(--signal)' : '1.5px solid rgba(255,148,38,0.7)',
+                background: hoveredTarget ? 'rgba(255,148,38,0.22)' : 'rgba(255,148,38,0.12)',
                 borderRadius: 2,
-                transition: 'all 150ms ease-out',
+                boxShadow: hoveredTarget ? '0 0 20px rgba(255,148,38,0.4)' : 'none',
               }}
               onMouseEnter={() => setHoveredTarget('chg_jewar_runway_01')}
               onMouseLeave={() => setHoveredTarget(null)}
             >
-              {hoveredTarget && (
-                <div
-                  className="absolute -top-8 left-0"
-                  style={{ transform: 'skewX(-2deg)' }}
-                >
-                  <div className="dossier-bar" style={{ fontSize: 9 }}>
-                    <span>{fixtureData.area} · {fixtureData.type}</span>
-                  </div>
+              {/* Corner targeting reticles */}
+              <div className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-[var(--signal)]" />
+              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-[var(--signal)]" />
+              <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-[var(--signal)]" />
+              <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-[var(--signal)]" />
+
+              {/* Lock-on Tag */}
+              <div
+                className="absolute -top-7 left-2"
+                style={{ transform: 'skewX(-2deg)' }}
+              >
+                <div className="dossier-bar flex items-center gap-1.5 px-2 py-0.5" style={{ fontSize: 9 }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--signal)] animate-pulse" />
+                  <span>{fixtureData.area} · {fixtureData.type}</span>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Swipe handle */}
@@ -144,19 +149,13 @@ export const LandingDemo: React.FC = () => {
               <div
                 className="absolute flex items-center justify-center rounded-full"
                 style={{
-                  width: 32, height: 32,
+                  width: 32,
+                  height: 32,
                   background: 'var(--signal)',
                   boxShadow: '0 0 12px rgba(255,148,38,0.4)',
                 }}
               >
                 <span className="text-[var(--signal-ink)] font-bold" style={{ fontSize: 12 }}>⇄</span>
-              </div>
-              {/* Handle label */}
-              <div
-                className="absolute -bottom-6 whitespace-nowrap font-mono text-[var(--signal)] font-bold"
-                style={{ fontSize: 9, letterSpacing: '0.1em' }}
-              >
-                2021 ⇄ 2025
               </div>
             </div>
           </div>

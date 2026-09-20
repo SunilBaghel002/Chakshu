@@ -116,6 +116,13 @@ export const LANDING_COPY = {
   demoStep2: 'HOVER A CHANGE',
   demoStep3: 'READ THE MEASUREMENT',
   demoFootnote: 'Fixture data from the demo AOI. No network calls.',
+  demoTargetLabel: 'TARGET: chg_jewar_runway_01',
+  demoTypeLabel: 'NEW AIRPORT INFRASTRUCTURE',
+  demoConfidenceValue: '91% (DETERMINISTIC)',
+  demoBeforeBadge: 'BEFORE · 2021 (FARMLAND BASELINE)',
+  demoAfterBadge: 'AFTER · 2026 (OPERATIONAL AIRPORT)',
+  previewCoords: '28.1748° N, 77.6075° E · SEC 04·B',
+  previewGsdSensor: 'GSD: 0.3m · GOOGLE SAT HD / S2A',
 
   // W2.6 Evidence
   rigourLabel: 'RIGOUR',

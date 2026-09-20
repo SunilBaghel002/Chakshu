@@ -144,35 +144,59 @@ export const LandingHero: React.FC = () => {
                 style={{ aspectRatio: '16/10' }}
                 className="relative bg-[var(--panel)] rounded-[var(--r-panel)] border border-[var(--line)] p-4 flex flex-col justify-between overflow-hidden"
               >
-                {/* Simulated map background with dot grid */}
-                <div className="absolute inset-0 dot-grid opacity-50" />
+                {/* Authentic Jewar Satellite Imagery Background */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <img
+                    src="/imagery/jewar_after_satellite.jpg"
+                    alt={LANDING_COPY.previewTitle}
+                    className="w-full h-full object-cover select-none pointer-events-none"
+                    style={{ filter: 'contrast(1.1) brightness(0.92)' }}
+                  />
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'rgba(8,12,22,0.3)' }}
+                  />
+                  <div className="absolute inset-0 dot-grid opacity-30 pointer-events-none" />
+                </div>
 
-                {/* Simulated polygon overlay */}
+                {/* Radar Active Scan Sweep Line (M2) */}
+                <div className="absolute inset-x-0 h-0.5 bg-[var(--signal)] opacity-70 shadow-lg pointer-events-none animate-scanline" />
+
+                {/* Detected Runway 10/28 Change Polygon */}
                 <div
-                  className="absolute"
+                  className="absolute cursor-pointer pointer-events-auto"
                   style={{
-                    top: '25%', left: '30%', width: '35%', height: '40%',
-                    border: '1.5px solid var(--signal)',
-                    background: 'rgba(255,148,38,0.12)',
+                    top: '55%',
+                    left: '12%',
+                    width: '74%',
+                    height: '36%',
+                    border: '2px solid var(--signal)',
+                    background: 'rgba(255,148,38,0.22)',
                     borderRadius: 2,
-                  }}
-                />
-
-                {/* Lock-on tag simulation */}
-                <div
-                  className="absolute"
-                  style={{
-                    top: '20%', left: '28%',
-                    transform: 'skewX(-2deg)',
+                    boxShadow: '0 0 20px rgba(255,148,38,0.4)',
                   }}
                 >
-                  <div className="dossier-bar" style={{ fontSize: 9 }}>
-                    <span>{LANDING_COPY.previewArea}</span>
+                  {/* Corner ticks */}
+                  <div className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-[var(--signal)]" />
+                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-[var(--signal)]" />
+                  <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-[var(--signal)]" />
+                  <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-[var(--signal)]" />
+
+                  {/* Lock-on tag simulation */}
+                  <div
+                    className="absolute -top-7 left-2"
+                    style={{ transform: 'skewX(-2deg)' }}
+                  >
+                    <div className="dossier-bar flex items-center gap-1.5 px-2.5 py-0.5" style={{ fontSize: 9 }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--signal)] animate-pulse" />
+                      <span>{LANDING_COPY.previewArea}</span>
+                    </div>
                   </div>
                 </div>
 
+                {/* Header HUD stats */}
                 <div className="relative flex justify-between items-start">
-                  <div className="space-y-1">
+                  <div className="space-y-1 bg-[var(--panel)]/80 backdrop-blur-sm p-2 rounded border border-[var(--line)]">
                     <div style={{ fontSize: 11 }} className="font-mono text-[var(--signal)]">
                       {LANDING_COPY.previewTarget}
                     </div>
@@ -183,7 +207,7 @@ export const LandingHero: React.FC = () => {
                       {LANDING_COPY.previewMeasured}
                     </div>
                   </div>
-                  <div className="px-2 py-1 bg-[var(--panel-2)] border border-[var(--line)] rounded text-right">
+                  <div className="px-2.5 py-1.5 bg-[var(--panel)]/80 backdrop-blur-sm border border-[var(--line)] rounded text-right">
                     <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
                       {LANDING_COPY.previewConfidenceLabel}
                     </div>
@@ -193,40 +217,60 @@ export const LandingHero: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Triptych Mini Strip */}
+                {/* Triptych Mini Strip with real thumbnails */}
                 <div className="relative grid grid-cols-3 gap-2 py-2">
-                  <div className="bg-[var(--well)] border border-[var(--line)] p-1.5 rounded text-center">
-                    <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
-                      {LANDING_COPY.previewBeforeLabel}
-                    </div>
-                    <div style={{ fontSize: 11 }} className="font-mono text-[var(--ink-2)] mt-1">
-                      {LANDING_COPY.previewBeforeClass}
+                  <div className="bg-[var(--panel)]/90 backdrop-blur-sm border border-[var(--line)] p-1.5 rounded flex items-center gap-2">
+                    <img
+                      src="/imagery/jewar_before_satellite.jpg"
+                      alt={LANDING_COPY.previewBeforeLabel}
+                      className="w-7 h-7 rounded object-cover border border-[var(--line)] shrink-0"
+                    />
+                    <div className="overflow-hidden">
+                      <div style={{ fontSize: 8 }} className="font-mono text-[var(--ink-3)] truncate">
+                        {LANDING_COPY.previewBeforeLabel}
+                      </div>
+                      <div style={{ fontSize: 10 }} className="font-mono text-[var(--ink-2)] truncate">
+                        {LANDING_COPY.previewBeforeClass}
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-[var(--well)] border border-[var(--signal)]/40 p-1.5 rounded text-center">
-                    <div style={{ fontSize: 9 }} className="font-mono text-[var(--signal)]">
-                      {LANDING_COPY.previewDiffLabel}
+                  <div className="bg-[var(--panel)]/90 backdrop-blur-sm border border-[var(--signal)]/50 p-1.5 rounded flex items-center gap-2">
+                    <div className="w-7 h-7 rounded bg-[var(--well)] border border-[var(--signal)]/40 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold text-[var(--signal)] font-mono">Δ</span>
                     </div>
-                    <div style={{ fontSize: 11 }} className="font-mono text-[var(--signal)] mt-1">
-                      {LANDING_COPY.previewDiffValue}
+                    <div className="overflow-hidden">
+                      <div style={{ fontSize: 8 }} className="font-mono text-[var(--signal)] truncate">
+                        {LANDING_COPY.previewDiffLabel}
+                      </div>
+                      <div style={{ fontSize: 10 }} className="font-mono text-[var(--signal)] truncate">
+                        {LANDING_COPY.previewDiffValue}
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-[var(--well)] border border-[var(--line)] p-1.5 rounded text-center">
-                    <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
-                      {LANDING_COPY.previewAfterLabel}
-                    </div>
-                    <div style={{ fontSize: 11 }} className="font-mono text-[var(--ink-2)] mt-1">
-                      {LANDING_COPY.previewAfterClass}
+                  <div className="bg-[var(--panel)]/90 backdrop-blur-sm border border-[var(--line)] p-1.5 rounded flex items-center gap-2">
+                    <img
+                      src="/imagery/jewar_after_satellite.jpg"
+                      alt={LANDING_COPY.previewAfterLabel}
+                      className="w-7 h-7 rounded object-cover border border-[var(--line)] shrink-0"
+                    />
+                    <div className="overflow-hidden">
+                      <div style={{ fontSize: 8 }} className="font-mono text-[var(--ink-3)] truncate">
+                        {LANDING_COPY.previewAfterLabel}
+                      </div>
+                      <div style={{ fontSize: 10 }} className="font-mono text-[var(--ink-2)] truncate">
+                        {LANDING_COPY.previewAfterClass}
+                      </div>
                     </div>
                   </div>
                 </div>
 
+                {/* Footer HUD line */}
                 <div
-                  style={{ fontSize: 10 }}
-                  className="relative flex justify-between items-center font-mono text-[var(--ink-3)] border-t border-[var(--line)] pt-2"
+                  style={{ fontSize: 9 }}
+                  className="relative flex justify-between items-center font-mono text-[var(--ink-3)] border-t border-[var(--line)] pt-1.5 bg-[var(--panel)]/80 px-2 py-1 rounded backdrop-blur-sm"
                 >
-                  <span>{LANDING_COPY.previewOnset}</span>
-                  <span className="text-[var(--signal)]">{LANDING_COPY.previewStatus}</span>
+                  <span>{LANDING_COPY.previewCoords}</span>
+                  <span className="text-[var(--signal)] font-bold">{LANDING_COPY.previewGsdSensor}</span>
                 </div>
               </div>
 
