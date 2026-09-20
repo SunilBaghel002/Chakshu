@@ -81,7 +81,7 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
     >
       {/* Left: Date A + year chips */}
       <div className="flex items-center gap-2">
-        <span className="t-tag" style={{ color: 'var(--amber)' }}>DATE A:</span>
+        <span className="t-tag font-bold" style={{ color: 'var(--signal)' }}>DATE A:</span>
         <input
           type="date"
           value={beforeDate}
@@ -89,7 +89,7 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
           max={maxAllowedBefore}
           onChange={(e) => onBeforeDateChange(e.target.value)}
           className="t-mono tabular-nums px-2 py-1 cursor-pointer focus:outline-none"
-          style={dateInputStyle('var(--amber)')}
+          style={dateInputStyle('var(--signal)')}
           title={`Baseline date (Historical Wayback archive). Max selectable to preserve 2-year gap: ${maxAllowedBefore}`}
         />
         <div className="hidden sm:flex items-center gap-1">
@@ -98,7 +98,7 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
               key={d}
               onClick={() => onBeforeDateChange(d)}
               className="t-tag px-1.5 py-0.5 cursor-pointer transition-colors"
-              style={chipStyle(beforeDate === d, 'var(--amber)', 'var(--amber-wash)')}
+              style={chipStyle(beforeDate === d, 'var(--signal)', 'var(--signal-wash)')}
               title={`Select ${d} as baseline date`}
             >
               {d.split('-')[0]}
@@ -127,7 +127,7 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
           variant="secondary"
           size="md"
           shortcut="S"
-          icon={<ArrowLeftRight className="w-3.5 h-3.5" style={{ color: 'var(--amber)' }} />}
+          icon={<ArrowLeftRight className="w-3.5 h-3.5" style={{ color: 'var(--signal)' }} />}
           onClick={onSwapDates}
           title="Swap Before and After dates"
         >
@@ -138,21 +138,21 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
         <div
           className="hidden md:flex items-center gap-1.5 px-2 py-1"
           style={{
-            background: isGapValid ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.15)',
-            border: isGapValid ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(239, 68, 68, 0.6)',
+            background: isGapValid ? 'var(--measured-fill)' : 'var(--rejected-fill)',
+            border: isGapValid ? '1px solid var(--measured-border)' : '1px solid var(--rejected-border)',
             borderRadius: 'var(--radius)',
           }}
           title={`Temporal difference: ${gapYears.toFixed(2)} years. Minimum required delta is ${MIN_TEMPORAL_GAP_YEARS} years.`}
         >
           {isGapValid ? (
-            <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-[var(--success)]" />
           ) : (
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+            <AlertTriangle className="w-3.5 h-3.5 text-[var(--danger)]" />
           )}
-          <span className="t-mono font-bold text-[10px]" style={{ color: isGapValid ? '#4ade80' : '#f87171' }}>
+          <span className="t-mono font-bold text-[10px]" style={{ color: isGapValid ? 'var(--success)' : 'var(--danger)' }}>
             Δ {gapYears.toFixed(1)} YRS
           </span>
-          <span className="t-tag text-[8px]" style={{ color: isGapValid ? '#86efac' : '#fca5a5' }}>
+          <span className="t-tag text-[8px]" style={{ color: isGapValid ? 'var(--measured-text)' : 'var(--rejected-text)' }}>
             {isGapValid ? '≥ 2Y BASELINE OK' : 'GAP < 2Y'}
           </span>
         </div>
@@ -170,7 +170,7 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
               className="t-tag px-2 py-0.5 cursor-pointer transition-colors"
               style={{
                 background: 'var(--panel-2)',
-                color: 'var(--ink-3)',
+                color: 'var(--ink-2)',
                 border: '1px solid var(--line)',
                 borderRadius: 'var(--radius-sm)',
                 fontSize: 9,
@@ -184,7 +184,7 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
 
       {/* Right: Date B + year chips */}
       <div className="flex items-center gap-2">
-        <span className="t-tag" style={{ color: 'var(--teal)' }}>DATE B:</span>
+        <span className="t-tag font-bold" style={{ color: 'var(--ion)' }}>DATE B:</span>
         <input
           type="date"
           value={afterDate}
@@ -192,7 +192,7 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
           max="2026-12-31"
           onChange={(e) => onAfterDateChange(e.target.value)}
           className="t-mono tabular-nums px-2 py-1 cursor-pointer focus:outline-none"
-          style={dateInputStyle('var(--teal)')}
+          style={dateInputStyle('var(--ion)')}
           title={`Observation date (Google Satellite HD). Min selectable to preserve 2-year gap: ${minAllowedAfter}`}
         />
         <div className="hidden sm:flex items-center gap-1">
@@ -201,7 +201,7 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
               key={d}
               onClick={() => onAfterDateChange(d)}
               className="t-tag px-1.5 py-0.5 cursor-pointer transition-colors"
-              style={chipStyle(afterDate === d, 'var(--teal)', 'var(--teal-wash)')}
+              style={chipStyle(afterDate === d, 'var(--ion)', 'var(--ion-wash)')}
               title={`Select ${d} as observation date`}
             >
               {d.split('-')[0]}

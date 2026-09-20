@@ -41,6 +41,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     { key: 'upload', label: 'UPLOAD' },
     { key: 'search', label: 'SEARCH' },
     { key: 'ask', label: 'ASK' },
+    { key: 'audit', label: 'AUDIT' },
   ];
 
   return (
@@ -61,19 +62,20 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         <div>
           <div className="flex items-center gap-2">
-            <span className="t-h1" style={{ color: 'var(--amber)', fontSize: 16, letterSpacing: '0.04em' }}>
+            <span className="t-h1" style={{ color: 'var(--signal)', fontSize: 16, letterSpacing: '0.04em' }}>
               {COPY.appNameDevanagari}
             </span>
-            <span className="t-h2" style={{ color: 'var(--ink)', fontSize: 14, letterSpacing: '0.04em' }}>
-              ({COPY.appName})
+            <span className="t-h2 font-mono" style={{ color: 'var(--ink)', fontSize: 13, letterSpacing: '0.06em' }}>
+              {COPY.appName}
             </span>
             <span className="t-tag" style={{
-              background: 'var(--amber-wash)',
-              color: 'var(--amber)',
-              border: '1px solid var(--amber)',
+              background: 'var(--signal-wash)',
+              color: 'var(--signal)',
+              border: '1px solid var(--signal)',
               borderRadius: 'var(--radius-sm)',
               padding: '2px 6px',
               fontSize: 9,
+              letterSpacing: '0.08em',
             }}>
               {COPY.orgTag}
             </span>
@@ -93,7 +95,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               borderRadius: 'var(--radius)',
             }}
           >
-            <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--amber)' }} />
+            <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--signal)' }} />
             <select
               value={selectedAoiId}
               onChange={(e) => onSelectAoi(e.target.value)}
@@ -122,12 +124,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             borderRadius: 'var(--radius)',
           }}
         >
-          <span className="flex items-center gap-1 tabular-nums" style={{ color: 'var(--amber)' }}>
+          <span className="flex items-center gap-1 tabular-nums" style={{ color: 'var(--signal)' }}>
             <span style={{ fontSize: 14, fontFamily: 'var(--font-cond)', fontWeight: 700 }}>{areaLabel}</span>
             <span style={{ color: 'var(--ink-3)' }}>AREA</span>
           </span>
           <span style={{ color: 'var(--line-strong)' }}>·</span>
-          <span className="flex items-center gap-1 tabular-nums" style={{ color: 'var(--teal)' }}>
+          <span className="flex items-center gap-1 tabular-nums" style={{ color: 'var(--ion)' }}>
             <span style={{ fontSize: 14, fontFamily: 'var(--font-cond)', fontWeight: 700 }}>{usableScenes}</span>
             <span style={{ color: 'var(--ink-3)' }}>PASSES</span>
           </span>
@@ -151,8 +153,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               onClick={() => onSelectView(key)}
               className="t-tag px-3 py-1.5 transition-colors relative"
               style={{
-                background: activeView === key ? 'var(--amber-wash)' : 'transparent',
-                color: activeView === key ? 'var(--amber)' : 'var(--ink-3)',
+                background: activeView === key ? 'var(--signal-wash)' : 'transparent',
+                color: activeView === key ? 'var(--signal)' : 'var(--ink-2)',
                 borderRadius: 'var(--radius-sm)',
                 border: 'none',
                 cursor: 'pointer',
@@ -164,7 +166,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               {activeView === key && (
                 <span
                   className="absolute bottom-0 left-1/4 right-1/4"
-                  style={{ height: 2, background: 'var(--amber)', borderRadius: 1 }}
+                  style={{ height: 2, background: 'var(--signal)', borderRadius: 1 }}
                 />
               )}
             </button>
@@ -177,9 +179,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           title={isMock ? 'Offline Demo Mode' : 'Live Satellite API'}
           className="flex items-center gap-1.5 px-2.5 py-1.5 t-tag cursor-pointer transition-colors"
           style={{
-            background: isMock ? 'var(--amber-wash)' : 'var(--teal-wash)',
-            border: `1px solid ${isMock ? 'var(--amber)' : 'var(--teal)'}`,
-            color: isMock ? 'var(--amber)' : 'var(--teal)',
+            background: isMock ? 'var(--signal-wash)' : 'var(--ion-wash)',
+            border: `1px solid ${isMock ? 'var(--signal)' : 'var(--ion)'}`,
+            color: isMock ? 'var(--signal)' : 'var(--ion)',
             borderRadius: 'var(--radius-sm)',
           }}
         >
@@ -189,7 +191,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: isMock ? 'var(--amber)' : 'var(--teal)',
+              background: isMock ? 'var(--signal)' : 'var(--ion)',
               display: 'inline-block',
             }}
           />

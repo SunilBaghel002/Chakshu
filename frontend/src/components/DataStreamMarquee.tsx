@@ -10,22 +10,25 @@ export const DataStreamMarquee: React.FC = () => {
   const text = COPY.marquee;
 
   return (
-    <div
-      id="slot-00-marquee"
-      className="w-full overflow-hidden select-none"
-      style={{
-        height: 18,
-        background: 'var(--bg)',
-        borderBottom: '1px solid var(--line)',
-      }}
-    >
+    <div id="slot-00-marquee" className="w-full overflow-hidden select-none flex flex-col">
+      {/* 3px Sovereign Tricolour Rule (PRD 9 §5.8) */}
+      <div className="tricolour-rule shrink-0" />
       <div
-        className="animate-marquee whitespace-nowrap flex items-center h-full"
-        style={{ width: 'max-content' }}
+        className="w-full overflow-hidden flex items-center"
+        style={{
+          height: 18,
+          background: 'var(--well)',
+          borderBottom: '1px solid var(--line)',
+        }}
       >
-        <span className="t-tag" style={{ color: 'var(--amber)', opacity: 0.7 }}>
-          {text}{text}
-        </span>
+        <div
+          className="animate-marquee whitespace-nowrap flex items-center h-full"
+          style={{ width: 'max-content' }}
+        >
+          <span className="t-tag font-mono" style={{ color: 'var(--signal)', opacity: 0.85, letterSpacing: '0.12em' }}>
+            {text}{text}
+          </span>
+        </div>
       </div>
     </div>
   );
