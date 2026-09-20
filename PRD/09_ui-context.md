@@ -280,22 +280,22 @@ Defence software has a register of its own: stencilled serials, hatch-mark panel
 All map interactions live in `frontend/src/lib/map-fx.ts` as one module. Coordinates are cursor→geo via the AOI bbox. Every effect below is implemented in the prototype; match timings exactly.
 
 **M1 — Cursor reticle + live coordinate readout.**
-A full-stage crosshair (1 px `--amber` at 22% opacity, one horizontal + one vertical line through the cursor) plus a 28 px iris reticle ring (2 px `--amber`, four 6 px gap notches) that follows the cursor with a 60 ms lerp lag. `SLOT-14` readout updates `LAT: 28.1395° N / LON: 77.7612° E` in `--t-mono` at pointer-move (throttled to rAF). On pointer-leave the reticle and crosshair fade over 140 ms. *This is the "the eye is looking" behaviour; it must feel attached, never floaty — cap the lag.*
+A full-stage crosshair (1 px `--signal` at 22% opacity, one horizontal + one vertical line through the cursor) plus a 28 px iris reticle ring (2 px `--signal`, four 6 px gap notches) that follows the cursor with a 60 ms lerp lag. `SLOT-14` readout updates `LAT: 28.1395° N / LON: 77.7612° E` in `--t-mono` at pointer-move (throttled to rAF). On pointer-leave the reticle and crosshair fade over 140 ms. *This is the "the eye is looking" behaviour; it must feel attached, never floaty — cap the lag.*
 
 **M2 — Scan sweep on stage enter.**
-On pointer-enter, a 2 px `--amber` horizontal line with a 24 px gradient trail sweeps top→bottom once over 900 ms (`linear`), and the dot grid brightens under the cursor via a 240 px radial mask that tracks the pointer. No repeat while the pointer stays inside.
+On pointer-enter, a 2 px `--signal` horizontal line with a 24 px gradient trail sweeps top→bottom once over 900 ms (`linear`), and the dot grid brightens under the cursor via a 240 px radial mask that tracks the pointer. No repeat while the pointer stays inside.
 
 **M3 — Target lock-on (polygon hover).** *The signature interaction.*
-On hovering a change polygon: (a) stroke goes `--amber-hot` 2 px, fill 30%→45%; (b) four L-shaped corner brackets animate from 12 px outside the bbox to the bbox corners over 160 ms, staggered 30 ms, `cubic-bezier(0.22,1,0.36,1)`, in `--amber`; (c) a dossier tag panel (`SLOT-16`) slides in 8 px from the bbox top-left over 140 ms, skewed −2°, amber left bar, containing: `TARGET: CONSTRUCTION // ID c67d562`, the measured area with a **400 ms count-up** (`--t-figure`), `MEASURED — UTM 43N` chip, confidence %, and onset date; (d) a 1 px leader line from the bracket to the tag. On leave: brackets retract and tag slides out over 120 ms. Hovering the *tag* keeps the lock (no flicker at the boundary).
+On hovering a change polygon: (a) stroke goes `--signal-hot` 2 px, fill 30%→45%; (b) four L-shaped corner brackets animate from 12 px outside the bbox to the bbox corners over 160 ms, staggered 30 ms, `cubic-bezier(0.22,1,0.36,1)`, in `--signal`; (c) a dossier tag panel (`SLOT-16`) slides in 8 px from the bbox top-left over 140 ms, skewed −2°, signal left bar, containing: `TARGET: CONSTRUCTION // ID c67d562`, the measured area with a **400 ms count-up** (`--t-figure`), `MEASURED — UTM 43N` chip, confidence %, and onset date; (d) a 1 px leader line from the bracket to the tag. On leave: brackets retract and tag slides out over 120 ms. Hovering the *tag* keeps the lock (no flicker at the boundary).
 
 **M4 — Sector grid hover.**
-The stage carries a faint sector grid (8 × 5). The hovered cell's dots brighten to `--amber` 18% and `SLOT-11` shows `SEC 04·B` in `--t-tag`. Cells are computed from cursor position; no DOM per cell (canvas or CSS background-position).
+The stage carries a faint sector grid (8 × 5). The hovered cell's dots brighten to `--signal` 18% and `SLOT-11` shows `SEC 04·B` in `--t-tag`. Cells are computed from cursor position; no DOM per cell (canvas or CSS background-position).
 
 **M5 — Timeline dot hover.**
-Dot scales 8→12 px over 100 ms; tooltip (monospace) shows `09 JUN 2024 · 2.5% CLOUD` or, for unusable dots, the reason (`MONSOON · CLOUD 78%`). Compared dates keep their amber ring.
+Dot scales 8→12 px over 100 ms; tooltip (monospace) shows `09 JUN 2024 · 2.5% CLOUD` or, for unusable dots, the reason (`MONSOON · CLOUD 78%`). Compared dates keep their signal ring.
 
 **M6 — Panel and row hover.**
-Dossier rows and queue rows: 2 px right shift + left amber bar 0→3 px over 120 ms. Tabs: amber underline grows from centre over 140 ms. Buttons: diagonal sweep highlight 120 ms (§5).
+Dossier rows and queue rows: 2 px right shift + left signal bar 0→3 px over 120 ms. Tabs: signal underline grows from centre over 140 ms. Buttons: diagonal sweep highlight 120 ms (§5).
 
 **M7 — Number tickers.**
 Any measured figure counts up over 400 ms (`ease-out`) on first reveal and on value change. **Never loops, never on inferred values** (inferred values appear instantly with their `INFERRED` chip — animating a guess would dress it as a measurement).
