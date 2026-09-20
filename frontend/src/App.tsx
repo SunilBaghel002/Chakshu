@@ -26,6 +26,10 @@ import {
   type SceneItem,
 } from './lib/api';
 import type { Evidence, ChangeSummary, DetectionSet } from './lib/types';
+import {
+  enforceMinGapForBefore,
+  enforceMinGapForAfter,
+} from './lib/satelliteProviders';
 
 export const App: React.FC = () => {
   const [aois, setAois] = useState<AoiItem[]>([]);
@@ -107,6 +111,28 @@ export const App: React.FC = () => {
     setIsMock(next);
   };
 
+  const handleSelectBeforeDate = useCallback(
+    (newBefore: string) => {
+      const { before, after } = enforceMinGapForBefore(newBefore, afterDate);
+      setBeforeDate(before);
+      if (after !== afterDate) {
+        setAfterDate(after);
+      }
+    },
+    [afterDate]
+  );
+
+  const handleSelectAfterDate = useCallback(
+    (newAfter: string) => {
+      const { before, after } = enforceMinGapForAfter(newAfter, beforeDate);
+      setAfterDate(after);
+      if (before !== beforeDate) {
+        setBeforeDate(before);
+      }
+    },
+    [beforeDate]
+  );
+
   const handleSwapDates = () => {
     const temp = beforeDate;
     setBeforeDate(afterDate);
@@ -163,12 +189,11 @@ export const App: React.FC = () => {
   };
 
   const visibleEvidenceList = useMemo(() => {
-    const maxObservationDate = beforeDate < afterDate ? afterDate : beforeDate;
-    return evidenceList.filter((ev) => {
-      const date = ev.temporal.first_supported || ev.sources.after.acquired_at;
-      return date <= maxObservationDate;
-    });
-  }, [evidenceList, beforeDate, afterDate]);
+    // Always show all evidence — temporal pre-existing styling in useMapPolygons
+    // handles visual differentiation (dimmed for pre-existing, bright for new).
+    // Filtering here was causing polygons to vanish on date changes.
+    return evidenceList;
+  }, [evidenceList]);
 
   const totalAreaM2 = useMemo(() => {
     return visibleEvidenceList.reduce((acc, ev) => acc + (ev.measurement.area_m2 || 0), 0);
@@ -215,18 +240,25 @@ export const App: React.FC = () => {
 
   // Camera preset handler for TacticalTelemetryBar
   const handlePreset = useCallback((preset: string) => {
-    // Presets will be consumed by MapPane via a ref/callback
-    const presetMap: Record<string, { center: [number, number]; zoom: number }> = {
-      runway: { center: [28.1695, 77.6080], zoom: 16 },
-      terminal: { center: [28.1765, 77.6160], zoom: 17 },
-      atc: { center: [28.1748, 77.6125], zoom: 18 },
-      full: { center: aoiCoords, zoom: 14 },
+    const presetMap: Record<string, { center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]]; match?: string }> = {
+      runway: { center: [28.1782, 77.6045], zoom: 16, bounds: [[28.1740, 77.5830], [28.1825, 77.6260]], match: 'Runway 10/28' },
+      terminal: { center: [28.1748, 77.6075], zoom: 17, bounds: [[28.1725, 77.6010], [28.1772, 77.6140]], match: 'Passenger Terminal 1' },
+      atc: { center: [28.1756, 77.6155], zoom: 18, bounds: [[28.1742, 77.6138], [28.1770, 77.6172]], match: 'ATC Tower' },
+      full: { center: aoiCoords, zoom: 14, bounds: aoiBounds },
     };
     const p = presetMap[preset];
-    if (p) setPresetTarget(p);
-  }, [aoiCoords]);
+    if (p) {
+      setPresetTarget(p);
+      if (p.match) {
+        const ev = evidenceList.find((e) => e.measurement.measured_by?.includes(p.match!));
+        if (ev) setSelectedEvidence(ev);
+      } else if (preset === 'full') {
+        setSelectedEvidence(null);
+      }
+    }
+  }, [aoiCoords, aoiBounds, evidenceList]);
 
-  const [presetTarget, setPresetTarget] = useState<{ center: [number, number]; zoom: number } | null>(null);
+  const [presetTarget, setPresetTarget] = useState<{ center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]] } | null>(null);
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
@@ -257,8 +289,8 @@ export const App: React.FC = () => {
       <TemporalBar
         beforeDate={beforeDate}
         afterDate={afterDate}
-        onBeforeDateChange={setBeforeDate}
-        onAfterDateChange={setAfterDate}
+        onBeforeDateChange={handleSelectBeforeDate}
+        onAfterDateChange={handleSelectAfterDate}
         onSwapDates={handleSwapDates}
         onRunAnalysis={handleRunAnalysis}
         isAnalyzing={isAnalyzing}
@@ -288,8 +320,8 @@ export const App: React.FC = () => {
               beforeDate={beforeDate}
               afterDate={afterDate}
               availableDates={availableDates}
-              onSelectBeforeDate={setBeforeDate}
-              onSelectAfterDate={setAfterDate}
+              onSelectBeforeDate={handleSelectBeforeDate}
+              onSelectAfterDate={handleSelectAfterDate}
               onSwapDates={handleSwapDates}
               presetTarget={presetTarget}
               onPresetConsumed={() => setPresetTarget(null)}
@@ -307,8 +339,8 @@ export const App: React.FC = () => {
             scenes={scenes}
             beforeDate={beforeDate}
             afterDate={afterDate}
-            onSelectBeforeDate={setBeforeDate}
-            onSelectAfterDate={setAfterDate}
+            onSelectBeforeDate={handleSelectBeforeDate}
+            onSelectAfterDate={handleSelectAfterDate}
           />
         </main>
 

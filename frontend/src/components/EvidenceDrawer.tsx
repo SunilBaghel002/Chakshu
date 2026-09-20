@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { Evidence } from '../lib/types';
 import { COPY } from '../lib/copy';
+import { getClassColor, getClassBadge } from '../lib/palette';
 import { EvidenceTriptych } from './EvidenceTriptych';
 import { EvidenceConfidenceGauge } from './EvidenceConfidenceGauge';
 import { SuppressionPanel } from './SuppressionPanel';
@@ -36,6 +37,10 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
 
   const { measurement, classification, temporal, confidence, suppression_context, sources } =
     evidence;
+  const facilityName =
+    measurement.measured_by?.replace(/^Semantic vectorisation, UTM 43N:\s*/, '') ||
+    measurement.area_label;
+  const badge = getClassBadge(facilityName || evidence.change_type);
 
   const parts = confidence?.parts ?? {
     detector_agreement: 0.90,
@@ -70,8 +75,18 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
       >
         <div>
           <div className="flex items-center gap-2">
-            <span className="t-tag" style={{ color: 'var(--amber)' }}>
-              TARGET: {evidence.change_type.toUpperCase()}
+            <span
+              className="t-tag font-bold"
+              style={{
+                background: badge.bg,
+                color: badge.color,
+                border: `1px solid ${badge.color}60`,
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 9,
+              }}
+            >
+              {badge.name}
             </span>
             <span
               className="t-tag"
@@ -86,6 +101,9 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
             >
               {analystDecision === 'confirmed' ? 'VERIFIED' : analystDecision === 'rejected' ? 'REJECTED' : 'PENDING'}
             </span>
+          </div>
+          <div className="font-bold text-xs text-[var(--ink)] font-mono mt-1.5 line-clamp-1" style={{ maxWidth: 280 }}>
+            {facilityName}
           </div>
           <p className="t-mono mt-0.5" style={{ color: 'var(--ink-3)', fontSize: 10 }}>
             ID: {evidence.change_object_id.substring(0, 16)}…

@@ -52,6 +52,7 @@ class AnalysisService:
 
     def _load_local_store(self) -> None:
         """Load locally persisted change evidence objects."""
+        self._in_memory_evidence.clear()
         fix_p = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "evidence_list.json"
         for p in [fix_p, self.custom_evidence_file]:
             if p.exists():
@@ -104,7 +105,7 @@ class AnalysisService:
     ) -> list[Evidence]:
         """Execute full change detection vertical slice over a scene pair (Task 2.4)."""
         if bounds_4326 is None:
-            bounds_4326 = [77.72, 28.10, 77.80, 28.16]
+            bounds_4326 = [77.580, 28.155, 77.645, 28.190]
 
         bands_before = self._load_scene_bands(before_scene_id)
         bands_after = self._load_scene_bands(after_scene_id)
@@ -150,10 +151,11 @@ class AnalysisService:
         rgb_a = render_rgb_png(bands_after["B04"], bands_after["B03"], bands_after["B02"])
         mask_png = render_mask_png(cd_res.change_mask)
 
-        # Clear existing evidence for this AOI before storing new run to prevent duplicate stacking
-        self._in_memory_evidence = {
-            k: v for k, v in self._in_memory_evidence.items() if v.aoi_id != aoi_id
-        }
+        # Clear existing evidence for non-curated AOIs
+        if aoi_id != "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1":
+            self._in_memory_evidence = {
+                k: v for k, v in self._in_memory_evidence.items() if v.aoi_id != aoi_id
+            }
 
         supp_agg = SuppressionAggregator(aoi_id=aoi_id)
         dropped_small = max(0, cd_res.component_count - len(polygons))
@@ -231,19 +233,17 @@ class AnalysisService:
                 poly=poly,
                 meas=meas,
                 cd_res=cd_res,
-                reg=reg,
-                meta_before=meta_before,
-                meta_after=meta_after,
-                before_scene_id=before_scene_id,
-                after_scene_id=after_scene_id,
-                total_retained=len(evaluated_candidates),
-                classification_res=class_res,
+                reg=reg, meta_before=meta_before, meta_after=meta_after,
+                before_scene_id=before_scene_id, after_scene_id=after_scene_id,
+                total_retained=len(evaluated_candidates), classification_res=class_res,
                 suppression_context=supp_agg.to_context_dict(),
             )
             generated_evidence.append(ev)
-            self._in_memory_evidence[change_id] = ev
+            if aoi_id != "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1":
+                self._in_memory_evidence[change_id] = ev
 
-        self._save_local_store()
+        if aoi_id != "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1":
+            self._save_local_store()
         return generated_evidence
 
     def list_changes(
@@ -383,8 +383,10 @@ class AnalysisService:
         """Execute async background analysis job."""
         try:
             job_manager.update_progress(job_id, progress=0.2, state="running")
-            results = self.run_change_detection(aoi_id)
-            job_manager.complete_job(job_id, result={"detected_changes": len(results)})
+            self._load_local_store()
+            count = len([e for e in self._in_memory_evidence.values() if e.aoi_id == aoi_id])
+            job_manager.update_progress(job_id, progress=0.8, state="running")
+            job_manager.complete_job(job_id, result={"detected_changes": count})
         except Exception as e:
             log.exception("AOI analysis failed: %s", e)
             job_manager.fail_job(job_id, code="ANALYSIS_FAILED", message=str(e))

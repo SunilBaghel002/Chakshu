@@ -24,7 +24,10 @@ export const ChangeCard: React.FC<ChangeCardProps> = ({
   className = '',
 }) => {
   const { change_object_id, change_type, measurement, temporal, confidence, status, sources } = evidence;
-  const color = getClassColor(change_type);
+  const facilityName =
+    measurement.measured_by?.replace(/^Semantic vectorisation, UTM 43N:\s*/, '') ||
+    measurement.area_label;
+  const color = getClassColor(facilityName || change_type);
   const confPct = Math.round(confidence.overall * 100);
   const onsetDate = temporal.first_supported || sources.after.acquired_at;
 
@@ -41,7 +44,7 @@ export const ChangeCard: React.FC<ChangeCardProps> = ({
       }}
     >
       {/* Top row: Change Type + Epistemic Chip + Status */}
-      <div className="flex items-center justify-between gap-2 mb-2.5">
+      <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
             className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono"
@@ -98,6 +101,11 @@ export const ChangeCard: React.FC<ChangeCardProps> = ({
         >
           {status}
         </span>
+      </div>
+
+      {/* Facility Name */}
+      <div className="font-bold text-xs text-[var(--ink)] font-mono tracking-tight my-1 line-clamp-1" title={facilityName}>
+        {facilityName}
       </div>
 
       {/* Center section: Ground Area & Onset */}

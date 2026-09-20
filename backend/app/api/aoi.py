@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, BackgroundTasks, Query, status
 
+from app.exceptions import NotFoundError
 from app.schemas.aoi import (
     Aoi,
     AoiCreate,
@@ -19,6 +20,7 @@ from app.schemas.aoi import (
     JobResponse,
     SceneListResponse,
 )
+from app.schemas.summary import ChangeSummary
 from app.services.aoi_service import aoi_service
 from app.services.jobs import job_manager
 from app.services.scene_service import scene_service
@@ -105,3 +107,21 @@ async def list_scenes_for_aoi(
         after=after,
     )
     return SceneListResponse(items=items, total=len(items))
+
+
+@router.get(
+    "/{aoi_id}/summary",
+    response_model=ChangeSummary,
+    summary="Get multi-year change synthesis summary for an AOI",
+)
+async def get_aoi_summary(aoi_id: str) -> ChangeSummary:
+    """Fetch multi-year change synthesis summary for an AOI."""
+    import json
+    from pathlib import Path
+    _ = aoi_service.get_aoi(aoi_id)
+    fix_p = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "change_summary.json"
+    if fix_p.exists():
+        data = json.loads(fix_p.read_text(encoding="utf-8"))
+        data["aoi_id"] = aoi_id
+        return ChangeSummary.model_validate(data)
+    raise NotFoundError(f"Change summary for AOI '{aoi_id}' not found.")

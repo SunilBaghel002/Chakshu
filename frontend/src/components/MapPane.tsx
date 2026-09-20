@@ -7,6 +7,12 @@ import { MapCursorInspector } from './MapCursorInspector';
 import { MapZoomControls } from './MapZoomControls';
 import { GhostNumeral } from './GhostNumeral';
 import { MapReticleOverlay } from './MapReticleOverlay';
+import {
+  getSatelliteTileConfig,
+  type ImageryMode,
+} from '../lib/satelliteProviders';
+import { SatelliteIntelModal } from './SatelliteIntelModal';
+import { MapImageryToolbar } from './MapImageryToolbar';
 
 interface MapPaneProps {
   selectedAoiId?: string;
@@ -27,7 +33,7 @@ interface MapPaneProps {
   onSelectBeforeDate?: (date: string) => void;
   onSelectAfterDate?: (date: string) => void;
   onSwapDates?: () => void;
-  presetTarget?: { center: [number, number]; zoom: number } | null;
+  presetTarget?: { center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]] } | null;
   onPresetConsumed?: () => void;
 }
 
@@ -60,8 +66,13 @@ export const MapPane: React.FC<MapPaneProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const beforeTileLayerRef = useRef<L.TileLayer | null>(null);
+  const afterTileLayerRef = useRef<L.TileLayer | null>(null);
   const prevAoiIdRef = useRef<string | null>(null);
 
+  const [imageryMode, setImageryMode] = useState<ImageryMode>('hybrid_optimum');
+  const [dehazeActive, setDehazeActive] = useState<boolean>(true);
+  const [showIntelModal, setShowIntelModal] = useState<boolean>(false);
   const [showAllPolygons, setShowAllPolygons] = useState<boolean>(true);
   const [hoveredEvidence, setHoveredEvidence] = useState<Evidence | null>(null);
   const coordRef = useRef<HTMLDivElement | null>(null);
@@ -85,23 +96,35 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
     const beforePane = map.createPane('beforePane');
     beforePane.style.zIndex = '200';
-    beforePane.style.filter = 'saturate(1.1) contrast(1.0) sepia(0.12) brightness(0.97)';
+    beforePane.style.filter = 'saturate(1.08) contrast(1.04) brightness(1.02)';
 
-    const esriSatellite = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      { maxZoom: 18, pane: 'beforePane', opacity: 1 }
-    );
-    esriSatellite.addTo(map);
+    const beforeCfg = getSatelliteTileConfig(beforeDate, imageryMode, false);
+    const beforeSatellite = L.tileLayer(beforeCfg.url, {
+      maxZoom: beforeCfg.maxZoom,
+      maxNativeZoom: beforeCfg.maxNativeZoom,
+      pane: 'beforePane',
+      opacity: 1,
+      attribution: beforeCfg.attribution,
+    });
+    beforeSatellite.addTo(map);
+    beforeTileLayerRef.current = beforeSatellite;
 
     const afterPane = map.createPane('afterPane');
     afterPane.style.zIndex = '450';
-    afterPane.style.filter = 'contrast(1.15) brightness(1.03) saturate(1.1)';
+    afterPane.style.filter = dehazeActive
+      ? 'contrast(1.22) saturate(1.28) brightness(0.96) hue-rotate(-2deg)'
+      : 'saturate(1.08) contrast(1.06) brightness(1.02)';
 
-    const googleSatellite = L.tileLayer(
-      'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-      { maxZoom: 20, pane: 'afterPane', opacity: 1 }
-    );
-    googleSatellite.addTo(map);
+    const afterCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
+    const afterSatellite = L.tileLayer(afterCfg.url, {
+      maxZoom: afterCfg.maxZoom,
+      maxNativeZoom: afterCfg.maxNativeZoom,
+      pane: 'afterPane',
+      opacity: 1,
+      attribution: afterCfg.attribution,
+    });
+    afterSatellite.addTo(map);
+    afterTileLayerRef.current = afterSatellite;
 
     const polygonsPane = map.createPane('polygonsPane');
     polygonsPane.style.zIndex = '500';
@@ -149,8 +172,40 @@ export const MapPane: React.FC<MapPaneProps> = ({
       window.removeEventListener('resize', handleResize);
       map.remove();
       mapInstanceRef.current = null;
+      beforeTileLayerRef.current = null;
+      afterTileLayerRef.current = null;
     };
   }, []);
+
+  // Dynamically update satellite tile layers when beforeDate, afterDate, or imageryMode changes
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const beforeCfg = getSatelliteTileConfig(beforeDate, imageryMode, false);
+    if (beforeTileLayerRef.current) {
+      beforeTileLayerRef.current.options.maxNativeZoom = beforeCfg.maxNativeZoom;
+      beforeTileLayerRef.current.options.maxZoom = beforeCfg.maxZoom;
+      beforeTileLayerRef.current.setUrl(beforeCfg.url);
+    }
+
+    const afterCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
+    if (afterTileLayerRef.current) {
+      afterTileLayerRef.current.options.maxNativeZoom = afterCfg.maxNativeZoom;
+      afterTileLayerRef.current.options.maxZoom = afterCfg.maxZoom;
+      afterTileLayerRef.current.setUrl(afterCfg.url);
+    }
+  }, [beforeDate, afterDate, imageryMode]);
+ 
+  // Dynamically update atmospheric de-haze filter on afterPane
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const afterPane = mapInstanceRef.current.getPane('afterPane');
+    if (afterPane) {
+      afterPane.style.filter = dehazeActive
+        ? 'contrast(1.22) saturate(1.28) brightness(0.96) hue-rotate(-2deg)'
+        : 'saturate(1.08) contrast(1.06) brightness(1.02)';
+    }
+  }, [dehazeActive]);
 
   const applyClip = useCallback((pct: number) => {
     const map = mapInstanceRef.current;
@@ -184,7 +239,9 @@ export const MapPane: React.FC<MapPaneProps> = ({
       : `polygon(${l}px ${top}px, ${clipX}px ${top}px, ${clipX}px ${bot}px, ${l}px ${bot}px)`;
 
     afterPane.style.clipPath = clip;
-    if (polyPane) polyPane.style.clipPath = clip;
+    if (polyPane) {
+      polyPane.style.clipPath = clip;
+    }
   }, [isSwipeActive, beforeDate, afterDate]);
 
   useEffect(() => {
@@ -218,8 +275,13 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
   // Handle camera presets from TacticalTelemetryBar
   useEffect(() => {
-    if (!mapInstanceRef.current || !presetTarget) return;
-    mapInstanceRef.current.flyTo(presetTarget.center, presetTarget.zoom, { duration: 1.0 });
+    const map = mapInstanceRef.current;
+    if (!map || !presetTarget) return;
+    if (presetTarget.bounds) {
+      map.fitBounds(presetTarget.bounds, { padding: [36, 36], maxZoom: presetTarget.zoom || 17, animate: true });
+    } else if (presetTarget.center && presetTarget.zoom) {
+      map.flyTo(presetTarget.center, presetTarget.zoom, { duration: 1.0 });
+    }
     onPresetConsumed?.();
   }, [presetTarget, onPresetConsumed]);
 
@@ -228,10 +290,11 @@ export const MapPane: React.FC<MapPaneProps> = ({
     evidenceList,
     selectedEvidenceId,
     onSelectEvidence,
-    detectionSet,
     showAllPolygons,
     setHoveredEvidence,
     inspectorRef,
+    beforeDate,
+    afterDate,
   });
 
   return (
@@ -297,21 +360,17 @@ export const MapPane: React.FC<MapPaneProps> = ({
         inspectorRef={inspectorRef}
       />
 
-      {/* Floating Date Watermarks */}
-      {isSwipeActive && (
-        <>
-          <div className="absolute bottom-3 left-3 z-[350] pointer-events-none t-tag flex items-center gap-1.5 px-2.5 py-1"
-            style={{ background: 'var(--panel)', border: '1px solid var(--amber)', color: 'var(--amber)', borderRadius: 'var(--radius)', fontSize: 9 }}>
-            <span className="animate-dot-pulse" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--amber)', display: 'inline-block' }} />
-            <span>DATE A: {beforeDate}</span>
-          </div>
-          <div className="absolute bottom-3 right-3 z-[350] pointer-events-none t-tag flex items-center gap-1.5 px-2.5 py-1"
-            style={{ background: 'var(--panel)', border: '1px solid var(--teal)', color: 'var(--teal)', borderRadius: 'var(--radius)', fontSize: 9 }}>
-            <span>DATE B: {afterDate}</span>
-            <span className="animate-dot-pulse" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} />
-          </div>
-        </>
-      )}
+      {/* SLOT-13: Map Imagery Toolbar & Telemetry Watermarks */}
+      <MapImageryToolbar
+        imageryMode={imageryMode}
+        setImageryMode={setImageryMode}
+        dehazeActive={dehazeActive}
+        setDehazeActive={setDehazeActive}
+        onOpenIntel={() => setShowIntelModal(true)}
+        isSwipeActive={isSwipeActive}
+        beforeDate={beforeDate}
+        afterDate={afterDate}
+      />
 
       {/* Zoom Controls */}
       <MapZoomControls
@@ -325,6 +384,15 @@ export const MapPane: React.FC<MapPaneProps> = ({
           }
         }}
         coords={aoiCoords}
+      />
+
+      {/* SENSOR & PIPELINE INTELLIGENCE MODAL */}
+      <SatelliteIntelModal
+        isOpen={showIntelModal}
+        onClose={() => setShowIntelModal(false)}
+        beforeDate={beforeDate}
+        afterDate={afterDate}
+        imageryMode={imageryMode}
       />
     </div>
   );

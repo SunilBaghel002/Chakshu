@@ -59,44 +59,101 @@ export const PALETTE = {
   info: '#35B8C0',
   neutral: '#6B7480',
 
-  // §2.5 Land Cover — dark-retuned
+  // §2.5 Land Cover & Semantic Infrastructure Classes
   classes: {
-    water: '#4FA3E0',
-    vegetation: '#4FB37A',
-    crop: '#A8C256',
-    built: '#E08A5A',
-    bare: '#C9A227',
-    snow: '#B9C6D2',
-    unclassified: '#6B7480',
-    construction: '#F0B45F',
-    clearance: '#D9A441',
-    vegetation_gain: '#4FB37A',
-    water_gain: '#4FA3E0',
+    // Water bodies & reservoirs — vibrant satellite blue
+    water: '#258CF4',
+    reservoir: '#258CF4',
+    retention_pond: '#258CF4',
+    water_gain: '#258CF4',
     water_loss: '#7FA8C4',
-    demolition: '#8A93A0',
-    road: '#A6ADB5',
-    other: '#A6ADB5',
+    drainage: '#258CF4',
 
-    // Object classes
-    building: '#E08A5A',
-    building_cluster: '#F0B45F',
+    // Vegetation & landscape — rich tactical green
+    vegetation: '#2ECC71',
+    crop: '#2ECC71',
+    green_buffer: '#2ECC71',
+    vegetation_gain: '#2ECC71',
+    landscape: '#2ECC71',
+
+    // Buildings & architecture — radiant orange
+    building: '#FF7A29',
+    architecture: '#FF7A29',
+    terminal: '#FF7A29',
+    atc_tower: '#FF7A29',
+    cargo: '#FF7A29',
+    built: '#FF7A29',
+    building_cluster: '#FF7A29',
+    structure: '#FF7A29',
+    facility: '#FF7A29',
+
+    // Aviation infrastructure & paved surfaces — aviation gold / amber
+    runway: '#F5A623',
+    taxiway: '#F5A623',
+    apron: '#E5A93C',
+    infrastructure: '#F5A623',
+    paved: '#F5A623',
+
+    // Earthworks & site clearance — sandy ochre
+    construction: '#D4A373',
+    clearance: '#D4A373',
+    earthworks: '#D4A373',
+    bare: '#D4A373',
+
+    // Aux / Object classes
     vehicle: '#9B7BE0',
     aircraft: '#5A9BE0',
-    ship: '#4FA3E0',
+    ship: '#258CF4',
     ship_large: '#2E7BB5',
-    storage_tank: '#D9A441',
-    swimming_pool: '#4FD0E0',
-    tower: '#B07BE0',
-    container: '#E07B5A',
+    storage_tank: '#FF7A29',
+    swimming_pool: '#258CF4',
+    tower: '#FF7A29',
+    container: '#FF7A29',
+    road: '#A6ADB5',
+    snow: '#B9C6D2',
+    demolition: '#8A93A0',
+    unclassified: '#6B7480',
+    other: '#A6ADB5',
   } as const,
 } as const;
 
 export type ClassLabel = keyof typeof PALETTE.classes;
 
 export function getClassColor(label: string): string {
-  const normalized = label.toLowerCase();
+  const normalized = label.toLowerCase().trim().replace(/[\s-]+/g, '_');
   if (normalized in PALETTE.classes) {
     return PALETTE.classes[normalized as ClassLabel];
   }
+  // Keyword fallbacks
+  if (normalized.includes('build') || normalized.includes('term') || normalized.includes('atc') || normalized.includes('cargo') || normalized.includes('arch')) {
+    return PALETTE.classes.building;
+  }
+  if (normalized.includes('veg') || normalized.includes('green') || normalized.includes('crop') || normalized.includes('tree')) {
+    return PALETTE.classes.vegetation;
+  }
+  if (normalized.includes('water') || normalized.includes('pond') || normalized.includes('basin') || normalized.includes('lake') || normalized.includes('drain')) {
+    return PALETTE.classes.water;
+  }
+  if (normalized.includes('runway') || normalized.includes('taxi') || normalized.includes('apron') || normalized.includes('pave')) {
+    return PALETTE.classes.runway;
+  }
+  if (normalized.includes('construct') || normalized.includes('clear') || normalized.includes('earth') || normalized.includes('soil')) {
+    return PALETTE.classes.construction;
+  }
   return PALETTE.neutral;
 }
+
+export function getClassBadge(label: string): { name: string; color: string; bg: string } {
+  const color = getClassColor(label);
+  const normalized = label.toLowerCase();
+  let name = 'INFRASTRUCTURE';
+  if (normalized.includes('build') || normalized.includes('term') || normalized.includes('atc') || normalized.includes('cargo')) name = 'BUILDING';
+  else if (normalized.includes('veg') || normalized.includes('green') || normalized.includes('crop')) name = 'VEGETATION';
+  else if (normalized.includes('water') || normalized.includes('pond') || normalized.includes('basin') || normalized.includes('lake')) name = 'WATER';
+  else if (normalized.includes('runway')) name = 'RUNWAY';
+  else if (normalized.includes('taxi')) name = 'TAXIWAY';
+  else if (normalized.includes('apron')) name = 'APRON';
+  else if (normalized.includes('clear') || normalized.includes('earth') || normalized.includes('construct')) name = 'EARTHWORKS';
+  return { name, color, bg: `${color}20` };
+}
+

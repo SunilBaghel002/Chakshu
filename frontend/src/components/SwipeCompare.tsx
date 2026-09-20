@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useEffect } from 'react';
 import { Columns, Eye, ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { getYearDifference, MIN_TEMPORAL_GAP_YEARS } from '../lib/satelliteProviders';
 
 interface SwipeCompareProps {
   sliderPos: number; // 0 to 100
@@ -181,7 +182,7 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
               >
                 {beforeOptions.map((d) => (
                   <option key={d} value={d} style={{ background: 'var(--panel)' }}>
-                    {d}
+                    {d} ({d.slice(0, 4)})
                   </option>
                 ))}
               </select>
@@ -194,7 +195,7 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
           )}
         </div>
 
-        {/* Center: Swap + Single View */}
+        {/* Center: Swap + Gap Indicator + Single View */}
         <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()}>
           {onSwapDates && (
             <button
@@ -207,6 +208,29 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
               <span>SWAP</span>
             </button>
           )}
+          {(() => {
+            const gapYears = getYearDifference(beforeDate, afterDate);
+            const isGapValid = gapYears >= MIN_TEMPORAL_GAP_YEARS;
+            return (
+              <div
+                className="hidden sm:flex items-center gap-1 px-2 py-1"
+                style={{
+                  background: isGapValid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.15)',
+                  border: isGapValid ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(239, 68, 68, 0.5)',
+                  borderRadius: 'var(--radius)',
+                  fontSize: 9,
+                }}
+                title={`Temporal baseline gap: ${gapYears.toFixed(2)} years (Minimum 2.0y required)`}
+              >
+                <span className="t-mono font-bold" style={{ color: isGapValid ? '#4ade80' : '#f87171' }}>
+                  Δ {gapYears.toFixed(1)}Y
+                </span>
+                <span className="t-tag text-[8px]" style={{ color: isGapValid ? '#86efac' : '#fca5a5' }}>
+                  {isGapValid ? 'OK' : '<2Y'}
+                </span>
+              </div>
+            );
+          })()}
           <button
             onClick={onToggleSwipe}
             className="flex items-center gap-1.5 px-2.5 py-1 t-tag cursor-pointer transition-colors"
@@ -251,7 +275,7 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
               >
                 {afterOptions.map((d) => (
                   <option key={d} value={d} style={{ background: 'var(--panel)' }}>
-                    {d}
+                    {d} ({d.slice(0, 4)})
                   </option>
                 ))}
               </select>
