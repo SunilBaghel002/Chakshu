@@ -28,12 +28,12 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 # Quality thresholds
-BLUR_THRESHOLD: float = 50.0          # Laplacian variance below this = blurry
-LOW_CONTRAST_RANGE: float = 30.0       # Dynamic range below this = very low contrast
-HIGH_CLOUD_PCT: float = 60.0           # Above this % bright pixels = likely cloudy/hazy
-MIN_USEFUL_PIXELS_PCT: float = 10.0    # Must have at least this % non-black/non-white
-OVEREXPOSED_THRESHOLD: int = 245       # Pixel value above this = overexposed
-UNDEREXPOSED_THRESHOLD: int = 10       # Pixel value below this = underexposed
+BLUR_THRESHOLD: float = 50.0  # Laplacian variance below this = blurry
+LOW_CONTRAST_RANGE: float = 30.0  # Dynamic range below this = very low contrast
+HIGH_CLOUD_PCT: float = 60.0  # Above this % bright pixels = likely cloudy/hazy
+MIN_USEFUL_PIXELS_PCT: float = 10.0  # Must have at least this % non-black/non-white
+OVEREXPOSED_THRESHOLD: int = 245  # Pixel value above this = overexposed
+UNDEREXPOSED_THRESHOLD: int = 10  # Pixel value below this = underexposed
 
 
 @dataclass
@@ -41,10 +41,10 @@ class ImageQuality:
     """Assessment of image quality for satellite analysis."""
 
     is_suitable: bool
-    blur_score: float           # Higher = sharper; < BLUR_THRESHOLD = blurry
-    dynamic_range: float        # Difference between 98th and 2nd percentile
-    bright_pixel_pct: float     # % of pixels above OVEREXPOSED_THRESHOLD
-    dark_pixel_pct: float       # % of pixels below UNDEREXPOSED_THRESHOLD
+    blur_score: float  # Higher = sharper; < BLUR_THRESHOLD = blurry
+    dynamic_range: float  # Difference between 98th and 2nd percentile
+    bright_pixel_pct: float  # % of pixels above OVEREXPOSED_THRESHOLD
+    dark_pixel_pct: float  # % of pixels below UNDEREXPOSED_THRESHOLD
     estimated_cloud_pct: float  # Estimated cloud/haze coverage (%)
     is_blurry: bool
     is_low_contrast: bool
@@ -116,7 +116,9 @@ class ImageValidator:
                 f"Very low contrast (dynamic range {dynamic_range:.0f}/255). "
                 "Results may be unreliable."
             )
-            recommendations.append("Consider histogram equalization or using a better source image.")
+            recommendations.append(
+                "Consider histogram equalization or using a better source image."
+            )
 
         # 2. Blur detection
         blur_score = self._compute_blur_score(gray)
@@ -196,6 +198,7 @@ class ImageValidator:
         else:
             # NumPy fallback: approximate Laplacian
             from scipy import ndimage
+
             laplacian = ndimage.laplace(gray.astype(np.float64))
             return float(np.var(laplacian))
 
@@ -204,7 +207,11 @@ class ImageValidator:
 
         Clouds are typically: bright, white/grey (low saturation), high luminance.
         """
-        r, g, b = rgb_arr[:, :, 0].astype(float), rgb_arr[:, :, 1].astype(float), rgb_arr[:, :, 2].astype(float)
+        r, g, b = (
+            rgb_arr[:, :, 0].astype(float),
+            rgb_arr[:, :, 1].astype(float),
+            rgb_arr[:, :, 2].astype(float),
+        )
         luminance = 0.299 * r + 0.587 * g + 0.114 * b
 
         # Check for bright, low-saturation pixels
@@ -212,7 +219,9 @@ class ImageValidator:
         min_rgb = np.minimum(np.minimum(r, g), b)
         saturation = np.zeros_like(max_rgb)
         nonzero_mask = max_rgb > 0
-        saturation[nonzero_mask] = (max_rgb[nonzero_mask] - min_rgb[nonzero_mask]) / max_rgb[nonzero_mask]
+        saturation[nonzero_mask] = (max_rgb[nonzero_mask] - min_rgb[nonzero_mask]) / max_rgb[
+            nonzero_mask
+        ]
 
         # Cloud = bright + low saturation
         cloud_mask = (luminance > 180) & (saturation < 0.15)

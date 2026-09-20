@@ -87,21 +87,14 @@ def test_list_changes_filtering_and_sorting() -> None:
     assert len(all_changes) > 0
 
     # Filter by minimum area (e.g. 5 hectares = 50,000 m²)
-    large_changes = analysis_service.list_changes(
-        aoi_id=aoi_id, min_area_m2=50000.0, limit=50
-    )
+    large_changes = analysis_service.list_changes(aoi_id=aoi_id, min_area_m2=50000.0, limit=50)
     for ev in large_changes:
         assert ev.measurement.area_m2 >= 50000.0
 
     # Sort by area descending
-    sorted_by_area = analysis_service.list_changes(
-        aoi_id=aoi_id, sort="area_desc", limit=10
-    )
+    sorted_by_area = analysis_service.list_changes(aoi_id=aoi_id, sort="area_desc", limit=10)
     for i in range(len(sorted_by_area) - 1):
-        assert (
-            sorted_by_area[i].measurement.area_m2
-            >= sorted_by_area[i + 1].measurement.area_m2
-        )
+        assert sorted_by_area[i].measurement.area_m2 >= sorted_by_area[i + 1].measurement.area_m2
 
 
 def test_record_analyst_decision() -> None:

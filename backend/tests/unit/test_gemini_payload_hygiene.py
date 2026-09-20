@@ -46,8 +46,17 @@ def test_payload_excludes_filename_title_aoi_coordinates_notes() -> None:
 
     # Must not contain any metadata fields
     forbidden_strings = [
-        "filename", "title", "aoi", "coordinate", "notes",
-        "EXIF", "GPS", "lat", "lon", "jewar", "airport",
+        "filename",
+        "title",
+        "aoi",
+        "coordinate",
+        "notes",
+        "EXIF",
+        "GPS",
+        "lat",
+        "lon",
+        "jewar",
+        "airport",
     ]
     prompt_lower = prompt_text.lower()
     for term in forbidden_strings:
@@ -103,7 +112,14 @@ def test_temperature_zero_and_json_response_mode() -> None:
 
     payload = {
         "systemInstruction": {"parts": [{"text": BLIND_SYSTEM_PROMPT}]},
-        "contents": [{"parts": [{"text": prompt}, {"inlineData": {"mimeType": "image/jpeg", "data": img_b64}}]}],
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt},
+                    {"inlineData": {"mimeType": "image/jpeg", "data": img_b64}},
+                ]
+            }
+        ],
         "generationConfig": {"temperature": 0, "responseMimeType": "application/json"},
     }
 

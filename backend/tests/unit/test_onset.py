@@ -131,9 +131,9 @@ def test_onset_jewar_published_construction_date() -> None:
         SceneObservation("j1", "2021-03-15", change_detected=False),
         SceneObservation("j2", "2021-06-20", change_detected=False),
         SceneObservation("j3", "2021-09-18", change_detected=False),  # Last clean
-        SceneObservation("j4", "2022-03-15", change_detected=True),   # 1st detection
-        SceneObservation("j5", "2022-06-18", change_detected=True),   # 2nd
-        SceneObservation("j6", "2022-09-24", change_detected=True),   # 3rd (confirmed!)
+        SceneObservation("j4", "2022-03-15", change_detected=True),  # 1st detection
+        SceneObservation("j5", "2022-06-18", change_detected=True),  # 2nd
+        SceneObservation("j6", "2022-09-24", change_detected=True),  # 3rd (confirmed!)
         SceneObservation("j7", "2023-03-12", change_detected=True),
         SceneObservation("j8", "2024-04-20", change_detected=True),
     ]

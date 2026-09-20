@@ -76,8 +76,8 @@ class ChangeDetector:
         arr_b = np.array(img_b_aligned.convert("RGB"), dtype=np.float32)
 
         # 2. Phase-correlation registration check (§20, §34, §35)
-        gray_a = (0.299 * arr_a[:, :, 0] + 0.587 * arr_a[:, :, 1] + 0.114 * arr_a[:, :, 2])
-        gray_b = (0.299 * arr_b[:, :, 0] + 0.587 * arr_b[:, :, 1] + 0.114 * arr_b[:, :, 2])
+        gray_a = 0.299 * arr_a[:, :, 0] + 0.587 * arr_a[:, :, 1] + 0.114 * arr_a[:, :, 2]
+        gray_b = 0.299 * arr_b[:, :, 0] + 0.587 * arr_b[:, :, 1] + 0.114 * arr_b[:, :, 2]
 
         reg_res = estimate_phase_correlation(gray_a, gray_b)
         alignment_info = reg_res.to_dict()
@@ -154,7 +154,7 @@ class ChangeDetector:
             px_area = p["area_px"]
 
             # Physical area strictly if GSD is available
-            m2_area = round(px_area * (gsd_m ** 2), 1) if gsd_m else None
+            m2_area = round(px_area * (gsd_m**2), 1) if gsd_m else None
             ha_area = round(m2_area / 10000.0, 2) if m2_area else None
 
             # Interpret change direction

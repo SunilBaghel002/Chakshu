@@ -168,8 +168,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>ANALYZING IMAGE...</span>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>ANALYSING IMAGE...</span>
                 </>
               ) : (
                 <>

@@ -64,7 +64,9 @@ class TestHTTPFailure:
         adapter.enabled = True
 
         def raise_http(*a: Any, **kw: Any) -> None:
-            raise urllib.error.HTTPError("http://example.com", 500, "Internal Server Error", {}, None)  # type: ignore[arg-type]
+            raise urllib.error.HTTPError(
+                "http://example.com", 500, "Internal Server Error", {}, None
+            )  # type: ignore[arg-type]
 
         adapter._call_rest_api = raise_http  # type: ignore[assignment]
         result = adapter.detect(_make_image(), gsd_m=0.5, pixel_summary={})

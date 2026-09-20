@@ -150,7 +150,9 @@ def render_intent_template(
             area_label=measurements.get("area_label", "4.0 ha"),
             place=slots.get("place", "an unlocated area"),
             acquired_date=slots.get("acquired_date", "2026-08-03"),
-            top_classes=measurements.get("top_classes", [("crop", 45.4), ("built", 27.2), ("bare", 14.8)]),
+            top_classes=measurements.get(
+                "top_classes", [("crop", 45.4), ("built", 27.2), ("bare", 14.8)]
+            ),
             object_count=measurements.get("object_count", 0),
         )
 
@@ -163,7 +165,9 @@ def render_intent_template(
 
     if intent_id == "explain_suppression":
         suppressed = measurements.get("suppressed_count", 312)
-        breakdown = measurements.get("reason_breakdown", "188 seasonal vegetation, 94 cloud shadow, 30 registration error")
+        breakdown = measurements.get(
+            "reason_breakdown", "188 seasonal vegetation, 94 cloud shadow, 30 registration error"
+        )
         return f"{suppressed} candidates were suppressed by the 8 quality gates: {breakdown}. Zero unverified candidates were displayed."
 
     if intent_id == "explain_confidence":

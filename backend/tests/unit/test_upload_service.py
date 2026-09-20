@@ -17,7 +17,9 @@ from app.services.upload_service import (
 )
 
 
-def _create_png_bytes(width: int = 100, height: int = 100, color: tuple[int, int, int] = (100, 150, 200)) -> bytes:
+def _create_png_bytes(
+    width: int = 100, height: int = 100, color: tuple[int, int, int] = (100, 150, 200)
+) -> bytes:
     """Helper to generate valid PNG bytes in memory."""
     img = Image.new("RGB", (width, height), color=color)
     buf = io.BytesIO()
@@ -115,7 +117,21 @@ def test_upload_with_user_declared_gsd(tmp_path: Path) -> None:
 
     assert upload.gsd_m == 0.5
     assert upload.gsd_source == ProvenanceSource.USER_DECLARED
-    assert upload.capabilities.object_classes == ["aircraft", "building", "container", "road", "ship", "storage_tank", "swimming_pool", "tower", "vehicle"] or "aircraft" in upload.capabilities.object_classes
+    assert (
+        upload.capabilities.object_classes
+        == [
+            "aircraft",
+            "building",
+            "container",
+            "road",
+            "ship",
+            "storage_tank",
+            "swimming_pool",
+            "tower",
+            "vehicle",
+        ]
+        or "aircraft" in upload.capabilities.object_classes
+    )
     assert upload.capabilities.area_measurements is True
 
 

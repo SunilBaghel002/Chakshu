@@ -98,9 +98,24 @@ def test_resolution_gate_forbids_vehicles_on_10m(
 
     # Proposals containing both forbidden (vehicle, aircraft) and permitted labels
     proposals = [
-        {"label": "airplane", "bbox": [100, 100, 200, 200], "score": 0.95, "visual_evidence": "jet on tarmac"},
-        {"label": "car", "bbox": [250, 250, 300, 300], "score": 0.88, "visual_evidence": "vehicle on road"},
-        {"label": "storage_tank", "bbox": [400, 400, 500, 500], "score": 0.90, "visual_evidence": "large cylindrical installation"},
+        {
+            "label": "airplane",
+            "bbox": [100, 100, 200, 200],
+            "score": 0.95,
+            "visual_evidence": "jet on tarmac",
+        },
+        {
+            "label": "car",
+            "bbox": [250, 250, 300, 300],
+            "score": 0.88,
+            "visual_evidence": "vehicle on road",
+        },
+        {
+            "label": "storage_tank",
+            "bbox": [400, 400, 500, 500],
+            "score": 0.90,
+            "visual_evidence": "large cylindrical installation",
+        },
     ]
 
     detections, rejections = service._validate_proposals(proposals, upload)
@@ -127,9 +142,24 @@ def test_highres_object_detection_and_nms(
 
     # Two overlapping aircraft boxes (IoU > 0.5) and one building
     proposals = [
-        {"label": "aircraft", "bbox": [100, 100, 300, 300], "score": 0.94, "visual_evidence": "large aircraft shape"},
-        {"label": "aircraft", "bbox": [105, 105, 305, 305], "score": 0.82, "visual_evidence": "large aircraft shape"},
-        {"label": "building", "bbox": [400, 400, 600, 600], "score": 0.89, "visual_evidence": "large isolated hangar"},
+        {
+            "label": "aircraft",
+            "bbox": [100, 100, 300, 300],
+            "score": 0.94,
+            "visual_evidence": "large aircraft shape",
+        },
+        {
+            "label": "aircraft",
+            "bbox": [105, 105, 305, 305],
+            "score": 0.82,
+            "visual_evidence": "large aircraft shape",
+        },
+        {
+            "label": "building",
+            "bbox": [400, 400, 600, 600],
+            "score": 0.89,
+            "visual_evidence": "large isolated hangar",
+        },
     ]
 
     detections, rejections = service._validate_proposals(proposals, upload)

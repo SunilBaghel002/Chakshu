@@ -191,4 +191,3 @@ class DetectionSet(BaseModel):
     summary: str | None = None
     track_status: dict[str, str] = Field(default_factory=dict)
     artifact_version: str | None = None
-

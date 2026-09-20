@@ -166,15 +166,17 @@ class CVDetector:
             x, y, w, h = cv2.boundingRect(cnt)
             simplified = simplify_contour(cnt)
 
-            detections.append(CVDetection(
-                label=label,
-                contour_px=simplified,
-                bbox_px=(x, y, x + w, y + h),
-                area_px=float(area),
-                score=score,
-                method="edge_structure",
-                evidence=f"Detected via edge analysis, rectangularity={rectangularity:.2f}",
-            ))
+            detections.append(
+                CVDetection(
+                    label=label,
+                    contour_px=simplified,
+                    bbox_px=(x, y, x + w, y + h),
+                    area_px=float(area),
+                    score=score,
+                    method="edge_structure",
+                    evidence=f"Detected via edge analysis, rectangularity={rectangularity:.2f}",
+                )
+            )
 
         return detections
 
@@ -202,22 +204,26 @@ class CVDetector:
 
             x, y, w, h = cv2.boundingRect(cnt)
             simplified = simplify_contour(cnt)
-            roi = bgr_img[max(0, y):min(h_img, y + h), max(0, x):min(w_img, x + w)]
+            roi = bgr_img[max(0, y) : min(h_img, y + h), max(0, x) : min(w_img, x + w)]
             evidence = describe_roi(roi, class_name, area)
 
-            detections.append(CVDetection(
-                label=class_name,
-                contour_px=simplified,
-                bbox_px=(x, y, x + w, y + h),
-                area_px=float(area),
-                score=round(score, 3),
-                method="color_segmentation",
-                evidence=evidence,
-            ))
+            detections.append(
+                CVDetection(
+                    label=class_name,
+                    contour_px=simplified,
+                    bbox_px=(x, y, x + w, y + h),
+                    area_px=float(area),
+                    score=round(score, 3),
+                    method="color_segmentation",
+                    evidence=evidence,
+                )
+            )
 
         return detections
 
-    def _deduplicate(self, detections: list[CVDetection], iou_threshold: float = 0.5) -> list[CVDetection]:
+    def _deduplicate(
+        self, detections: list[CVDetection], iou_threshold: float = 0.5
+    ) -> list[CVDetection]:
         """Remove overlapping detections using bounding-box IoU."""
         if len(detections) <= 1:
             return detections
@@ -274,15 +280,17 @@ class CVDetector:
                 area_ratio = area / (h_img * w_img)
                 score = max(0.3, min(0.8, 0.5 + (1.0 - abs(area_ratio - 0.1)) * 0.3))
 
-                detections.append(CVDetection(
-                    label=cls,
-                    contour_px=contour,
-                    bbox_px=(x1, y1, x2, y2),
-                    area_px=float(area),
-                    score=round(score, 3),
-                    method="fallback_numpy",
-                    evidence=f"{cls} region, {area} px², fallback detection",
-                ))
+                detections.append(
+                    CVDetection(
+                        label=cls,
+                        contour_px=contour,
+                        bbox_px=(x1, y1, x2, y2),
+                        area_px=float(area),
+                        score=round(score, 3),
+                        method="fallback_numpy",
+                        evidence=f"{cls} region, {area} px², fallback detection",
+                    )
+                )
 
         detections.sort(key=lambda d: d.score, reverse=True)
         return detections[:max_detections]

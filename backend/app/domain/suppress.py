@@ -92,8 +92,7 @@ def evaluate_suppression_gates(candidate: CandidateEvaluationInput) -> Suppressi
             passed=False,
             reason=SuppressionReason.CLOUD_SHADOW,
             detail=(
-                "Dark patch co-located with cloud mask projection vector / "
-                "SCL cloud shadow class."
+                "Dark patch co-located with cloud mask projection vector / SCL cloud shadow class."
             ),
         )
 
@@ -178,10 +177,7 @@ def evaluate_suppression_gates(candidate: CandidateEvaluationInput) -> Suppressi
         )
 
     # Gate 8: Low confidence / weak change signal
-    if (
-        candidate.confidence_score < SUPPRESS_CONFIDENCE_MIN
-        or candidate.change_magnitude < 0.10
-    ):
+    if candidate.confidence_score < SUPPRESS_CONFIDENCE_MIN or candidate.change_magnitude < 0.10:
         return SuppressionGateResult(
             passed=False,
             reason=SuppressionReason.LOW_CONFIDENCE,

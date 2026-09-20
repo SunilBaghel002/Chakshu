@@ -101,21 +101,41 @@ def estimate_phase_correlation(
             reason="Low variance / uniform input array",
         )
 
-    from skimage.registration import phase_cross_correlation
+    try:
+        from skimage.registration import phase_cross_correlation
 
-    shifts, error, _ = phase_cross_correlation(
-        ref_f,
-        tgt_f,
-        upsample_factor=10,
-    )
-    final_dy = -float(shifts[0])
-    final_dx = -float(shifts[1])
+        shifts, _error, _ = phase_cross_correlation(ref_f, tgt_f, upsample_factor=10)
+        final_dy = -float(shifts[0])
+        final_dx = -float(shifts[1])
+    except (ImportError, ModuleNotFoundError):
+        f_ref = np.fft.fft2(ref_f)
+        f_tgt = np.fft.fft2(tgt_f)
+        cps = f_tgt * np.conj(f_ref)
+        denom = np.abs(cps)
+        cps /= np.where(denom > 1e-12, denom, 1.0)
+        corr = np.fft.ifft2(cps).real
+        peak = np.unravel_index(np.argmax(corr), corr.shape)
+        py, px = int(peak[0]), int(peak[1])
+
+        # Quadratic subpixel refinement
+        y_prev, y_curr, y_next = corr[(py - 1) % h, px], corr[py, px], corr[(py + 1) % h, px]
+        denom_y = 2.0 * (y_prev - 2.0 * y_curr + y_next)
+        sub_y = float((y_prev - y_next) / denom_y) if abs(denom_y) > 1e-6 else 0.0
+
+        x_prev, x_curr, x_next = corr[py, (px - 1) % w], corr[py, px], corr[py, (px + 1) % w]
+        denom_x = 2.0 * (x_prev - 2.0 * x_curr + x_next)
+        sub_x = float((x_prev - x_next) / denom_x) if abs(denom_x) > 1e-6 else 0.0
+
+        final_dy = float(py - h if py > h // 2 else py) + sub_y
+        final_dx = float(px - w if px > w // 2 else px) + sub_x
+
     shift_mag = float(np.sqrt(final_dy**2 + final_dx**2))
     try:
         if shift_mag < 0.01:
             score = float(np.clip(np.corrcoef(ref_f.ravel(), tgt_f.ravel())[0, 1], 0.0, 1.0))
         else:
             from scipy import ndimage  # type: ignore[import-untyped]
+
             tgt_aligned = ndimage.shift(tgt_f, (final_dy, final_dx), mode="nearest")
             score = float(np.clip(np.corrcoef(ref_f.ravel(), tgt_aligned.ravel())[0, 1], 0.0, 1.0))
     except Exception:

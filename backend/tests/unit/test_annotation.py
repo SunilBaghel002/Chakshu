@@ -56,9 +56,15 @@ class TestLabelChips:
         monkeypatch.setattr(PILImageDraw, "text", mock_text)
 
         detections = [
-            _make_box_detection("storage_tank", 0.88, [[50, 50], [150, 50], [150, 150], [50, 150], [50, 50]]),
-            _make_box_detection("building", 0.75, [[200, 200], [300, 200], [300, 300], [200, 300], [200, 200]]),
-            _make_box_detection("vehicle", 0.65, [[350, 350], [450, 350], [450, 450], [350, 450], [350, 350]]),
+            _make_box_detection(
+                "storage_tank", 0.88, [[50, 50], [150, 50], [150, 150], [50, 150], [50, 50]]
+            ),
+            _make_box_detection(
+                "building", 0.75, [[200, 200], [300, 200], [300, 300], [200, 300], [200, 200]]
+            ),
+            _make_box_detection(
+                "vehicle", 0.65, [[350, 350], [450, 350], [450, 450], [350, 450], [350, 350]]
+            ),
         ]
 
         annotate_image(_make_base_image(), detections, overlay_lc=False)
@@ -77,8 +83,12 @@ class TestDefaultAnnotationNoLCFill:
 
         # Include built and vegetation polygons alongside water
         detections = [
-            _make_polygon_detection("built", [[10, 10], [100, 10], [100, 100], [10, 100], [10, 10]]),
-            _make_polygon_detection("vegetation", [[200, 200], [300, 200], [300, 300], [200, 300], [200, 200]]),
+            _make_polygon_detection(
+                "built", [[10, 10], [100, 10], [100, 100], [10, 100], [10, 10]]
+            ),
+            _make_polygon_detection(
+                "vegetation", [[200, 200], [300, 200], [300, 300], [200, 300], [200, 200]]
+            ),
         ]
 
         result = annotate_image(base, detections, overlay_lc=False)
@@ -90,7 +100,9 @@ class TestDefaultAnnotationNoLCFill:
         changed = np.count_nonzero(np.any(diff > 5, axis=-1))
         total = base.width * base.height
         # Less than 0.1% changed means no fill was applied
-        assert (changed / total) < 0.001, f"Non-water LC fill detected: {changed}/{total} pixels changed"
+        assert (changed / total) < 0.001, (
+            f"Non-water LC fill detected: {changed}/{total} pixels changed"
+        )
 
     def test_water_is_outline_only(self) -> None:
         """Water polygons must render as outlines, not filled blocks."""
@@ -99,9 +111,9 @@ class TestDefaultAnnotationNoLCFill:
 
         # Large water polygon covering a significant area
         detections = [
-            _make_polygon_detection("water", [
-                [100, 100], [300, 100], [300, 300], [100, 300], [100, 100]
-            ]),
+            _make_polygon_detection(
+                "water", [[100, 100], [300, 100], [300, 300], [100, 300], [100, 100]]
+            ),
         ]
 
         result = annotate_image(base, detections, overlay_lc=False)
@@ -127,8 +139,12 @@ class TestLCOverlay:
         base_arr = np.array(base.convert("RGB"))
 
         detections = [
-            _make_polygon_detection("built", [[10, 10], [200, 10], [200, 200], [10, 200], [10, 10]]),
-            _make_polygon_detection("vegetation", [[250, 250], [450, 250], [450, 450], [250, 450], [250, 250]]),
+            _make_polygon_detection(
+                "built", [[10, 10], [200, 10], [200, 200], [10, 200], [10, 10]]
+            ),
+            _make_polygon_detection(
+                "vegetation", [[250, 250], [450, 250], [450, 450], [250, 450], [250, 250]]
+            ),
         ]
 
         result = annotate_image(base, detections, overlay_lc=True)
@@ -138,7 +154,9 @@ class TestLCOverlay:
         diff = np.abs(base_arr.astype(int) - result_arr.astype(int))
         changed = np.count_nonzero(np.any(diff > 3, axis=-1))
         total = base.width * base.height
-        assert (changed / total) > 0.05, f"LC overlay not visible: only {changed}/{total} pixels changed"
+        assert (changed / total) > 0.05, (
+            f"LC overlay not visible: only {changed}/{total} pixels changed"
+        )
 
         # But the changes should be subtle (25% alpha, not opaque)
         # Max channel diff should generally be < 100 (25% of 255 ~= 64)

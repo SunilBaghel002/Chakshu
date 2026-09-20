@@ -53,12 +53,16 @@ def test_gate_plain_png_lands_as_visual_only():
     assert data["crs_epsg"] is None
     assert data["bounds_4326"] is None
     assert data["aoi_id"] is None
-    assert data["capability_tier"] == CapabilityTier.T0_UNKNOWN.value or data["capability_tier"] == "T0_UNKNOWN"
+    assert (
+        data["capability_tier"] == CapabilityTier.T0_UNKNOWN.value
+        or data["capability_tier"] == "T0_UNKNOWN"
+    )
 
 
 def test_gate_10m_refusal_for_vehicles():
     """Gate 3: A 10m image produces no vehicle or aircraft detections, and refusal appears verbatim."""
     from app.services.query_router import QueryRouter
+
     router = QueryRouter()
 
     # Query asking for cars at 10m GSD

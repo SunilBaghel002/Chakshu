@@ -83,7 +83,7 @@ class SegmentationResult:
                 # Individual structural footprints are compact (aspect <= 5.0), not elongated road ribbons
                 if aspect <= 5.0:
                     sub_lbl = labeled[sl]
-                    building_mask[sl] |= (sub_lbl == idx)
+                    building_mask[sl] |= sub_lbl == idx
 
         return building_mask
 
@@ -100,7 +100,14 @@ class SatelliteSegmentationModel:
         self.model_version = version
         self.model_type = "Calibrated Optical Remote Sensing Feature Classifier"
         self.supported_classes = [
-            "water", "building", "vegetation", "road", "bare", "crop", "snow", "unclassified",
+            "water",
+            "building",
+            "vegetation",
+            "road",
+            "bare",
+            "crop",
+            "snow",
+            "unclassified",
         ]
         self.limitations = (
             "RGB-only imagery lacks physical NIR absorption; deep building shadows "

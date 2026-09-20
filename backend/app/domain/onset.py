@@ -150,9 +150,7 @@ def compute_onset(
         )
 
     # 3. Forward walk for k consecutive detections over usable observations
-    usable_obs = [
-        o for o in sorted_obs if o.usable and (o.cloud_cover_pct <= max_cloud_pct)
-    ]
+    usable_obs = [o for o in sorted_obs if o.usable and (o.cloud_cover_pct <= max_cloud_pct)]
 
     last_clean_date: str | None = None
     first_supported_date: str | None = None

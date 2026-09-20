@@ -77,8 +77,7 @@ class GeminiQAClient:
 
         # Build prompt from facts
         serialized_facts = [
-            f"{f.kind} ({f.type or 'item'}): {f.value} {f.unit or ''}"
-            for f in facts
+            f"{f.kind} ({f.type or 'item'}): {f.value} {f.unit or ''}" for f in facts
         ]
         user_prompt = (
             f"User Question: {question}\n\n"

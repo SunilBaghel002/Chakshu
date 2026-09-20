@@ -124,9 +124,24 @@ class SummaryService:
         # Verified narrative facts (§B8 step 6)
         narrative_facts = [
             NarrativeFact(fact_id="f1", kind="count", value=6, unit="changes", type="construction"),
-            NarrativeFact(fact_id="f2", kind="area", value=184320.5, unit="m2", label="18.43 ha", type="construction"),
-            NarrativeFact(fact_id="f3", kind="onset", value="2024-06-09", type="earliest_construction"),
-            NarrativeFact(fact_id="f4", kind="gap", value=["2024-06-01", "2024-09-30"], days=121, reason="monsoon cloud"),
+            NarrativeFact(
+                fact_id="f2",
+                kind="area",
+                value=184320.5,
+                unit="m2",
+                label="18.43 ha",
+                type="construction",
+            ),
+            NarrativeFact(
+                fact_id="f3", kind="onset", value="2024-06-09", type="earliest_construction"
+            ),
+            NarrativeFact(
+                fact_id="f4",
+                kind="gap",
+                value=["2024-06-01", "2024-09-30"],
+                days=121,
+                reason="monsoon cloud",
+            ),
             NarrativeFact(fact_id="f5", kind="count", value=312, unit="suppressed_candidates"),
             NarrativeFact(fact_id="f6", kind="count", value=usable_scenes, unit="usable_scenes"),
             NarrativeFact(fact_id="f7", kind="count", value=total_scenes, unit="total_scenes"),

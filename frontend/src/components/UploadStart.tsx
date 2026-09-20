@@ -45,7 +45,7 @@ export const UploadStart: React.FC<UploadStartProps> = ({ onClose, onComplete })
         </label>
         {error && <p className="mt-3 flex gap-2 text-xs text-rose-400 bg-rose-950/30 border border-rose-800/40 p-2.5 rounded"><AlertTriangle size={15} />{error}</p>}
         <button disabled={!file || busy} onClick={submit} className="mt-5 flex w-full justify-center items-center gap-2 rounded bg-[#F2B84B] hover:bg-[#f5c76d] text-black p-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-40 transition-all shadow">
-          {busy ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+          <Sparkles className="w-4 h-4" />
           {busy ? 'Processing multi-band raster...' : 'Ingest & Analyze Imagery'}
         </button>
       </div>
