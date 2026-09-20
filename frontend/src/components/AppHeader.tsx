@@ -10,8 +10,8 @@ interface AppHeaderProps {
   aois: AoiItem[];
   selectedAoiId: string;
   onSelectAoi: (aoiId: string) => void;
-  activeView: 'map' | 'review' | 'upload' | 'ask' | 'search';
-  onSelectView: (view: 'map' | 'review' | 'upload' | 'ask' | 'search') => void;
+  activeView: 'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit';
+  onSelectView: (view: 'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit') => void;
   isMock: boolean;
   onToggleMock: () => void;
   areaLabel?: string;
