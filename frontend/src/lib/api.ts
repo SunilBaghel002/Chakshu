@@ -96,45 +96,21 @@ async function safeFetch<T>(
     const parsedError = ErrorEnvelopeSchema.safeParse(json);
     if (parsedError.success) {
       const err = parsedError.data.error;
-      if (err.code === 'RESOLUTION_INSUFFICIENT' || err.code === 'NOT_GEOREFERENCED') {
-        return {
-          kind: 'capability_notice',
-          message: err.message,
-        };
-      }
-      if (err.code === 'NO_RESULTS') {
-        return { kind: 'empty', message: err.message };
-      }
-      if (fallbackData !== undefined) {
-        return { kind: 'ok', data: fallbackData };
-      }
+      if (err.code === 'RESOLUTION_INSUFFICIENT' || err.code === 'NOT_GEOREFERENCED') return { kind: 'capability_notice', message: err.message };
+      if (err.code === 'NO_RESULTS') return { kind: 'empty', message: err.message };
+      if (fallbackData !== undefined) return { kind: 'ok', data: fallbackData };
       return { kind: 'error', code: err.code, message: err.message, traceId: err.trace_id };
     }
 
     if (!res.ok) {
-      if (fallbackData !== undefined) {
-        return { kind: 'ok', data: fallbackData };
-      }
-      return {
-        kind: 'error',
-        code: 'HTTP_ERROR',
-        message: `HTTP ${res.status}: ${res.statusText}`,
-        traceId: 'trace_client',
-      };
+      if (fallbackData !== undefined) return { kind: 'ok', data: fallbackData };
+      return { kind: 'error', code: 'HTTP_ERROR', message: `HTTP ${res.status}: ${res.statusText}`, traceId: 'trace_client' };
     }
 
     return { kind: 'ok', data: json as T };
   } catch (err: unknown) {
-    if (fallbackData !== undefined) {
-      return { kind: 'ok', data: fallbackData };
-    }
-    const msg = err instanceof Error ? err.message : 'Network error';
-    return {
-      kind: 'error',
-      code: 'NETWORK_FAILURE',
-      message: msg,
-      traceId: 'trace_client',
-    };
+    if (fallbackData !== undefined) return { kind: 'ok', data: fallbackData };
+    return { kind: 'error', code: 'NETWORK_FAILURE', message: err instanceof Error ? err.message : 'Network error', traceId: 'trace_client' };
   }
 }
 
@@ -144,62 +120,35 @@ export type AoiItem = Aoi;
 export async function getAois(): Promise<ApiResult<AoiItem[]>> {
   const fallback = aoiFixture as unknown as AoiItem[];
   const res = await safeFetch<AoiItem[] | { items: AoiItem[]; total: number }>('/aoi', undefined, fallback);
-  if (res.kind === 'ok') {
-    const list = Array.isArray(res.data) ? res.data : res.data.items;
-    return { kind: 'ok', data: list };
-  }
-  return res as ApiResult<AoiItem[]>;
+  return res.kind === 'ok' ? { kind: 'ok', data: Array.isArray(res.data) ? res.data : res.data.items } : res as ApiResult<AoiItem[]>;
 }
 
 export async function getAoi(id: string): Promise<ApiResult<Aoi>> {
-  const fallback = (aoiFixture as unknown as AoiItem[]).find((a) => a.id === id) || (aoiFixture[0] as unknown as Aoi);
-  return safeFetch(`/aoi/${id}`, undefined, fallback);
+  return safeFetch(`/aoi/${id}`, undefined, (aoiFixture as unknown as AoiItem[]).find((a) => a.id === id) || (aoiFixture[0] as unknown as Aoi));
 }
 
 export async function createAoi(data: AoiCreate): Promise<ApiResult<Aoi>> {
-  return safeFetch('/aoi', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
+  return safeFetch('/aoi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
 }
 
 export async function triggerAoiIngest(aoiId: string): Promise<ApiResult<JobResponse>> {
-  return safeFetch(`/aoi/${aoiId}/ingest`, {
-    method: 'POST',
-  });
+  return safeFetch(`/aoi/${aoiId}/ingest`, { method: 'POST' });
 }
 
-// Scenes / Timeline
 export type SceneItem = Scene;
 
-export async function getScenes(
-  aoiId?: string,
-  usableOnly = false,
-  before?: string,
-  after?: string
-): Promise<ApiResult<SceneItem[]>> {
+export async function getScenes(aoiId?: string, usableOnly = false, before?: string, after?: string): Promise<ApiResult<SceneItem[]>> {
   let fallback = scenesFixture as unknown as SceneItem[];
   if (aoiId) fallback = fallback.filter((s) => s.aoi_id === aoiId);
   if (usableOnly) fallback = fallback.filter((s) => s.usable);
-
   const params = new URLSearchParams();
   if (aoiId) params.append('aoi_id', aoiId);
   if (usableOnly) params.append('usable_only', 'true');
   if (before) params.append('before', before);
   if (after) params.append('after', after);
   const q = params.toString();
-
-  const res = await safeFetch<SceneItem[] | { items: SceneItem[]; total: number }>(
-    `/scenes${q ? `?${q}` : ''}`,
-    undefined,
-    fallback
-  );
-  if (res.kind === 'ok') {
-    const list = Array.isArray(res.data) ? res.data : res.data.items;
-    return { kind: 'ok', data: list };
-  }
-  return res as ApiResult<SceneItem[]>;
+  const res = await safeFetch<SceneItem[] | { items: SceneItem[]; total: number }>(`/scenes${q ? `?${q}` : ''}`, undefined, fallback);
+  return res.kind === 'ok' ? { kind: 'ok', data: Array.isArray(res.data) ? res.data : res.data.items } : res as ApiResult<SceneItem[]>;
 }
 
 export async function getScene(sceneId: string): Promise<ApiResult<Scene>> {
@@ -223,23 +172,12 @@ export async function getHealth(): Promise<
 
 // Uploads & Single-Image Detections
 export async function getUpload(id: string): Promise<ApiResult<Upload>> {
-  const fallback =
-    id === 'visual_only'
-      ? (uploadVisualOnlyFixture.upload as unknown as Upload)
-      : id === 'unknown_gsd'
-      ? (uploadUnknownGsdFixture.upload as unknown as Upload)
-      : (uploadGeoreferencedFixture.upload as unknown as Upload);
+  const fallback = id === 'visual_only' ? (uploadVisualOnlyFixture.upload as unknown as Upload) : id === 'unknown_gsd' ? (uploadUnknownGsdFixture.upload as unknown as Upload) : (uploadGeoreferencedFixture.upload as unknown as Upload);
   return safeFetch(`/uploads/${id}`, undefined, fallback);
 }
 
 export async function getDetections(uploadId: string, useMockFallback = true): Promise<ApiResult<DetectionSet>> {
-  const fallback = !useMockFallback ? undefined : (
-    uploadId === 'visual_only'
-      ? (uploadVisualOnlyFixture as unknown as DetectionSet)
-      : uploadId === 'unknown_gsd'
-      ? (uploadUnknownGsdFixture as unknown as DetectionSet)
-      : (uploadGeoreferencedFixture as unknown as DetectionSet)
-  );
+  const fallback = !useMockFallback ? undefined : uploadId === 'visual_only' ? (uploadVisualOnlyFixture as unknown as DetectionSet) : uploadId === 'unknown_gsd' ? (uploadUnknownGsdFixture as unknown as DetectionSet) : (uploadGeoreferencedFixture as unknown as DetectionSet);
   return safeFetch(`/uploads/${uploadId}/detections`, undefined, fallback);
 }
 
@@ -384,3 +322,68 @@ export async function askQuestion(question: string, aoiId?: string, uploadId?: s
     fallback
   );
 }
+
+export interface SemanticSearchResultItem {
+  tile_id: string;
+  scene_id: string;
+  x: number;
+  y: number;
+  geom?: Record<string, unknown>;
+  cloud_pct?: number;
+  ndvi_mean?: number;
+  ndwi_mean?: number;
+  ndbi_mean?: number;
+  score: number;
+  png_url?: string;
+  acquired_at?: string;
+}
+
+export interface SemanticSearchResponse {
+  query: string;
+  count: number;
+  results: SemanticSearchResultItem[];
+}
+
+export async function searchSemantic(query: string, aoiId?: string, limit = 12): Promise<ApiResult<SemanticSearchResponse>> {
+  const fallback: SemanticSearchResponse = {
+    query,
+    count: 2,
+    results: [
+      {
+        tile_id: 'S2A_JEWAR_20210315_SYNTH_0_0',
+        scene_id: 'S2A_JEWAR_20210315_SYNTH',
+        x: 0,
+        y: 0,
+        cloud_pct: 0.0,
+        ndvi_mean: 0.816,
+        ndwi_mean: -0.754,
+        ndbi_mean: -0.623,
+        score: 0.885,
+        png_url: '/api/v1/tiles/imagery/14/11956/6789.png?scene_id=S2A_JEWAR_20210315_SYNTH',
+      },
+      {
+        tile_id: 'S2B_JEWAR_20240420_SYNTH_0_0',
+        scene_id: 'S2B_JEWAR_20240420_SYNTH',
+        x: 0,
+        y: 0,
+        cloud_pct: 0.0,
+        ndvi_mean: 0.210,
+        ndwi_mean: -0.420,
+        ndbi_mean: 0.313,
+        score: 0.842,
+        png_url: '/api/v1/tiles/imagery/14/11956/6789.png?scene_id=S2B_JEWAR_20240420_SYNTH',
+      },
+    ],
+  };
+
+  return safeFetch(
+    '/search/semantic',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, aoi_id: aoiId, limit }),
+    },
+    fallback
+  );
+}
+

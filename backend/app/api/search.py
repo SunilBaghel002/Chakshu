@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.services.retrieval import RetrievalFilter, RetrievalService, TileSearchResult
@@ -60,6 +60,37 @@ async def search_semantic(payload: SemanticSearchRequest) -> SearchResponse:
 
     return SearchResponse(
         query=payload.query,
+        count=len(results),
+        results=[r.to_dict() for r in results],
+    )
+
+
+@router.get("/semantic", response_model=SearchResponse)
+async def search_semantic_get(
+    q: str = Query(..., description="Natural language search query"),
+    aoi_id: str | None = Query(default=None),
+    start_date: str | None = Query(default=None),
+    end_date: str | None = Query(default=None),
+    max_cloud_pct: float | None = Query(default=20.0),
+    min_ndvi: float | None = Query(default=None),
+    max_ndvi: float | None = Query(default=None),
+    min_ndbi: float | None = Query(default=None),
+    limit: int = Query(default=12, ge=1, le=100),
+) -> SearchResponse:
+    """Execute semantic search via GET query string (PRD 4 §A3)."""
+    filters = RetrievalFilter(
+        aoi_id=aoi_id,
+        start_date=start_date,
+        end_date=end_date,
+        max_cloud_pct=max_cloud_pct,
+        min_ndvi=min_ndvi,
+        max_ndvi=max_ndvi,
+        min_ndbi=min_ndbi,
+        limit=limit,
+    )
+    results = retrieval_service.search_semantic(query=q, filters=filters)
+    return SearchResponse(
+        query=q,
         count=len(results),
         results=[r.to_dict() for r in results],
     )

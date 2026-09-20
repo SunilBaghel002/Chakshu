@@ -11,6 +11,7 @@ import { EvidenceDrawer } from './components/EvidenceDrawer';
 import { AskPanel } from './components/AskPanel';
 import { ReviewQueueModal } from './components/ReviewQueueModal';
 import { UploadModal } from './components/UploadModal';
+import { SearchModal } from './components/SearchModal';
 import { TemporalBar } from './components/TemporalBar';
 import {
   getAois,
@@ -46,7 +47,7 @@ export const App: React.FC = () => {
   const [afterDate, setAfterDate] = useState<string>('2026-08-18');
 
   // UI state
-  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask'>('map');
+  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask' | 'search'>('map');
   const [isMock, setIsMock] = useState<boolean>(isMockMode());
   const [sliderPos, setSliderPos] = useState<number>(50);
   const [isSwipeActive, setIsSwipeActive] = useState<boolean>(true);
@@ -140,22 +141,14 @@ export const App: React.FC = () => {
   };
 
   const handleConfirmEvidence = async (id: string) => {
-    setEvidenceList((prev) =>
-      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
-    );
-    if (selectedEvidence?.change_object_id === id) {
-      setSelectedEvidence((prev) => (prev ? { ...prev, status: 'confirmed' } : null));
-    }
+    setEvidenceList((prev) => prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e)));
+    if (selectedEvidence?.change_object_id === id) setSelectedEvidence((prev) => (prev ? { ...prev, status: 'confirmed' } : null));
     await submitDecision('change_object', id, 'confirm');
   };
 
   const handleRejectEvidence = async (id: string) => {
-    setEvidenceList((prev) =>
-      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
-    );
-    if (selectedEvidence?.change_object_id === id) {
-      setSelectedEvidence((prev) => (prev ? { ...prev, status: 'rejected' } : null));
-    }
+    setEvidenceList((prev) => prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e)));
+    if (selectedEvidence?.change_object_id === id) setSelectedEvidence((prev) => (prev ? { ...prev, status: 'rejected' } : null));
     await submitDecision('change_object', id, 'reject');
   };
 
@@ -166,16 +159,10 @@ export const App: React.FC = () => {
       const res = await triggerAoiAnalyse(selectedAoiId);
       if (res.kind === 'ok') {
         setTimeout(async () => {
-          const [evListRes, sumRes] = await Promise.all([
-            getEvidenceList(selectedAoiId),
-            getChangeSummary(selectedAoiId),
-          ]);
+          const [evListRes, sumRes] = await Promise.all([getEvidenceList(selectedAoiId), getChangeSummary(selectedAoiId)]);
           if (evListRes.kind === 'ok') {
             setEvidenceList(evListRes.data);
-            if (evListRes.data.length > 0 && !selectedEvidence) {
-              const first = evListRes.data[0];
-              if (first) setSelectedEvidence(first);
-            }
+            if (evListRes.data.length > 0 && !selectedEvidence && evListRes.data[0]) setSelectedEvidence(evListRes.data[0]);
           }
           if (sumRes.kind === 'ok') setChangeSummary(sumRes.data);
           setIsAnalyzing(false);
@@ -387,6 +374,13 @@ export const App: React.FC = () => {
             const res = await getDetections(type);
             if (res.kind === 'ok') setDetectionSet(res.data);
           }}
+        />
+      )}
+
+      {activeView === 'search' && (
+        <SearchModal
+          aoiId={selectedAoiId}
+          onClose={() => setActiveView('map')}
         />
       )}
     </div>

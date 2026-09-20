@@ -1,7 +1,7 @@
 import React from 'react';
-import { Map, Search, Upload, CheckCircle2, Shield } from 'lucide-react';
+import { Map, Search, Upload, CheckCircle2, MessageSquare } from 'lucide-react';
 
-type NavView = 'map' | 'review' | 'upload' | 'ask';
+type NavView = 'map' | 'review' | 'upload' | 'ask' | 'search';
 
 interface IconRailProps {
   activeView: NavView;
@@ -10,9 +10,10 @@ interface IconRailProps {
 
 const RAIL_ITEMS: { view: NavView; icon: React.ReactNode; label: string }[] = [
   { view: 'map', icon: <Map className="w-5 h-5" />, label: 'MAP' },
-  { view: 'ask', icon: <Search className="w-5 h-5" />, label: 'SEARCH' },
+  { view: 'search', icon: <Search className="w-5 h-5" />, label: 'SEARCH' },
   { view: 'upload', icon: <Upload className="w-5 h-5" />, label: 'UPLOAD' },
   { view: 'review', icon: <CheckCircle2 className="w-5 h-5" />, label: 'REVIEW' },
+  { view: 'ask', icon: <MessageSquare className="w-5 h-5" />, label: 'ASK' },
 ];
 
 /**

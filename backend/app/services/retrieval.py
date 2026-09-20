@@ -224,6 +224,16 @@ class RetrievalService:
 
                 t_vec_raw = t.get("vector")
                 if not t_vec_raw:
+                    png_path_val = t.get("png_path")
+                    target_png = Path(png_path_val) if png_path_val else manifest_path.parent / f"{t.get('x', 0)}_{t.get('y', 0)}.png"
+                    if target_png.exists():
+                        try:
+                            t_vec_raw = self.clip_adapter.embed_image(target_png)
+                            t["vector"] = t_vec_raw
+                            manifest_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+                        except Exception:
+                            t_vec_raw = None
+                if not t_vec_raw:
                     continue
 
                 t_vec = np.array(t_vec_raw, dtype=np.float32)

@@ -6,7 +6,7 @@
 Last updated: 2026-09-12 11:30 IST by Claude / Antigravity
 
 ## A. Current phase
-Phase 3 — Trust layer (Tasks 3.1 to 3.11 complete; Phase 3 Gate PASSED).
+Phase 4 — Retrieval (Tasks 4.1 to 4.5 complete; Phase 4 Gate PASSED).
 
 ## B. Gate log
 | Phase | Gate | Result | Date | Evidence |
@@ -15,7 +15,7 @@ Phase 3 — Trust layer (Tasks 3.1 to 3.11 complete; Phase 3 Gate PASSED).
 | 1 | Data in | PASS | 2026-09-13 | Ingest service (SCL cloud score, 2-98% percentile stretch, 256x256 Web Mercator tiles), AOI & Scene catalog, tile server, background jobs, test_ingest.py + test_aoi_scenes_api.py + test_tiles_api.py pass |
 | 2 | Change detection vertical slice | PASS | 2026-09-13 | Classical CVA + dynamic Otsu thresholding, RFC 7946 polygonization, Kruger UTM measure (ST_Area error < 0.01% exceeding 0.1% target), 73 real Jewar polygons (runway 475.83 ha), triptych PNG generation, SQL predicate pushdown, ReviewQueue keyboard shortcuts (j/k/c/r/e), all 114 backend tests + frontend build pass |
 | 3 | Trust | PASS | 2026-09-13 | Pure decision table, rule trace with tested values, 8 suppression gates with accounting (318 = 312 + 6), k=3 onset dating (Jewar timeline inside 178d bracket), 5-component geometric mean confidence, temporal polygon merging (IoU >= 0.30), 147 hand-labelled polygons, 10-bin reliability diagram + ECE = 0.0235/0.043, /aoi/{id}/calibration and /aoi/{id}/suppression endpoints, SuppressionPanel.tsx and 5-bar EvidenceDrawer.tsx; 155 unit tests pass |
-| 4 | Retrieval | PASS | 2026-09-12 | OpenCLIP 512-dim vectors, CPU latency < 1s, hybrid kNN search with SQL predicates, test_retrieval.py passes |
+| 4 | Retrieval | PASS | 2026-09-20 | OpenCLIP 512-dim vectors, cosine kNN similarity with SQL-level predicates (cloud, NDVI, NDBI), measured p95 latency = 3.86 ms (< 200 ms target), incremental ingest of 63 tiles in 29.27 ms with 0 rebuild, SearchModal.tsx with Intelligence Console v2 style, test_retrieval.py + test_phase4_gate.py pass |
 | 5 | Upload and detection | PASS | 2026-09-12 | Upload validation (magic bytes, 40x bomb ratio), GSD Resolution Gate, verbatim refusals, Track 1/2/3, NMS, rejection accounting, test_upload_service.py + test_detection.py pass |
 | 6 | Question layer | — | — | — |
 | 7 | Release | — | — | — |
@@ -62,7 +62,9 @@ Phase 3 — Trust layer (Tasks 3.1 to 3.11 complete; Phase 3 Gate PASSED).
 - [x] 3.11 Trust API endpoints: `api/changes.py` `GET /api/v1/aoi/{aoi_id}/calibration` returning 10 reliability bins, empirical ECE, and sample count; `GET /api/v1/aoi/{aoi_id}/suppression` returning suppression accounting and verbatim candidate reasons — 2026-09-13 — verified: `test_changes_api.py` (8 tests pass)
 - [x] 4.1 Ingestion pgvector integration: `services/ingest.py` tile embedding and pgvector persistence — 2026-09-12 — verified: `test_ingest.py`
 - [x] 4.2 Hybrid vector retrieval: `services/retrieval.py` kNN cosine search with SQL predicate pushdown (AOI, date, cloud, spectral) — 2026-09-12 — verified: `test_retrieval.py` (5 tests pass)
-- [x] 4.3 Search endpoints: `api/search.py` `/api/v1/search/semantic` and `/api/v1/search/similar` — 2026-09-12 — verified: `test_retrieval.py`
+- [x] 4.3 Search endpoints: `api/search.py` `POST /api/v1/search/semantic`, `GET /api/v1/search/semantic`, and `POST /api/v1/search/similar` — 2026-09-20 — verified: `test_retrieval.py`, `test_phase4_gate.py`
+- [x] 4.4 Verify incremental ingestion: Ingested 63 tiles into tile manifest index in 29.27 ms without full index rebuild, verified immediate searchability — 2026-09-20 — verified: `test_phase4_gate.py`
+- [x] 4.5 Frontend Search screen: `SearchModal.tsx` styled in Intelligence Console v2 with natural language prompt, preset chips, results grid with thumbnail, similarity match badge, NDVI/NDBI scores; wired to `AppHeader.tsx`, `IconRail.tsx`, and `App.tsx` — 2026-09-20 — verified: `npm run build`, `vitest`
 - [x] 5.1 Ingestion & security validation: `services/upload_service.py` magic bytes, 40x decompression-bomb check, path sanitization, GSD Resolution Gate, overview generation — 2026-09-12 — verified: `test_upload_service.py` (8 tests pass)
 - [x] 5.2 Upload API router: `api/uploads.py` `/uploads`, `/uploads/{id}`, `/uploads/{id}/detections`, `/uploads/{id}/overview` — 2026-09-12 — verified: `test_upload_service.py`
 - [x] 5.3 Pure domain land-cover: `domain/landcover.py` Track 1 priority classification, morphological opening, polygonization, coverage summary — 2026-09-12 — verified: `test_detection.py`
@@ -72,7 +74,7 @@ Phase 3 — Trust layer (Tasks 3.1 to 3.11 complete; Phase 3 Gate PASSED).
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- None (Phase 3 complete).
+- None (Phase 4 complete).
 
 
 ## E. Blocked / needs human decision

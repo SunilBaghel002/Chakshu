@@ -10,8 +10,8 @@ interface AppHeaderProps {
   aois: AoiItem[];
   selectedAoiId: string;
   onSelectAoi: (aoiId: string) => void;
-  activeView: 'map' | 'review' | 'upload' | 'ask';
-  onSelectView: (view: 'map' | 'review' | 'upload' | 'ask') => void;
+  activeView: 'map' | 'review' | 'upload' | 'ask' | 'search';
+  onSelectView: (view: 'map' | 'review' | 'upload' | 'ask' | 'search') => void;
   isMock: boolean;
   onToggleMock: () => void;
   areaLabel?: string;
@@ -38,6 +38,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     { key: 'map', label: 'MAP' },
     { key: 'review', label: 'REVIEW' },
     { key: 'upload', label: 'UPLOAD' },
+    { key: 'search', label: 'SEARCH' },
     { key: 'ask', label: 'ASK' },
   ];
 
