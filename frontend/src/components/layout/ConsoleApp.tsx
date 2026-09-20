@@ -26,6 +26,7 @@ import { AskHistoryStrip } from '../ask/AskHistoryStrip';
 import { SearchBar } from '../search/SearchBar';
 import { SearchResultsPanel } from '../search/SearchResultsPanel';
 import { SearchDateStrip } from '../search/SearchDateStrip';
+import { AuditPanel } from '../audit/AuditPanel';
 
 import { useToast } from '../ui/Toast';
 import { useAppScreens } from '../../lib/useAppScreens';
@@ -35,6 +36,12 @@ export const ConsoleApp: React.FC = () => {
   const { showToast } = useToast();
   const screens = useAppScreens(showToast);
   const state = useConsoleState({ showToast });
+
+  // Ensure body overflow:hidden for console mode
+  React.useEffect(() => {
+    document.body.classList.add('console-body');
+    return () => { document.body.classList.remove('console-body'); };
+  }, []);
 
   const {
     aois,
@@ -77,6 +84,7 @@ export const ConsoleApp: React.FC = () => {
       activeView === 'ask' ||
       activeView === 'search' ||
       activeView === 'review' ||
+      activeView === 'audit' ||
       selectedEvidence
   );
 
@@ -207,6 +215,8 @@ export const ConsoleApp: React.FC = () => {
             onSelectResult={screens.setSelectedSearchResult}
             isLoading={screens.isSearching}
           />
+        ) : activeView === 'audit' ? (
+          <AuditPanel onExportReport={() => screens.setIsExportModalOpen(true)} />
         ) : activeView === 'review' ? (
           <ReviewQueuePanel
             evidenceList={evidenceList}

@@ -28,23 +28,27 @@ try:
     from app.api.aoi import router as aoi_router
     from app.api.ask import router as ask_router
     from app.api.changes import router as changes_router
+    from app.api.events import router as events_router
     from app.api.jobs import router as jobs_router
     from app.api.scenes import router as scenes_router
     from app.api.search import router as search_router
     from app.api.tiles import router as tiles_router
     from app.api.uploads import router as uploads_router
     from app.exceptions import ChakshuError
+    from app.middleware import GuestSessionMiddleware
     from app.settings import settings
 except ImportError:
     from .api.aoi import router as aoi_router
     from .api.ask import router as ask_router
     from .api.changes import router as changes_router
+    from .api.events import router as events_router
     from .api.jobs import router as jobs_router
     from .api.scenes import router as scenes_router
     from .api.search import router as search_router
     from .api.tiles import router as tiles_router
     from .api.uploads import router as uploads_router
     from .exceptions import ChakshuError
+    from .middleware import GuestSessionMiddleware
     from .settings import settings
 
 log = logging.getLogger(__name__)
@@ -69,6 +73,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Guest session middleware (PRD 14 S1, Task 8.10)
+    app.add_middleware(GuestSessionMiddleware, env=getattr(settings, 'ENV', 'dev'))
 
     # Exception Handling Middleware
     @app.exception_handler(ChakshuError)
@@ -132,6 +139,7 @@ def create_app() -> FastAPI:
     app.include_router(search_router, prefix="/api/v1")
     app.include_router(uploads_router, prefix="/api/v1")
     app.include_router(ask_router, prefix="/api/v1")
+    app.include_router(events_router, prefix="/api/v1")
 
     # Health Check Endpoint
     @app.get("/health", tags=["System"])

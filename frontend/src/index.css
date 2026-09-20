@@ -129,6 +129,22 @@
     --teal: #35B8C0;
     --teal-wash: rgba(53,184,192,0.12);
 
+    /* ── v3 signal/ion aliases (PRD 9 §2.3, task 8.1 migration) ── */
+    --signal: #FF9426;
+    --signal-hot: #FFAA4D;
+    --signal-deep: #8A4208;
+    --signal-ink: #1F1200;
+    --signal-wash: rgba(255,148,38,0.13);
+    --ion: #3FA9F5;
+    --ion-hot: #6BC2FF;
+    --ion-wash: rgba(63,169,245,0.12);
+
+    /* ── Tricolour tokens (PRD 9 §5.8) ── */
+    --tricolour-saffron: #FF9426;
+    --tricolour-white: #FFFFFF;
+    --tricolour-green: #138808;
+    --steel: #8FA3BC;
+
     /* ── §2.4 Semantic states ── */
     --measured-fill: rgba(47,191,113,0.12);
     --measured-border: #2FBF71;
@@ -202,6 +218,7 @@
 
     --w-rail: 56px;
     --w-dossier: 380px;
+    --w-landing-max: 1200px;
 
     --pad-panel: 12px;
     --pad-panel-lg: 16px;
@@ -223,6 +240,40 @@
     --shadow-button-primary: 0 0 12px rgba(240, 180, 95, 0.35);
   }
 
+  .landing-container {
+    max-width: var(--w-landing-max);
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+
+  .landing-nav-desktop {
+    display: none;
+  }
+  @media (min-width: 900px) {
+    .landing-nav-desktop {
+      display: flex;
+    }
+  }
+
+  .landing-nav-mobile-btn {
+    display: flex;
+  }
+  @media (min-width: 900px) {
+    .landing-nav-mobile-btn {
+      display: none;
+    }
+  }
+
+  .landing-nav-dropdown {
+    display: flex;
+  }
+  @media (min-width: 900px) {
+    .landing-nav-dropdown {
+      display: none;
+    }
+  }
+
   html, body {
     margin: 0;
     padding: 0;
@@ -233,9 +284,13 @@
     font-family: var(--font-ui);
     font-size: 13.5px;
     line-height: 20px;
-    overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Console needs overflow:hidden; landing page needs scroll */
+  body.console-body {
+    overflow: hidden;
   }
 
   *, *::before, *::after {

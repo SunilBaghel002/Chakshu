@@ -247,7 +247,19 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
     center: [number, number];
     zoom?: number;
     bounds?: [[number, number], [number, number]];
-  } | null>(null);
+  } | null>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('preset');
+      if (p === 'change' || p === 'runway') {
+        return {
+          center: [28.1782, 77.6045],
+          zoom: 16,
+          bounds: [[28.1740, 77.5830], [28.1825, 77.6260]],
+        };
+      }
+    }
+    return null;
+  });
 
   const handleShortcutAction = useConsoleActions({
     activeView,

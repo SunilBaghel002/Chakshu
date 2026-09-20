@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#1A2234" stop-opacity="0.8"/>
+      <stop offset="60%" stop-color="#0B0F19" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#06080E" stop-opacity="1"/>
+    </radialGradient>
+
+    <!-- Signal Amber Gradients -->
+    <linearGradient id="amberCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB347"/>
+      <stop offset="50%" stop-color="#FF9426"/>
+      <stop offset="100%" stop-color="#D96B00"/>
+    </linearGradient>
+
+    <linearGradient id="bladeGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFC875" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#E07D10" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <linearGradient id="bladeGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFA834" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#9E5100" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <!-- Ion Cyan Accent Gradient -->
+    <linearGradient id="ionAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="coreGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="512" height="512" rx="96" fill="url(#bgGlow)"/>
+  <rect width="508" height="508" x="2" y="2" rx="94" fill="none" stroke="#1E293B" stroke-width="1.5" stroke-opacity="0.8"/>
+
+  <!-- Tactical Corner Registration Marks -->
+  <g stroke="#38BDF8" stroke-width="1.5" opacity="0.4">
+    <path d="M 36 52 L 36 36 L 52 36" fill="none"/>
+    <path d="M 460 36 L 476 36 L 476 52" fill="none"/>
+    <path d="M 36 460 L 36 476 L 52 476" fill="none"/>
+    <path d="M 460 476 L 476 476 L 476 460" fill="none"/>
+  </g>
+
+  <!-- Outer Telemetry Radar Ring -->
+  <circle cx="256" cy="256" r="216" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="4 8" opacity="0.6"/>
+  <circle cx="256" cy="256" r="192" fill="none" stroke="#1E293B" stroke-width="1.5"/>
+
+  <!-- Compass / Azimuth Cardinal Ticks -->
+  <g stroke="#64748B" stroke-width="1.5" opacity="0.7">
+    <line x1="256" y1="36" x2="256" y2="48"/>
+    <line x1="256" y1="464" x2="256" y2="476"/>
+    <line x1="36" y1="256" x2="48" y2="256"/>
+    <line x1="464" y1="256" x2="476" y2="256"/>
+  </g>
+
+  <!-- Orbital Trajectory Ellipse (Satellite Orbit) -->
+  <g transform="rotate(-28 256 256)">
+    <ellipse cx="256" cy="256" rx="224" ry="96" fill="none" stroke="url(#ionAccent)" stroke-width="1.5" stroke-dasharray="8 6" opacity="0.55"/>
+    <circle cx="480" cy="256" r="5" fill="#38BDF8" filter="url(#softGlow)"/>
+    <circle cx="480" cy="256" r="2" fill="#FFFFFF"/>
+    <line x1="472" y1="256" x2="488" y2="256" stroke="#38BDF8" stroke-width="1.5"/>
+    <line x1="472" y1="253" x2="472" y2="259" stroke="#38BDF8" stroke-width="1"/>
+    <line x1="488" y1="253" x2="488" y2="259" stroke="#38BDF8" stroke-width="1"/>
+  </g>
+
+  <!-- Eye Contour (Sovereign Observation Arc) -->
+  <path d="M 96 256 C 144 164 368 164 416 256 C 368 348 144 348 96 256 Z" 
+        fill="rgba(15, 23, 42, 0.4)" 
+        stroke="#475569" 
+        stroke-width="1.5" 
+        stroke-dasharray="6 4" 
+        opacity="0.65"/>
+
+  <!-- Aperture Blade Outer Ring -->
+  <circle cx="256" cy="256" r="148" fill="none" stroke="url(#amberCore)" stroke-width="2" opacity="0.85"/>
+  <circle cx="256" cy="256" r="138" fill="none" stroke="#FF9426" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+
+  <!-- Six Iris Aperture Blades -->
+  <g>
+    <path d="M 256 108 C 304 108 368 152 384 200 L 320 224 C 308 190 274 168 256 168 Z" 
+          fill="url(#bladeGrad1)" stroke="#FFB347" stroke-width="1.2"/>
+    <path d="M 384 200 C 400 248 392 320 356 356 L 312 300 C 334 274 336 238 320 224 Z" 
+          fill="url(#bladeGrad2)" stroke="#FF9426" stroke-width="1.2"/>
+    <path d="M 356 356 C 320 392 248 404 200 384 L 224 320 C 258 334 294 326 312 300 Z" 
+          fill="url(#bladeGrad1)" stroke="#FFB347" stroke-width="1.2"/>
+    <path d="M 200 384 C 152 368 108 304 108 256 L 168 256 C 168 290 198 316 224 320 Z" 
+          fill="url(#bladeGrad2)" stroke="#FF9426" stroke-width="1.2"/>
+    <path d="M 108 256 C 108 200 152 144 200 120 L 236 180 C 204 196 180 228 168 256 Z" 
+          fill="url(#bladeGrad1)" stroke="#FFB347" stroke-width="1.2"/>
+    <path d="M 200 120 C 248 100 320 108 356 144 L 300 188 C 274 168 248 168 236 180 Z" 
+          fill="url(#bladeGrad2)" stroke="#FF9426" stroke-width="1.2"/>
+  </g>
+
+  <!-- Inner Iris Chamber (Pupil Reticle Area) -->
+  <circle cx="256" cy="256" r="76" fill="#070A12" stroke="#FF9426" stroke-width="2"/>
+  <circle cx="256" cy="256" r="64" fill="none" stroke="#38BDF8" stroke-width="1" stroke-dasharray="2 4" opacity="0.7"/>
+
+  <!-- Radar Crosshairs / Targeting Reticle -->
+  <g stroke="#FF9426" stroke-width="1.5" opacity="0.9">
+    <line x1="256" y1="184" x2="256" y2="216"/>
+    <line x1="256" y1="296" x2="256" y2="328"/>
+    <line x1="184" y1="256" x2="216" y2="256"/>
+    <line x1="296" y1="256" x2="328" y2="256"/>
+  </g>
+
+  <!-- Central Pupil (The Eye That Never Blinks) -->
+  <circle cx="256" cy="256" r="34" fill="url(#amberCore)" filter="url(#coreGlow)"/>
+  <circle cx="256" cy="256" r="18" fill="#080C16"/>
+  <circle cx="256" cy="256" r="8" fill="#FFFFFF" filter="url(#softGlow)"/>
+</svg>

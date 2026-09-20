@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { COPY } from '../lib/copy';
 import type { AoiItem } from '../lib/api';
+import { ChakshuLogo } from './ui/ChakshuLogo';
 
 interface AppHeaderProps {
   aois: AoiItem[];
@@ -55,24 +56,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     >
       {/* Left: Brand Lockup */}
       <div className="flex items-center gap-3">
-        {/* Amber Iris SVG */}
-        <div
-          className="relative flex items-center justify-center"
-          style={{
-            width: 40,
-            height: 40,
-            background: 'var(--bg)',
-            border: '1px solid var(--line-strong)',
-            borderRadius: 'var(--radius)',
-          }}
-        >
-          <svg className="w-8 h-8" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="21" stroke="var(--amber)" strokeWidth="1.5" strokeOpacity="0.3" strokeDasharray="3 3" />
-            <circle cx="24" cy="24" r="16" stroke="var(--amber)" strokeWidth="2" strokeOpacity="0.6" />
-            <circle cx="24" cy="24" r="11" stroke="var(--amber)" strokeWidth="2.5" strokeOpacity="0.9" />
-            <circle cx="24" cy="24" r="5" fill="var(--amber)" className="animate-iris-pulse" />
-          </svg>
-        </div>
+        {/* Sovereign Platform Logo */}
+        <ChakshuLogo size={36} />
 
         <div>
           <div className="flex items-center gap-2">

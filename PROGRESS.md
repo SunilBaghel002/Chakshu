@@ -207,6 +207,7 @@ Phase 8 Stage A — Interface Work (Tasks 8.1, 8.3, 8.4 complete; Stage A ongoin
 | 2026-09-20 | Task 8.1 & 8.3: Design tokens, Button.tsx, UI linter | Ad-hoc CSS & components | PRD 10 L1/L2, PRD 11 K1 token and component compliance |
 | 2026-09-20 | Task 8.2: Slot grid, ConsoleShell, primaryOwner, shortcuts, sticky footers | Hand-rolled divs, multi-primary | PRD 10 L4/L8/L3 compliance; unslotted elements flagged under NEEDS A SLOT |
 | 2026-09-20 | Tasks 8.6 & 8.7: Dossier fixed sequence, un-modaled screen slot mapping, 5 feedback states, anti-pattern removal | Floating modals & ad-hoc feedback states | PRD 10 §4/§5, PRD 9 §5, PRD 12 §4/§5/§9 compliance; zero modals for core workflows; amber-wash refusals |
+| 2026-09-20 | Tasks 8.8, 8.9, 8.10: Landing page W1–W7, zero external requests, live fixture hero, 6 deep links, single primary, guest session middleware, DDL migration 004, events API | Multi-page / Next.js / External fonts / Ad-hoc telemetry | PRD 13 W1–W7, PRD 14 S1, PRD 15 T1 compliance |
 
 ## K0. Next actions — Phase 8 Stage A (supersedes K below, which is stale)
 
@@ -225,8 +226,10 @@ Per user directive 20 Sep 2026: **Phase 8 before Phase 7.** Full task list and g
 10. [x] **8.6** ConsoleShell on the grid + sticky footers — L (DONE 2026-09-20)
 11. [x] **8.7** Dossier SLOT-20–26 + other screens — L (DONE 2026-09-20)
 12. [x] **8.8** Five states everywhere; amber-wash refusals — L (DONE 2026-09-20)
-13. **8.20–8.22** MapLibre replacement + `map-fx` M1–M4 + local basemap — L·L·M
-14. **8.9–8.14** Landing, sessions, tracking, `/privacy`, `/admin`, seed script
+13. [x] **8.9** Landing page `/` — sectors, hero, six deep links, one primary per scroll — L (DONE 2026-09-20)
+14. [x] **8.10** Guest sessions: middleware, cookie, session/visit DDL, POST /api/v1/events → 204 — M (DONE 2026-09-20)
+15. **8.20–8.22** MapLibre replacement + `map-fx` M1–M4 + local basemap — L·L·M
+16. **8.11–8.14** Tracking hooks, `/privacy`, `/admin`, seed script
 
 **Blocked:** 8.21/8.7 cannot claim "matches the prototype" — `brand/ui-prototype-intel.html` is not
 in the repo. Needs either the file or an amendment to `ui-context.md` §11.4. Raise, do not decide.
