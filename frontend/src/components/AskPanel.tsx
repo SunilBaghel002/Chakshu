@@ -214,13 +214,13 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose, onHighlightC
             </div>
 
             {/* Verified Facts Telemetry */}
-            {answer.measurements?.facts && (answer.measurements.facts as any[]).length > 0 && (
+            {Array.isArray(answer.measurements?.facts) && (answer.measurements.facts as Array<{ type?: string; kind?: string; value?: unknown; unit?: string }>).length > 0 && (
               <div className="space-y-1">
                 <span className="text-[var(--ink3)] text-[10px] uppercase tracking-wider block">
                   Ground Truth Telemetry:
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {(answer.measurements.facts as any[]).map((fact, i) => (
+                  {(answer.measurements.facts as Array<{ type?: string; kind?: string; value?: unknown; unit?: string }>).map((fact, i) => (
                     <div
                       key={i}
                       className="bg-[var(--well)] border border-[var(--line)] p-2 text-[11px] flex justify-between"

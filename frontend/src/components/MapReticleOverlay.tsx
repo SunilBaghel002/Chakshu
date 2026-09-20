@@ -7,7 +7,7 @@ interface MapReticleOverlayProps {
   enabled?: boolean;
   onSectorChange?: (sectorLabel: string) => void;
   onCoordMove?: (lat: number, lng: number) => void;
-  mapInstance?: any;
+  mapInstance?: unknown;
 }
 
 /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { LockonTag } from './LockonTag';
 import { hoverLatencyTracker, shouldCountUp } from '../../lib/map-fx';
@@ -14,7 +14,7 @@ describe('LockonTag: M3 Real Fixture Hover & Honesty Rules', () => {
     change_object_id: 'inferred-0001-test',
     measurement: {
       ...realMeasuredEvidence.measurement,
-      kind: 'INFERRED' as any,
+      kind: 'INFERRED' as unknown as Evidence['measurement']['kind'],
     },
   };
 

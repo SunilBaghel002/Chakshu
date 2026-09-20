@@ -26,7 +26,7 @@ Measured, not hoped for. Anything missing its budget is a bug with an ID.
 | Hover polygon → lock-on tag | ≤ 100 ms | ≤ 160 ms | skeleton tag |
 | Click nav tab → content painted | ≤ 120 ms | ≤ 250 ms | skeleton in SLOT-20 |
 | Pan/zoom → tiles | ≤ 200 ms | ≤ 600 ms | `--panel-2` tile placeholders, never a spinner over the map |
-| AOI change → stats refresh | ≤ 300 ms | ≤ 800 ms | stat values dim to `--ink-3` while stale, with a 2 px amber top edge |
+| AOI change → stats refresh | ≤ 300 ms | ≤ 800 ms | stat values dim to `--ink-3` while stale, with a 2 px signal top edge |
 | `DETECT CHANGES` → first visual feedback | ≤ 150 ms | ≤ 300 ms | button enters `loading`, SLOT-30 shows stage 1 |
 | Full change analysis (demo AOI) | — | ≤ 45 s | honest stage progress + `CANCEL` after 10 s |
 | `ASK` → streamed first token | ≤ 900 ms | ≤ 2.5 s | `THINKING` state with the tier badge (`ROUTER` / `VLM`) |
@@ -61,10 +61,10 @@ Five states are mandatory for every data-bearing region. Copy is verbatim; it li
 | **Empty** | out-of-focus iris in `--line-strong` at 40% + one line + one action | `NO CHANGES DETECTED FOR THIS PAIR · TRY A WIDER DATE RANGE` + `WIDEN RANGE` secondary |
 | **Loading** | skeleton wells + one scan sweep; never a spinner, never a percentage without a stage | `READING SCENE S2B_43RCU_20240609 …` |
 | **Error** | 1 px `--danger` frame, code in `--t-mono`, copyable `trace_id`, `RETRY` secondary | `ANALYSIS FAILED · JOB_TIMEOUT · TRACE 9f2c…` |
-| **Refusal / capability notice** | `--amber-wash` panel + aperture icon, **never red** | the verbatim resolution-gate copy from `feature-specs.md` B3 |
-| **Stale** | value dimmed to `--ink-3` + 2 px amber top edge + `REFRESH` ghost | `SHOWING RESULT FROM 09:41 · AOI CHANGED` |
+| **Refusal / capability notice** | `--signal-wash` panel + aperture icon, **never red** | the verbatim resolution-gate copy from `feature-specs.md` B3 |
+| **Stale** | value dimmed to `--ink-3` + 2 px signal top edge + `REFRESH` ghost | `SHOWING RESULT FROM 09:41 · AOI CHANGED` |
 
-**Refusal is a first-class state, not an error.** A refusal rendered in red reads as "the system broke"; in amber-wash it reads as "the system is careful". This distinction is worth points with a domain judge.
+**Refusal is a first-class state, not an error.** A refusal rendered in red reads as "the system broke"; in signal-wash it reads as "the system is careful". This distinction is worth points with a domain judge.
 
 ---
 
@@ -140,7 +140,7 @@ Rehearse with the network physically off. If any step needs narration to be unde
 |---|---|
 | Modal dialogs for information the user should see in context | SLOT-20 dossier panel |
 | Alerts (`window.alert`, `confirm`) | Dialog component (K9) |
-| Red banners for capability limits | amber-wash refusal notice (X4) |
+| Red banners for capability limits | signal-wash refusal notice (X4) |
 | Spinners over the map | tile placeholders + stage labels |
 | Tooltips as the only documentation of an icon | labels, or `?` |
 | Auto-playing carousels / looping counters | static until interacted |
@@ -156,7 +156,7 @@ Rehearse with the network physically off. If any step needs narration to be unde
 - [ ] All five flows in §5 meet their click budget (counted, recorded in `PROGRESS.md`)
 - [ ] Every latency budget in §2 measured at p50/p95 on the demo machine and recorded in `progress-tracker.md` §I
 - [ ] Five states implemented for every data-bearing region; screenshot contact sheet committed
-- [ ] Refusals render in amber-wash, never red, with verbatim `feature-specs.md` copy
+- [ ] Refusals render in signal-wash, never red, with verbatim `feature-specs.md` copy
 - [ ] No fake progress anywhere; every progress surface shows a real stage name
 - [ ] `?` lists all shortcuts; no shortcut fires from a text field except `Esc`/`⏎`
 - [ ] First run reaches a populated console with zero clicks and shows the 3-step tour once

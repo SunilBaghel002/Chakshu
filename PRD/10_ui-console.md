@@ -1,6 +1,6 @@
 # PRD 10 — Console Layout and Control Placement (L)
 
-> **Status:** Authoritative. Extends `ui-context.md` (v2 · Intelligence Console) §4.
+> **Status:** Authoritative. Extends `ui-context.md` (v3 · Sovereign Console) §4.
 > **Scope:** *Where every element and every control goes*, on every screen. `ui-context.md` defines what things look like; this file defines where they live. Neither may be changed by inference.
 > **Work-item IDs:** `L1`–`L9`. Slot IDs come from `ui-context.md` §4 and are reused verbatim here.
 > **Authorised:** by user directive, 20 Sep 2026 — "the positioning of everything is bad… every button".
@@ -15,7 +15,7 @@ The current build fails on placement, not on colour. Symptoms: controls floating
 
 1. **Grid, not vibes.** A 4 px base grid, three fixed control heights (28 / 36 / 44), and fixed panel padding. Nothing is placed by eyeball.
 2. **Zones, not scatter.** Every panel is exactly three zones — header, body, footer. Actions live *only* in the footer, right-aligned. Bodies never contain buttons except row-level ones.
-3. **One primary per viewport.** Exactly one amber filled control may exist on screen at a time. If a second appears, one of them is not primary.
+3. **One primary per viewport.** Exactly one signal filled control may exist on screen at a time. If a second appears, one of them is not primary.
 
 ---
 
@@ -95,6 +95,9 @@ One ladder, named, in `frontend/src/index.css`. No number outside this table may
 
 Every control, its exact slot, position within the slot, size, variant, and keyboard shortcut. Variants are defined in `ui-controls.md` (K). If a control is not in this table, it does not exist.
 
+### SLOT-00A · classification banner — 28 px, full width
+No controls. Static, never animates. `ui-context.md` §5.7 · `--z-sticky`.
+
 ### SLOT-00 · data-stream marquee — 18 px, full width
 No controls. Hover pauses (M8). `--z-sticky`.
 
@@ -112,9 +115,9 @@ No controls. Hover pauses (M8). `--z-sticky`.
 | 01.3 | `stat:area` | after selector, gap `--s-4` | auto × 36 | `stat` (K8) | — | label `AREA` over value `1,204.6 ha`, tabular |
 | 01.4 | `stat:passes` | gap `--s-4` | auto × 36 | `stat` | — | label `CLEAR PASSES` over `14 / 22` |
 | 01.5 | flex spacer | — | — | — | — | Pushes nav right. Never put a control in the spacer |
-| 01.6 | Nav tabs `MAP` `REVIEW` `UPLOAD` `ASK` | right group, gap `--s-1` | 88 × 36 each | `tab` (K5) | `G` then `M/R/U/Q` | Active = amber underline from centre (M6) |
+| 01.6 | Nav tabs `MAP` `REVIEW` `UPLOAD` `ASK` | right group, gap `--s-1` | 88 × 36 each | `tab` (K5) | `G` then `M/R/U/Q` | Active = signal underline from centre (M6) |
 | 01.7 | Session chip | right, gap `--s-3` | auto × 28 | `chip` (K7) | — | `GUEST-7F3A` or user name; click → account menu (S3) |
-| 01.8 | `LIVE API` indicator | far right, pad `--s-4` | auto × 28 | `status` (K8) | — | teal pulsing dot (M8). Amber `OFFLINE` when `offline=true` |
+| 01.8 | `LIVE API` indicator | far right, pad `--s-4` | auto × 28 | `status` (K8) | — | ion pulsing dot (M8). Amber `OFFLINE` when `offline=true` |
 
 ### SLOT-02 · temporal bar — 44 px, full width
 
@@ -148,7 +151,7 @@ row B: [DATE B ▾][year chips …]                                             
 | 05.7 | `HELP / KEYS` | 6 | 40 × 40 | `?` |
 | 05.8 | `SETTINGS` | 7 (bottom-anchored, `margin-top:auto`) | 40 × 40 | — |
 
-Active = 3 px amber left bar + `--amber-wash` fill. Tooltips appear to the **right** of the rail (`--z-tooltip`), never left (off-screen). The rail never scrolls; if it needs to, there are too many items.
+Active = 3 px signal left bar + `--signal-wash` fill. Tooltips appear to the **right** of the rail (`--z-tooltip`), never left (off-screen). The rail never scrolls; if it needs to, there are too many items.
 
 ### SLOT-10 · map stage — flex
 
@@ -184,7 +187,7 @@ Top to bottom, fixed order, per `ui-context.md` §4. Controls:
 | 25 | `EXPORT` | footer, far left | 92 × 36 | `secondary` | `E` |
 | 26 | Trace rows + `COPY TRACE_ID` | body bottom | 348 × 28 | `icon-ghost` | — |
 
-**The one-primary rule across slots:** when the dossier footer is visible, `CONFIRM` is the viewport's primary and SLOT-02.7 `DETECT CHANGES` **downgrades to `secondary`**. This is not optional; two amber filled bars on screen is the single most common cause of "this looks amateur". Implement as: `<ConsoleShell>` provides `primaryOwner` context; `DETECT` reads it.
+**The one-primary rule across slots:** when the dossier footer is visible, `CONFIRM` is the viewport's primary and SLOT-02.7 `DETECT CHANGES` **downgrades to `secondary`**. This is not optional; two signal filled bars on screen is the single most common cause of "this looks amateur". Implement as: `<ConsoleShell>` provides `primaryOwner` context; `DETECT` reads it.
 
 Below 1280 px the dossier collapses to a 48 px rail (SLOT-20 shows only the vertical title); the footer actions move into a bottom action bar docked above SLOT-30, same order, `--h-ctl-lg`.
 
@@ -195,7 +198,7 @@ Below 1280 px the dossier collapses to a 48 px rail (SLOT-20 shows only the vert
 | 30.1 | `PLAY` (animate A→B) | left, pad `--s-3` | 36 × 36 |
 | 30.2 | Date axis + scene dots | centre, flex | full × 40 |
 | 30.3 | Year labels | under axis | 10 px mono |
-| 30.4 | Onset-interval band | on axis | amber-wash |
+| 30.4 | Onset-interval band | on axis | signal-wash |
 | 30.5 | `RANGE ▾` (1y / 3y / 5y / all) | right, pad `--s-3` | 84 × 28 |
 
 ### SLOT-40 · status line — 24 px
@@ -210,7 +213,7 @@ Slots do not change between screens; content within them does (`ui-context.md` �
 
 ### UPLOAD (`G U`)
 - SLOT-02 becomes: `SOURCE ▾` (FILE / GEOTIFF / URL-disabled-offline) · `SENSOR ▾` · `RESOLUTION` readout · **`ANALYSE` primary, far right**.
-- SLOT-10 becomes the dropzone: dashed `--line-strong` frame, centred aperture icon, `DROP A GeoTIFF OR PNG · ≤ 40 MB`, and one `BROWSE FILES` secondary button — **centred is allowed here because the stage is empty**. Drag-over: frame → amber, wash `--amber-wash` at 6%, single scan sweep (M2), not a spinner.
+- SLOT-10 becomes the dropzone: dashed `--line-strong` frame, centred aperture icon, `DROP A GeoTIFF OR PNG · ≤ 40 MB`, and one `BROWSE FILES` secondary button — **centred is allowed here because the stage is empty**. Drag-over: frame → signal, wash `--signal-wash` at 6%, single scan sweep (M2), not a spinner.
 - SLOT-20 becomes `UPLOAD MANIFEST`: filename, size, CRS, resolution m/px, bands, checksum, and the **Resolution Gate verdict** chip.
 - SLOT-30 becomes the job progress bar with honest stage labels (`READING`, `GATE`, `TILES`, `MODEL`, `VERIFY`) — never a fake percentage.
 
@@ -251,7 +254,7 @@ Nothing in SLOT-00/01/02/40 ever changes height. The map well absorbs all size c
 | Symptom in the current build | Fix, with the rule that mandates it |
 |---|---|
 | Buttons floating directly over satellite imagery | §4 SLOT-10 — overlays only, ≤ 220 px, at the four insets, `--z-map-overlay` |
-| Two amber primary buttons visible at once | §4 one-primary rule + `primaryOwner` context |
+| Two signal primary buttons visible at once | §4 one-primary rule + `primaryOwner` context |
 | Panel buttons move when content grows | §3 reflow ban — sticky footer, fixed header |
 | Numbers jitter as values change | §3 tabular numerals + fixed column widths |
 | Icon-only buttons with no label in panels | §3 icon-only permitted in 4 named places only |

@@ -33,7 +33,7 @@ Build in this order, and do not skip ahead:
 
 If you remember nothing else:
 
-1. **One primary per viewport.** `primaryOwner` context. Two amber filled bars on screen is the single most common cause of "this looks amateur" (`ui-console.md` L4).
+1. **One primary per viewport.** `primaryOwner` context. Two signal filled bars on screen is the single most common cause of "this looks amateur" (`ui-console.md` L4).
 2. **Slots, not divs.** `<Slot id="SLOT-02" h={44}>`. No hand-rolled layout divs. Passing an unknown id throws in dev.
 3. **Sticky footers.** `position: sticky; bottom: 0` inside the panel, opaque `--panel` background, 1 px `--line` top border. This alone removes the "everything jumps" feeling.
 4. **Disable, never hide.** Every disabled control carries one of the eight reason strings from `ui-controls.md` §1.5. Silent disabling is a bug.
@@ -65,10 +65,10 @@ If you remember nothing else:
 
 ```css
 @theme {
-  --color-bg: #0B0D10;
-  --color-panel: #121519;
-  --color-amber: #F0B45F;
-  --color-ink: #EDEAE3;
+  --color-bg: #080C16;
+  --color-panel: #0E1626;
+  --color-signal: #FF9426;
+  --color-ink: #E9EFF8;
   --spacing-s-4: 16px;
   --height-ctl: 36px;
   --z-index-sticky: 30;
@@ -131,7 +131,7 @@ export function Button({ variant, size = 'md', state, reason, ... }) {
 Three details that are easy to get wrong and are explicitly specified:
 
 - **`loading`** = label switches to the gerund (`DETECT` → `DETECTING`) + a 2 px indeterminate bar along the button's **bottom edge**. **No spinner inside a button** (`ui-controls.md` §1.3).
-- **`focus-visible`**, not `:focus`. 2 px amber ring, `outline-offset: 2px`. Never `outline: none` without a replacement.
+- **`focus-visible`**, not `:focus`. 2 px signal ring, `outline-offset: 2px`. Never `outline: none` without a replacement.
 - **Labels are typed in sentence case** (`Detect changes`) and uppercased with `text-transform`, so screen readers behave. Strings come from `lib/copy.ts`.
 
 **The eight reason strings** (`ui-controls.md` §1.5) — `no-aoi` `SELECT AN AOI FIRST` · `no-dates` `BOTH DATES REQUIRED` · `same-date` `DATES MUST DIFFER` · `job-running` `ANALYSIS IN PROGRESS` · `offline` `UNAVAILABLE OFFLINE` · `no-selection` `SELECT A TARGET FIRST` · `gate-failed` `RESOLUTION BELOW 2 m — SEE NOTICE` · `permission` `ADMIN ONLY`.
@@ -158,7 +158,7 @@ const map = new maplibregl.Map({
 map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 ```
 
-**M3 lock-on is the signature interaction** — build it last, after everything else works, so you can debug it against a stable map. Its requirements are exact (`ui-context.md` §6 M3): stroke → `--amber-hot` 2 px, fill 30%→45%, four corner brackets animating from 12 px outside the bbox inward over **160 ms staggered 30 ms**, dossier tag sliding 8 px over **140 ms** skewed −2°, **400 ms count-up on the polygon's area**, and a 1 px leader line. Hovering the *tag* must keep the lock — no flicker at the boundary.
+**M3 lock-on is the signature interaction** — build it last, after everything else works, so you can debug it against a stable map. Its requirements are exact (`ui-context.md` §6 M3): stroke → `--signal-hot` 2 px, fill 30%→45%, four corner brackets animating from 12 px outside the bbox inward over **160 ms staggered 30 ms**, dossier tag sliding 8 px over **140 ms** skewed −2°, **400 ms count-up on the polygon's area**, and a 1 px leader line. Hovering the *tag* must keep the lock — no flicker at the boundary.
 
 **Hard constraint:** the count-up fires **only for `MEASURED`**. Animating an `INFERRED` value dresses a guess as a measurement (`ux-rules.md` §7.1).
 
@@ -173,7 +173,7 @@ From `ui-console.md` §7, each with the rule that prevents it:
 | If you see this | You violated |
 |---|---|
 | Buttons floating over imagery | SLOT-10 is overlays only, ≤ 220 px, four insets |
-| Two amber primaries visible | `primaryOwner` |
+| Two signal primaries visible | `primaryOwner` |
 | Panel buttons move when content grows | sticky footer |
 | Numbers jitter as values change | tabular numerals + fixed column widths |
 | Icon-only buttons with no label in panels | icon-only allowed in SLOT-05/12/40 + row actions only |

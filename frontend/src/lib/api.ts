@@ -199,7 +199,9 @@ export async function uploadImageFile(
     const res = await fetch(`${API_BASE}/uploads`, { method: 'POST', body: formData });
     const json: unknown = await res.json();
     if (!res.ok) {
-      const err = (json as any)?.error;
+      const err = (json && typeof json === 'object' && 'error' in json)
+        ? (json as { error?: { code?: string; message?: string; trace_id?: string } }).error
+        : undefined;
       return { kind: 'error', code: err?.code || 'UPLOAD_FAILED', message: err?.message || `HTTP ${res.status}`, traceId: err?.trace_id || 'trace_client' };
     }
     return { kind: 'ok', data: json as Upload };

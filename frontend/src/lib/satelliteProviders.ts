@@ -75,7 +75,7 @@ export function enforceMinGapForBefore(
   minYears: number = MIN_TEMPORAL_GAP_YEARS
 ): { before: string; after: string; adjusted: boolean } {
   const b = new Date(newBefore);
-  let a = new Date(currentAfter);
+  const a = new Date(currentAfter);
   const minMs = minYears * 365.25 * 24 * 60 * 60 * 1000;
 
   if (a.getTime() - b.getTime() < minMs) {
@@ -108,7 +108,7 @@ export function enforceMinGapForAfter(
   currentBefore: string,
   minYears: number = MIN_TEMPORAL_GAP_YEARS
 ): { before: string; after: string; adjusted: boolean } {
-  let b = new Date(currentBefore);
+  const b = new Date(currentBefore);
   const a = new Date(newAfter);
   const minMs = minYears * 365.25 * 24 * 60 * 60 * 1000;
 

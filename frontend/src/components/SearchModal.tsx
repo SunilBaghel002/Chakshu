@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Loader2, Database, Sparkles, SlidersHorizontal } from 'lucide-react';
+import { Search, X, Database, Sparkles } from 'lucide-react';
 import { searchSemantic, type SemanticSearchResultItem } from '../lib/api';
 
 interface SearchModalProps {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   formatCoord,
   formatArea,
@@ -9,7 +9,6 @@ import {
   countUp,
   checkLabelCollisions,
   hoverLatencyTracker,
-  isReducedMotion,
 } from './map-fx';
 
 describe('map-fx: M1 Coordinate Formatting', () => {

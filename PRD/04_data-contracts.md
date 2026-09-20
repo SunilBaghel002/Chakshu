@@ -251,7 +251,7 @@ Attached to every change. This is the core artefact of the whole system and the 
 `MEASURED` = produced by deterministic geometry/arithmetic over pixels.
 `INFERRED` = produced by a model or a rule table that could be wrong.
 
-The frontend renders `MEASURED` with a solid green chip and `INFERRED` with an outlined amber chip. **This is not decoration.** It is the visual form of the project's central promise, and SIH26227 §2.2.3 asks for it directly.
+The frontend renders `MEASURED` with a solid green chip and `INFERRED` with an outlined signal chip. **This is not decoration.** It is the visual form of the project's central promise, and SIH26227 §2.2.3 asks for it directly.
 
 ---
 

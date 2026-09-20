@@ -305,7 +305,7 @@ Cutting any of those removes the thing that distinguishes this project from ever
 | 8.5 | `lib/shortcuts.ts` — the full map from `ux-rules.md` §6, conflict-checked in dev. | `ux-rules.md` §6 | M |
 | 8.6 | ConsoleShell on the grid: SLOT-00/01/02/05/10/20–26/30/40 at exact heights. Sticky footers (reflow ban). | `ui-console.md` §3–§4 | L |
 | 8.7 | Dossier SLOT-20–26 in fixed order + the other screens mapped onto the same slots. | `ui-console.md` §5 | L |
-| 8.8 | All five states for every data-bearing region; refusals in amber-wash. | `ux-rules.md` §4 | L |
+| 8.8 | All five states for every data-bearing region; refusals in signal-wash. | `ux-rules.md` §4 | L |
 | 8.9 | Landing page `/` — sectors, hero, six deep links, one primary per scroll. | `landing-page.md` | L |
 | 8.10 | Guest sessions: middleware, cookie, `session`/`visit` DDL, `POST /api/v1/events` → always 204. | `auth.md` S1 | M |
 | 8.11 | `lib/track.ts` — queue, `sendBeacon`, `trackOnce`/`trackAgg`; `map.hover` aggregated ≤1/5 s. | `tracking.md` T | M |
@@ -329,7 +329,7 @@ Cutting any of those removes the thing that distinguishes this project from ever
 - [ ] Exactly one `primary` per viewport, enforced by `primaryOwner`; test: dossier open → assert 1
 - [ ] No `z-index` or spacing literal outside the §1/§2 tokens; lint fails on a planted violation
 - [ ] Panel footers do not move across three body content lengths
-- [ ] All five states captured for every data-bearing region; refusals amber-wash, never red
+- [ ] All five states captured for every data-bearing region; refusals signal-wash, never red
 - [ ] Click counts in `ux-rules.md` §5 met and recorded in `PROGRESS.md`
 - [ ] Latency budgets in `ux-rules.md` §2 measured p50/p95 and recorded in `PROGRESS.md` §I
 - [ ] **Zero external requests** — verified with the network physically disabled, not by grep alone

@@ -27,6 +27,34 @@ the motion tokens are faithful to `ui-context.md` §2/§7. The gap is structural
 
 **Sequencing decision (user, 20 Sep 2026):** Phase 8 Stage A runs **before** Phase 7.
 
+## A.1 Design system v3 — 20 Sep 2026 (user directive)
+
+**Directive:** *"ui element, theme, color scheme is very dull and worst… not looking like an Indian
+army software… make it feel like ISRO or RAW high-tech software."* Docs only — **no code changed.**
+
+`PRD/09_ui-context.md` rewritten as **v3 · Sovereign Console**, superseding v2's amber-on-black.
+
+| | v2 (superseded) | v3 |
+|---|---|---|
+| Field | `#0B0D10` neutral grey-black | `#080C16` **deep navy** |
+| Accent | `#F0B45F` amber, one hue | `#FF9426` **saffron** (attention) + `#3FA9F5` **ISRO blue** (data) |
+| Ink | `#EDEAE3` warm | `#E9EFF8` cool |
+| Token names | `--amber*` / `--teal*` | `--signal*` / `--ion*` |
+| New | — | §5.7 classification banner + SLOT-00A, §5.8 restricted tricolour rule, §5.9 Ashoka Chakra |
+
+**Why v2 failed its own test:** v2 §0 already warned *"mission-control, not movie-villain"* while
+being pitched as *"spy-thriller title-sequence UIs"*. It shipped the warning and not the correction.
+
+**Guardrails added so this does not become costume:** the tricolour has exactly **three** permitted
+placements; `MEASURED` green is a trust encoding and is not restyled to flag-green; the banner is
+static and never animates; and the banner requires a `DEMONSTRATION BUILD · NOT AN ACCREDITED SYSTEM`
+line, because an unqualified *FOR OFFICIAL USE ONLY* marking on an unaccredited build is the same
+class of error as a fabricated benchmark.
+
+**Token migration:** `--amber`→`--signal`, `--teal`→`--ion` in task 8.1. ~92 references updated
+across 11 PRD files; the only remaining `amber`/`teal` text is the §0/§2.3 history and the
+compatibility note. **No frontend code has been touched — the build still renders v2 colours.**
+
 ## A. Current phase
 Phase 8 Stage A — Interface Work (Tasks 8.1, 8.3, 8.4 complete; Stage A ongoing).
 

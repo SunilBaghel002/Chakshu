@@ -39,16 +39,16 @@ export interface EvidenceObject {
     vertex_count?: number;
     closed_ring?: boolean;
     no_self_intersection?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   note?: string | null;
 }
 
 export interface OverlayCollection {
-  masks: Array<Record<string, any>>;
-  polygons: Array<Record<string, any>>;
+  masks: Array<Record<string, unknown>>;
+  polygons: Array<Record<string, unknown>>;
   boxes: Array<{ bbox_px?: number[]; label?: string; score?: number }>;
-  changes: Array<Record<string, any>>;
+  changes: Array<Record<string, unknown>>;
   mask_url?: string | null;
 }
 

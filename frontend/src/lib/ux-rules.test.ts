@@ -65,7 +65,7 @@ describe('UX Rules Verification (PRD 12 §4, §5, §9)', () => {
       'Find what a shortcut does': { budget: 1, actual: 1, description: 'Press ?' },
     };
 
-    for (const [flowName, flow] of Object.entries(FLOW_CLICK_BUDGETS)) {
+    for (const [_flowName, flow] of Object.entries(FLOW_CLICK_BUDGETS)) {
       expect(flow.actual).toBeLessThanOrEqual(flow.budget);
       expect(flow.actual).toBe(flow.budget);
     }

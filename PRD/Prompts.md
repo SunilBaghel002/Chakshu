@@ -88,7 +88,7 @@ Then read the actual frontend code and produce FIVE things:
 4. VIOLATION LIST, each with file:line, grouped:
    - hex literals / arbitrary px values / numeric z-index in components
    - hardcoded user-facing strings not in lib/copy.ts
-   - more than one filled amber primary visible in one viewport
+   - more than one filled signal primary visible in one viewport
    - <div onClick> or anchors styled as buttons
    - spinners, fake percentages, or progress without a real stage name
    - data-bearing regions missing any of the five states (§5.2)
@@ -157,7 +157,7 @@ Deliver:
 3. ConsoleShell rebuilt on the grid: SLOT-00 marquee, SLOT-01 command bar, SLOT-02 temporal
    bar, SLOT-05 rail, SLOT-10 stage, SLOT-20..26 dossier, SLOT-30 timeline, SLOT-40 status.
    Exact heights (18/56/44/72/24) and widths (56/380) from the spec.
-4. primaryOwner context: at most one filled amber control (variant "primary" OR "bar") per
+4. primaryOwner context: at most one filled signal control (variant "primary" OR "bar") per
    viewport. A second claimant downgrades itself and console.warns in dev.
 5. lib/shortcuts.ts with the full keyboard map from prd/ux-rules.md §6, registered once at
    the shell, conflict-checked in dev.
@@ -228,7 +228,7 @@ Deliver:
    SEARCH, plus the export dialog. Slots do not change between screens — only their content.
 3. All five states (ok | loading | empty | error | capability_notice, with stale as a
    modifier of ok) for every data-bearing region, using the verbatim copy in lib/copy.ts.
-   Refusals render in amber-wash, never red.
+   Refusals render in signal-wash, never red.
 4. Delete the anti-patterns listed in prd/ux-rules.md §9: window.alert/confirm, spinners over
    the map, red capability banners, tooltips as the only documentation of an icon,
    confirmation dialogs for reversible actions (use a toast with UNDO).
@@ -259,7 +259,7 @@ Hard constraints:
 - Every number on the page must exist in PROGRESS.md §I. If it does not, omit the row.
   No estimates, no "≈", no superlatives (W1.2).
 - All six "SEE IT →" deep links must land on a populated console view.
-- Exactly one filled amber primary at any scroll position.
+- Exactly one filled signal primary at any scroll position.
 
 Deliver the sections in W2 order, the metadata/OG block from W5, public/og.png, and the
 responsive breakpoints from W3. Then deploy and verify the public URL from a fresh browser

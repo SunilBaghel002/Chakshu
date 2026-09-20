@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { AlertTriangle, FileImage, Loader2, Sparkles, UploadCloud, X } from 'lucide-react';
+import { AlertTriangle, FileImage, Sparkles, UploadCloud, X } from 'lucide-react';
 import type { DetectionSet } from '../lib/types';
 import { getDetections, uploadImageFile } from '../lib/api';
 
