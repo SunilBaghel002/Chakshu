@@ -3,7 +3,6 @@ import type { UploadManifestData } from '../components/upload/UploadManifestPane
 import type { AskAnswerData } from '../components/ask/AskAnswerPanel';
 import type { SearchResultItem } from '../components/search/SearchResultsPanel';
 import type { ExportOptions } from '../components/ExportModal';
-import { TOAST_COPY } from './copy';
 
 export function useAppScreens(
   showToast?: (toast: { message: string; onUndo?: () => void }) => void

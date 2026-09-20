@@ -48,17 +48,12 @@ freeze:
 fe-install:
 	cd frontend && npm ci
 
-# NOTE: `eslint` requires the config added by build-order.md task 8.0a.
-# Until then `fe-lint` fails with "no config found" — that is expected and is the task.
 fe-lint:
-	cd frontend && npx tsc --noEmit
-	cd frontend && npx eslint src/ || echo "WARN: eslint config missing — see build-order.md task 8.0a"
+	cd frontend && npm run typecheck
+	cd frontend && npm run lint
 
 fe-check: fe-lint
 	cd frontend && npm test
 
-# `make check` does NOT yet include the frontend. `code-standards.md` §1.1 and
-# `architecture.md` §8 gate 7 require tsc + eslint. Wire `fe-check` in at task 8.0a.
-check: lint format purity verify-audit test-fast
+check: lint format purity verify-audit test-fast fe-check
 	@echo "==> make check passed successfully!"
-	@echo "!! frontend NOT checked — run 'make fe-check' (see build-order.md task 8.0a)"

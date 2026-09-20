@@ -5,7 +5,6 @@ import {
   ShieldAlert,
   Layers,
   FileImage,
-  Loader2,
   AlertTriangle,
   Sparkles,
   Maximize2,
@@ -28,7 +27,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   detectionSet,
   onClose,
   onDetectionSetUpdate,
-  onLoadSample,
+  onLoadSample: _onLoadSample,
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customGsd, setCustomGsd] = useState<string>('0.5');
@@ -87,9 +86,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const { upload, coverage, rejections, counts } = detectionSet;
   const objectDetections = detectionSet.detections.filter((d) => d.kind === 'box');
   const rawOverviewUrl = upload.overview_url || `/api/v1/uploads/${upload.id}/overview`;
-  const cacheKey = (detectionSet as any)?.stats ? `${(detectionSet as any).stats.total_objects}_${(detectionSet as any).stats.total_area_m2}` : upload.checksum_sha256 || 'v1';
-  const annotatedImageUrl = `${(detectionSet as any).annotated_url || `/api/v1/uploads/${upload.id}/annotated`}?v=${encodeURIComponent(cacheKey)}`;
-  const explanationText = (detectionSet as any).explanation;
+  const dsRecord = detectionSet as unknown as { stats?: { total_objects?: number; total_area_m2?: number }; annotated_url?: string; explanation?: string };
+  const cacheKey = dsRecord.stats ? `${dsRecord.stats.total_objects}_${dsRecord.stats.total_area_m2}` : upload.checksum_sha256 || 'v1';
+  const annotatedImageUrl = `${dsRecord.annotated_url || `/api/v1/uploads/${upload.id}/annotated`}?v=${encodeURIComponent(cacheKey)}`;
+  const explanationText = dsRecord.explanation;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md select-none font-mono">

@@ -6,7 +6,7 @@
 #>
 param(
     [Parameter(Position=0)]
-    [ValidateSet("help", "check", "test", "test-fast", "offline", "types", "verify-audit", "freeze", "purity", "lint", "format")]
+    [ValidateSet("help", "check", "test", "test-fast", "offline", "types", "verify-audit", "freeze", "purity", "lint", "format", "fe-lint", "fe-check")]
     [string]$Target = "help"
 )
 
@@ -62,6 +62,28 @@ function Run-Freeze {
     python -m pip freeze > backend/requirements.txt
 }
 
+function Run-FeLint {
+    Write-Host "--> Running frontend typecheck & lint checks..." -ForegroundColor Cyan
+    Push-Location frontend
+    try {
+        npm run typecheck
+        npm run lint
+    } finally {
+        Pop-Location
+    }
+}
+
+function Run-FeCheck {
+    Run-FeLint
+    Write-Host "--> Running frontend test suite (vitest)..." -ForegroundColor Cyan
+    Push-Location frontend
+    try {
+        npm test -- --run
+    } finally {
+        Pop-Location
+    }
+}
+
 function Run-Check {
     Write-Host "==========================================" -ForegroundColor Green
     Write-Host "   Chakshu 'make check' Verification      " -ForegroundColor Green
@@ -71,6 +93,7 @@ function Run-Check {
     Run-Purity
     Run-VerifyAudit
     Run-TestFast
+    Run-FeCheck
     Write-Host "==> All checks passed successfully!" -ForegroundColor Green
 }
 
@@ -84,9 +107,11 @@ switch ($Target) {
     "offline"      { Run-Offline }
     "types"        { Run-Types }
     "freeze"       { Run-Freeze }
+    "fe-lint"      { Run-FeLint }
+    "fe-check"     { Run-FeCheck }
     "check"        { Run-Check }
     Default {
         Write-Host "Usage: .\make.ps1 <target>"
-        Write-Host "Available targets: check, test, test-fast, offline, types, verify-audit, freeze, purity, lint, format"
+        Write-Host "Available targets: check, test, test-fast, offline, types, verify-audit, freeze, purity, lint, format, fe-lint, fe-check"
     }
 }

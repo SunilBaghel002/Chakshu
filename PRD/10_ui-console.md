@@ -1,6 +1,6 @@
 # PRD 10 — Console Layout and Control Placement (L)
 
-> **Status:** Authoritative. Extends `ui-context.md` (v2 · Intelligence Console) §4.
+> **Status:** Authoritative. Extends `ui-context.md` (v3 · Sovereign Console) §4.
 > **Scope:** *Where every element and every control goes*, on every screen. `ui-context.md` defines what things look like; this file defines where they live. Neither may be changed by inference.
 > **Work-item IDs:** `L1`–`L9`. Slot IDs come from `ui-context.md` §4 and are reused verbatim here.
 > **Authorised:** by user directive, 20 Sep 2026 — "the positioning of everything is bad… every button".
@@ -94,6 +94,9 @@ One ladder, named, in `frontend/src/index.css`. No number outside this table may
 ## 4. Control map — CONSOLE screen (L4)
 
 Every control, its exact slot, position within the slot, size, variant, and keyboard shortcut. Variants are defined in `ui-controls.md` (K). If a control is not in this table, it does not exist.
+
+### SLOT-00A · classification banner — 28 px, full width
+No controls. Static, never animates. `ui-context.md` §5.7 · `--z-sticky`.
 
 ### SLOT-00 · data-stream marquee — 18 px, full width
 No controls. Hover pauses (M8). `--z-sticky`.

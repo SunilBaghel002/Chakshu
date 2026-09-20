@@ -3,7 +3,7 @@ import type { Evidence } from './types';
 
 export interface UseConsoleActionsParams {
   activeView: string;
-  setActiveView: (view: any) => void;
+  setActiveView: (view: 'map' | 'review' | 'upload' | 'ask' | 'search') => void;
   selectedEvidence: Evidence | null;
   setSelectedEvidence: (ev: Evidence | null) => void;
   visibleEvidenceList: Evidence[];

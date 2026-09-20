@@ -59,6 +59,7 @@ export const MeasuredBlock: React.FC<MeasuredBlockProps> = ({
             size="sm"
             shortcut="B"
             onClick={onToggleBeforeAfter}
+            aria-pressed={isBeforeActive}
             className="h-7 px-2"
             title="Toggle Before/After (B)"
           >

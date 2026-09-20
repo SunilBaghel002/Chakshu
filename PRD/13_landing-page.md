@@ -1,7 +1,7 @@
 # PRD 13 — Landing Page (W)
 
 > **Status:** Authoritative.
-> **Scope:** the public front door at `/`. Not the console. Same design tokens (`ui-context.md` v2), different layout system — the console grid does not apply here.
+> **Scope:** the public front door at `/`. Not the console. Same design tokens (`ui-context.md` v3), different layout system — the console grid does not apply here.
 > **Work-item IDs:** `W1`–`W7`.
 > **Purpose, in one line:** in 20 seconds a stranger must know *what it does*, *that it is real*, and *that it runs with no internet* — and have an obvious way in.
 
@@ -32,6 +32,7 @@ Left pad 24, link gap 24, right gap 12. Below 900 px the four links collapse int
 Left column, top-aligned at 22 vh:
 - Eyebrow, `--t-tag` signal: `SIH 2026 · PS SIH26227 (MoD) + SIH26167 (ISRO/SAC)`
 - H1, 48/52 cond 700: **`THE EYE THAT NEVER BLINKS`**, second line in `--signal`: **`FROM ORBIT TO EVIDENCE.`**
+- **3 px tricolour rule (`ui-context.md` §5.8) across the top edge of the hero** — one of only three permitted placements
 - Sub, 17/26 `--ink-2`, max 52 ch: `Chakshu turns multi-year satellite imagery into measured, auditable change evidence — and answers questions about it in plain language. Fully on-prem. Runs with the network disabled.`
 - CTAs, gap 12: **`OPEN THE CONSOLE`** (`bar`, 44 px, `→`) · **`SEE HOW IT WORKS`** (`secondary`, 44 px, scrolls to W2.3)
 - Trust row, `--t-tag` `--ink-3`, gap 16: `NO CLOUD` · `NO THIRD-PARTY TRACKERS` · `MODEL LICENCES DECLARED` · `CPU ONLY`

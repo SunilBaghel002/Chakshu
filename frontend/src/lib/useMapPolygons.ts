@@ -117,7 +117,9 @@ export function useMapPolygons({
   // Compute container BBox from a Leaflet layer for M3 lock-on brackets
   const computeContainerBBox = useCallback((layer: L.Path): BBox | null => {
     if (!map) return null;
-    const bounds = (layer as any).getBounds?.();
+    const bounds = 'getBounds' in layer && typeof (layer as L.Polygon).getBounds === 'function'
+      ? (layer as L.Polygon).getBounds()
+      : null;
     if (!bounds) return null;
 
     const nw = map.latLngToContainerPoint(bounds.getNorthWest());
@@ -232,7 +234,7 @@ export function useMapPolygons({
         const color = getClassColor(facilityLabel);
         const onset = ev.temporal?.first_supported;
         const isPreExisting = Boolean(beforeDateRef.current && onset && onset < beforeDateRef.current);
-        const isTrack3 = (ev.measurement.kind as string) === 'INFERRED' || (ev as any).track === 'object_model';
+        const isTrack3 = (ev.measurement.kind as string) === 'INFERRED' || ('track' in ev && ev.track === 'object_model');
 
         const feature = {
           type: 'Feature' as const,
@@ -249,8 +251,8 @@ export function useMapPolygons({
           geometry: ev.measurement.geom_4326,
         };
 
-        haloGroup.addData(feature as any);
-        layerGroup.addData(feature as any);
+        haloGroup.addData(feature as unknown as GeoJSON.GeoJsonObject);
+        layerGroup.addData(feature as unknown as GeoJSON.GeoJsonObject);
 
         // If area is very small (sub-pixel box when zoomed out), also add crosshair dot
         if (ev.measurement.centroid && ev.measurement.area_m2 && ev.measurement.area_m2 < 120) {
@@ -282,7 +284,6 @@ export function useMapPolygons({
     return () => {
       map.off('moveend zoomend', evaluateLabelCollisions);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, evidenceList, onSelectEvidence, showAllPolygons, selectedEvidenceId, setHoveredEvidence, onHoverWithBbox, evaluateLabelCollisions, computeContainerBBox]);
 
   // Lightweight style update on date change
