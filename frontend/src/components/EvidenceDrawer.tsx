@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { X, Check, Ban, Layers, ShieldCheck, Activity } from 'lucide-react';
+import {
+  X,
+  Check,
+  Ban,
+} from 'lucide-react';
 import type { Evidence } from '../lib/types';
 import { COPY } from '../lib/copy';
-import { getClassColor, getClassBadge, formatClassLabel } from '../lib/palette';
+import { getClassColor, getClassBadge } from '../lib/palette';
 import { EvidenceTriptych } from './EvidenceTriptych';
 import { EvidenceConfidenceGauge } from './EvidenceConfidenceGauge';
 import { SuppressionPanel } from './SuppressionPanel';
@@ -14,13 +18,17 @@ interface EvidenceDrawerProps {
   onReject?: (id: string) => void;
 }
 
+/**
+ * SLOT-20 — Dossier Panel (380px)
+ * Skewed amber dossier bars, corner ticks, 5-arc confidence gauge.
+ */
 export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
   evidence,
   onClose,
   onConfirm,
   onReject,
 }) => {
-  const [activeTab, setActiveTab] = useState<'evidence' | 'trace' | 'suppression'>('evidence');
+  const [activeTab, setActiveTab] = useState<'evidence' | 'rules' | 'history'>('evidence');
   const [analystDecision, setAnalystDecision] = useState<'pending' | 'confirmed' | 'rejected'>(
     evidence?.status ?? 'pending'
   );
@@ -42,11 +50,30 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
     temporal_persistence: 0.88,
   };
 
+  const tabs: { key: typeof activeTab; label: string }[] = [
+    { key: 'evidence', label: 'EVIDENCE' },
+    { key: 'rules', label: 'TRACE' },
+    { key: 'history', label: `SUPPRESSION (${evidence.suppression_context?.candidates_suppressed ?? 312})` },
+  ];
+
   return (
-    <aside className="w-96 md:w-[420px] bg-[#090D13] border-l border-[#1C2333] h-full flex flex-col shadow-2xl z-30 select-none overflow-hidden text-slate-200 font-mono">
-      {/* 1. Header with Tactical Badges and ID */}
-      <div className="p-3.5 border-b border-[#1C2333] bg-[#0D1117] space-y-1.5">
-        <div className="flex items-center justify-between">
+    <aside
+      id="slot-20-dossier"
+      className="flex flex-col select-none overflow-hidden animate-dossier-in"
+      style={{
+        width: 380,
+        background: 'var(--panel)',
+        borderLeft: '1px solid var(--line)',
+        height: '100%',
+        zIndex: 30,
+      }}
+    >
+      {/* Dossier Header */}
+      <div
+        className="p-3 flex items-center justify-between"
+        style={{ borderBottom: '1px solid var(--line)', background: 'var(--bg)' }}
+      >
+        <div>
           <div className="flex items-center gap-2">
             <span
               className="t-tag font-bold"
@@ -62,264 +89,276 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
               {badge.name}
             </span>
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                analystDecision === 'confirmed'
-                  ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/50'
-                  : analystDecision === 'rejected'
-                  ? 'bg-rose-950/40 text-rose-300 border border-rose-500/50'
-                  : 'bg-[#F2B84B]/15 text-[#F2B84B] border border-[#F2B84B]/40'
-              }`}
+              className="t-tag"
+              style={{
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 9,
+                background: analystDecision === 'confirmed' ? 'var(--confirmed-fill)' : analystDecision === 'rejected' ? 'var(--rejected-fill)' : 'var(--amber-wash)',
+                border: `1px solid ${analystDecision === 'confirmed' ? 'var(--confirmed-border)' : analystDecision === 'rejected' ? 'var(--rejected-border)' : 'var(--amber)'}`,
+                color: analystDecision === 'confirmed' ? 'var(--confirmed-text)' : analystDecision === 'rejected' ? 'var(--rejected-text)' : 'var(--amber)',
+              }}
             >
-              {analystDecision === 'confirmed' ? 'CONFIRMED' : analystDecision === 'rejected' ? 'REJECTED' : 'PENDING'}
+              {analystDecision === 'confirmed' ? 'VERIFIED' : analystDecision === 'rejected' ? 'REJECTED' : 'PENDING'}
             </span>
           </div>
-
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-            title="Close inspector"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div>
-          <div className="font-bold text-xs text-[var(--ink)] font-mono mt-1 line-clamp-1">
+          <div className="font-bold text-xs text-[var(--ink)] font-mono mt-1.5 line-clamp-1" style={{ maxWidth: 280 }}>
             {facilityName}
           </div>
-          <p className="text-[10px] text-slate-400 truncate mt-0.5">
-            ID: {evidence.change_object_id}
+          <p className="t-mono mt-0.5" style={{ color: 'var(--ink-3)', fontSize: 10 }}>
+            ID: {evidence.change_object_id.substring(0, 16)}…
           </p>
         </div>
-      </div>
 
-      {/* 2. Tactical Navigation Tabs */}
-      <div className="flex border-b border-[#1C2333] bg-[#05070A] text-[11px] font-bold text-slate-400">
         <button
-          onClick={() => setActiveTab('evidence')}
-          className={`flex-1 py-2 text-center transition-all border-b-2 ${
-            activeTab === 'evidence'
-              ? 'border-[#F2B84B] text-[#F2B84B] bg-[#0D1117]'
-              : 'border-transparent hover:text-slate-200'
-          }`}
+          onClick={onClose}
+          className="p-1.5 transition-colors cursor-pointer"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--ink-3)',
+            borderRadius: 'var(--radius)',
+          }}
+          title="Close dossier"
         >
-          EVIDENCE
-        </button>
-        <button
-          onClick={() => setActiveTab('trace')}
-          className={`flex-1 py-2 text-center transition-all border-b-2 ${
-            activeTab === 'trace'
-              ? 'border-[#F2B84B] text-[#F2B84B] bg-[#0D1117]'
-              : 'border-transparent hover:text-slate-200'
-          }`}
-        >
-          TRACE
-        </button>
-        <button
-          onClick={() => setActiveTab('suppression')}
-          className={`flex-1 py-2 text-center transition-all border-b-2 ${
-            activeTab === 'suppression'
-              ? 'border-[#F2B84B] text-[#F2B84B] bg-[#0D1117]'
-              : 'border-transparent hover:text-slate-200'
-          }`}
-        >
-          SUPPRESSION ({suppression_context?.candidates_suppressed ?? 65})
+          <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* 3. Drawer Body */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
+      {/* Tabs */}
+      <div
+        className="flex"
+        style={{ borderBottom: '1px solid var(--line)', background: 'var(--bg)' }}
+      >
+        {tabs.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className="flex-1 py-2 text-center t-tag transition-colors relative cursor-pointer"
+            style={{
+              background: activeTab === key ? 'var(--panel)' : 'transparent',
+              color: activeTab === key ? 'var(--amber)' : 'var(--ink-3)',
+              border: 'none',
+              fontSize: 9,
+            }}
+          >
+            {label}
+            {activeTab === key && (
+              <span
+                className="absolute bottom-0 left-1/4 right-1/4"
+                style={{ height: 2, background: 'var(--amber)' }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {activeTab === 'evidence' && (
           <>
-            {/* Card 1: Measured Ground Area */}
-            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#F2B84B] uppercase tracking-wider">
-                <span>■</span>
-                <span>MEASURED — GROUND AREA</span>
+            {/* Measured Area — dossier bar */}
+            <div>
+              <div className="dossier-bar" style={{ marginBottom: 8 }}>
+                <span>{COPY.measuredBadge} — GROUND AREA</span>
               </div>
-
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-3xl font-extrabold text-white tabular-nums tracking-tight">
-                  {measurement.area_label}
-                </span>
-                <span className="text-xs text-slate-400 tabular-nums">
-                  ({measurement.area_m2.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²)
-                </span>
-              </div>
-
-              {/* Status Chip */}
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  MEASURED — UTM {measurement.utm_epsg || '32643'}
-                </span>
-              </div>
-
-              <div className="pt-2 border-t border-[#1C2333] flex items-center justify-between text-[10px] text-slate-400">
-                <span>Perimeter: <span className="text-slate-200 font-semibold">{measurement.perimeter_m} m</span></span>
-                <span>Projection: <span className="text-slate-200 font-semibold">UTM {measurement.utm_epsg || '32643'}</span></span>
-              </div>
-            </div>
-
-            {/* Card 2: Satellite Imagery Triplet */}
-            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#F2B84B] uppercase tracking-wider">
-                <span>■</span>
-                <span>SATELLITE IMAGERY</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {/* Before Card */}
-                <div className="bg-[#05070A] border border-[#1C2333] rounded p-1.5 text-center flex flex-col justify-between">
-                  <div className="w-full h-16 rounded bg-[#111622] border border-slate-800 flex items-center justify-center overflow-hidden relative">
-                    <span className="text-[9px] font-mono uppercase text-amber-300 font-bold px-1 py-0.5 rounded bg-amber-950/60 border border-amber-600/40">
-                      BEFORE
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[9px] space-y-0.5">
-                    <span className="text-slate-400 block truncate">{sources.before.acquired_at}</span>
-                    <span className="text-emerald-400 font-bold block">▼ 1.5%</span>
-                  </div>
-                </div>
-
-                {/* Mask Card */}
-                <div className="bg-[#05070A] border border-[#1C2333] rounded p-1.5 text-center flex flex-col justify-between">
-                  <div className="w-full h-16 rounded bg-[#090D13] border border-[#24C6C8]/40 flex items-center justify-center overflow-hidden relative">
-                    <div className="w-7 h-7 rounded bg-[#24C6C8]/30 border-2 border-[#24C6C8]" />
-                  </div>
-                  <div className="mt-1 text-[9px] space-y-0.5">
-                    <span className="text-[#24C6C8] font-bold block">Detected Shape</span>
-                    <span className="text-slate-400 block">Vectorized</span>
-                  </div>
-                </div>
-
-                {/* After Card */}
-                <div className="bg-[#05070A] border border-[#1C2333] rounded p-1.5 text-center flex flex-col justify-between">
-                  <div className="w-full h-16 rounded bg-[#111622] border border-slate-800 flex items-center justify-center overflow-hidden relative">
-                    <span className="text-[9px] font-mono uppercase text-orange-400 font-bold px-1 py-0.5 rounded bg-orange-950/60 border border-orange-600/40">
-                      AFTER
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[9px] space-y-0.5">
-                    <span className="text-slate-400 block truncate">{sources.after.acquired_at}</span>
-                    <span className="text-emerald-400 font-bold block">▲ 1.5%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Confidence Progress Gauge */}
-            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#F2B84B] uppercase tracking-wider">
-                  <span>■</span>
-                  <span>CONFIDENCE</span>
-                </div>
-                <span className="text-[9px] text-[#24C6C8] font-bold">ALGORITHM CONSENSUS</span>
-              </div>
-
-              <div className="flex items-center gap-4 pt-1">
-                {/* Amber Progress Ring */}
-                <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#1C2333" strokeWidth="3" />
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="14"
-                      fill="none"
-                      stroke="#F2B84B"
-                      strokeWidth="3"
-                      strokeDasharray={`${(confidence.overall || 0.91) * 88} 88`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="absolute font-mono text-sm font-extrabold text-[#F2B84B] tabular-nums">
-                    {Math.round((confidence.overall || 0.91) * 100)}%
+              <div
+                className="console-panel corner-ticks p-3"
+              >
+                <div className="flex items-baseline gap-2">
+                  <span className="t-figure tabular-nums" style={{ color: 'var(--amber)' }}>
+                    {measurement.area_label}
+                  </span>
+                  <span className="t-mono tabular-nums" style={{ color: 'var(--ink-3)' }}>
+                    ({measurement.area_m2.toLocaleString('en-US', { minimumFractionDigits: 1 })} m²)
                   </span>
                 </div>
+                <div className="chip-measured t-tag mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--measured-border)', display: 'inline-block' }} />
+                  {COPY.measuredBadge} — UTM {measurement.utm_epsg}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3 t-mono" style={{ fontSize: 11, color: 'var(--ink-2)' }}>
+                  <div>
+                    <span style={{ color: 'var(--ink-3)' }}>Perimeter: </span>
+                    <span className="tabular-nums">{measurement.perimeter_m} m</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--ink-3)' }}>Projection: </span>
+                    <span className="tabular-nums">UTM {measurement.utm_epsg}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                <div className="flex-1 space-y-1 text-[10px]">
-                  <div className="flex justify-between text-slate-400">
-                    <span>Geometric mean:</span>
-                    <span className="text-white font-bold">{(confidence.overall || 0.91).toFixed(3)}</span>
+            {/* Evidence Triptych */}
+            <EvidenceTriptych sources={sources} />
+
+            {/* 5-Component Confidence */}
+            <EvidenceConfidenceGauge
+              overall={confidence.overall}
+              parts={parts}
+              calibrated={confidence.calibrated}
+              calibrationEce={confidence.calibration_ece}
+              calibrationN={confidence.calibration_n}
+            />
+
+            {/* Temporal / Onset */}
+            <div>
+              <div className="dossier-bar" style={{ marginBottom: 8 }}>
+                <span>TEMPORAL ONSET</span>
+              </div>
+              <div className="console-panel p-3 space-y-2 t-mono" style={{ fontSize: 11 }}>
+                <div className="flex justify-between" style={{ color: 'var(--ink-2)' }}>
+                  <span style={{ color: 'var(--ink-3)' }}>First Supported:</span>
+                  <span style={{ color: 'var(--ink)', fontWeight: 700 }}>{temporal.first_supported ?? '2021-11-25'}</span>
+                </div>
+                {temporal.onset_interval && (
+                  <div
+                    className="p-2"
+                    style={{
+                      background: 'var(--amber-wash)',
+                      border: '1px solid var(--amber)',
+                      borderRadius: 'var(--radius)',
+                      color: 'var(--amber)',
+                      fontSize: 10,
+                    }}
+                  >
+                    ONSET: {temporal.onset_interval.start} → {temporal.onset_interval.end} (±{temporal.onset_interval.days}d)
                   </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>ECE (Calibration Error):</span>
-                    <span className="text-emerald-400 font-bold">0.041</span>
+                )}
+                {temporal.onset_gaps && temporal.onset_gaps.length > 0 && temporal.onset_gaps[0] && (
+                  <div
+                    className="p-2"
+                    style={{
+                      background: 'var(--inferred-fill)',
+                      border: '1px dashed var(--inferred-border)',
+                      borderRadius: 'var(--radius)',
+                      color: 'var(--inferred-text)',
+                      fontSize: 10,
+                    }}
+                  >
+                    GAP: {temporal.onset_gaps[0].reason?.replace('_', ' ')} ({temporal.onset_gaps[0].start} → {temporal.onset_gaps[0].end})
                   </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>Validation Samples:</span>
-                    <span className="text-white font-bold">N=150</span>
-                  </div>
+                )}
+                <div className="flex justify-between" style={{ color: 'var(--ink-3)', fontSize: 10 }}>
+                  <span>Trend:</span>
+                  <span className="t-tag" style={{ color: 'var(--teal)' }}>
+                    {temporal.trend ?? 'EXPANDING'} (k={temporal.persistence_k ?? 3})
+                  </span>
                 </div>
               </div>
             </div>
           </>
         )}
 
-        {activeTab === 'trace' && (
-          <div className="space-y-2 text-[11px]">
-            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-1.5">
-              <span className="text-[#F2B84B] font-bold block text-[10px] uppercase">1. Spectral Change Detection</span>
-              <div className="flex justify-between text-slate-300">
-                <span>NDBI (Built-up Delta):</span>
-                <span className="text-emerald-400 font-bold">+0.21 ✓</span>
-              </div>
-              <div className="flex justify-between text-slate-300">
-                <span>NDVI (Vegetation Delta):</span>
-                <span className="text-emerald-400 font-bold">-0.34 ✓</span>
-              </div>
+        {activeTab === 'rules' && (
+          <div className="space-y-2">
+            <div className="dossier-bar" style={{ marginBottom: 8 }}>
+              <span>DECISION TRACE</span>
             </div>
+            <p className="t-body" style={{ color: 'var(--ink-3)', fontSize: 12, marginBottom: 8 }}>
+              Automated decision table — exact spectral and geometric criteria evaluated:
+            </p>
 
-            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-1.5">
-              <span className="text-[#F2B84B] font-bold block text-[10px] uppercase">2. Temporal Progression</span>
-              <div className="flex justify-between text-slate-300">
-                <span>First Detected:</span>
-                <span className="text-white font-bold">{temporal.first_supported ?? '2024-06-09'}</span>
+            {(classification.rule_trace && classification.rule_trace.length > 0
+              ? classification.rule_trace
+              : [
+                  { rule: 'ndbi_rise', tested_value: 0.21, threshold: 0.10, comparator: '>=', passed: true, rationale: 'Building index (NDBI) jumped above threshold, indicating concrete, roof, or runway pavement.' },
+                  { rule: 'ndvi_drop', tested_value: -0.34, threshold: -0.15, comparator: '<=', passed: true, rationale: 'Vegetation index (NDVI) fell sharply as farmland was stripped and cleared.' },
+                  { rule: 'ndwi_water_check', tested_value: -0.28, threshold: 0.15, comparator: '<', passed: true, rationale: 'NDWI remains negative, confirming dry soil excavation and rejecting seasonal flooding.' },
+                ]
+            ).map((ruleItem, rIdx) => {
+              const isPassed = ruleItem.passed !== false && ruleItem.fired !== false;
+              return (
+                <div
+                  key={rIdx}
+                  className="console-panel p-2.5 space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="t-tag" style={{ color: 'var(--amber)', fontSize: 10 }}>
+                      {ruleItem.rule} (val: {String(ruleItem.tested_value ?? ruleItem.value)})
+                    </span>
+                    <span
+                      className="t-tag"
+                      style={{
+                        padding: '1px 6px',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 9,
+                        background: isPassed ? 'var(--measured-fill)' : 'var(--rejected-fill)',
+                        border: `1px solid ${isPassed ? 'var(--measured-border)' : 'var(--rejected-border)'}`,
+                        color: isPassed ? 'var(--measured-text)' : 'var(--rejected-text)',
+                      }}
+                    >
+                      {isPassed ? '✓ PASS' : '✕ FAIL'}
+                    </span>
+                  </div>
+                  <div className="t-mono" style={{ color: 'var(--ink-3)', fontSize: 10 }}>
+                    Threshold: {ruleItem.comparator ?? '>='} {String(ruleItem.threshold ?? '0.0')}
+                  </div>
+                  {ruleItem.rationale && (
+                    <p className="t-body" style={{ color: 'var(--ink-2)', fontSize: 11, lineHeight: '16px' }}>
+                      {ruleItem.rationale}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Alternatives */}
+            {classification.alternatives && classification.alternatives.length > 0 && (
+              <div>
+                <div className="dossier-bar" style={{ marginTop: 12, marginBottom: 8 }}>
+                  <span>ALTERNATIVES CONSIDERED</span>
+                </div>
+                <div className="space-y-1.5">
+                  {classification.alternatives.map((alt, aIdx) => (
+                    <div
+                      key={aIdx}
+                      className="console-panel p-2 t-mono"
+                      style={{ fontSize: 11 }}
+                    >
+                      <div className="flex justify-between">
+                        <span className="t-tag" style={{ color: 'var(--amber)', fontSize: 10 }}>
+                          {alt.change_type ?? alt.type}
+                        </span>
+                        <span className="tabular-nums" style={{ color: 'var(--ink-2)' }}>
+                          {((alt.score ?? 0) * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex justify-between text-slate-300">
-                <span>Persistence Check:</span>
-                <span className="text-emerald-400 font-bold">PASSED (4+ Passes)</span>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
-        {activeTab === 'suppression' && (
-          <div className="space-y-2 text-[11px]">
-            <div className="bg-[#0D1117] border border-[#1C2333] p-3 rounded tactical-corners space-y-1.5">
-              <div className="flex justify-between font-bold">
-                <span className="text-[#F2B84B]">FALSE ALARM SUPPRESSION</span>
-                <span className="text-emerald-400">65 Filtered</span>
-              </div>
-              <div className="space-y-1 text-slate-400 text-[10px] pt-1">
-                <div className="flex justify-between bg-[#05070A] p-1.5 rounded border border-[#1C2333]">
-                  <span>Cloud Shadows Filtered:</span>
-                  <span className="text-white font-bold">28</span>
-                </div>
-                <div className="flex justify-between bg-[#05070A] p-1.5 rounded border border-[#1C2333]">
-                  <span>Seasonal Phenology Shift:</span>
-                  <span className="text-white font-bold">24</span>
-                </div>
-                <div className="flex justify-between bg-[#05070A] p-1.5 rounded border border-[#1C2333]">
-                  <span>Sensor Registration Shake:</span>
-                  <span className="text-white font-bold">13</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        {activeTab === 'history' && (
+          <SuppressionPanel
+            aoiId={evidence.aoi_id}
+            suppressionContext={suppression_context}
+          />
         )}
       </div>
 
-      {/* 4. Action Buttons (Reject / Confirm) */}
-      <div className="p-3 border-t border-[#1C2333] bg-[#0D1117] flex items-center justify-between gap-3">
+      {/* Action Footer */}
+      <div
+        className="p-3 flex items-center gap-2"
+        style={{ borderTop: '1px solid var(--line)', background: 'var(--bg)' }}
+      >
         <button
           onClick={() => {
             setAnalystDecision('rejected');
             onReject?.(evidence.change_object_id);
           }}
-          className="flex-1 py-2 px-3 rounded bg-[#111622] hover:bg-rose-950/40 text-rose-400 border border-rose-800/60 text-xs font-bold transition-all flex items-center justify-center gap-1.5 uppercase"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 t-tag cursor-pointer transition-colors"
+          style={{
+            background: 'var(--rejected-fill)',
+            border: '1px solid var(--rejected-border)',
+            color: 'var(--rejected-text)',
+            borderRadius: 'var(--radius)',
+            fontSize: 10,
+          }}
         >
           <Ban className="w-3.5 h-3.5" />
           <span>REJECT</span>
@@ -330,9 +369,10 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
             setAnalystDecision('confirmed');
             onConfirm?.(evidence.change_object_id);
           }}
-          className="flex-1 py-2 px-3 rounded bg-[#F2B84B] hover:bg-[#d9a33e] text-black font-extrabold text-xs shadow-[0_0_12px_rgba(242,184,75,0.4)] transition-all flex items-center justify-center gap-1.5 uppercase"
+          className="btn-primary flex-1 flex items-center justify-center gap-1.5"
+          style={{ fontSize: 10, padding: '8px 12px' }}
         >
-          <Check className="w-3.5 h-3.5 stroke-[3]" />
+          <Check className="w-3.5 h-3.5" />
           <span>CONFIRM</span>
         </button>
       </div>

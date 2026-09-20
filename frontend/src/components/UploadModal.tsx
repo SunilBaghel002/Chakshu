@@ -21,12 +21,14 @@ interface UploadModalProps {
   detectionSet: DetectionSet | null;
   onClose: () => void;
   onDetectionSetUpdate?: (newSet: DetectionSet) => void;
+  onLoadSample?: (type: 'georeferenced' | 'visual_only' | 'unknown_gsd') => void;
 }
 
 export const UploadModal: React.FC<UploadModalProps> = ({
   detectionSet,
   onClose,
   onDetectionSetUpdate,
+  onLoadSample,
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customGsd, setCustomGsd] = useState<string>('0.5');

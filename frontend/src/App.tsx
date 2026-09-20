@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppHeader } from './components/AppHeader';
 import { DataStreamMarquee } from './components/DataStreamMarquee';
 import { TacticalTelemetryBar } from './components/TacticalTelemetryBar';
-import { IconRail, type NavView } from './components/IconRail';
+import { IconRail } from './components/IconRail';
 import { StatusLine } from './components/StatusLine';
 import { AmbientScanline } from './components/AmbientScanline';
 import { MapPane } from './components/MapPane';
@@ -11,7 +11,6 @@ import { EvidenceDrawer } from './components/EvidenceDrawer';
 import { AskPanel } from './components/AskPanel';
 import { ReviewQueueModal } from './components/ReviewQueueModal';
 import { UploadModal } from './components/UploadModal';
-import { SearchModal } from './components/SearchModal';
 import { TemporalBar } from './components/TemporalBar';
 import {
   getAois,
@@ -47,7 +46,7 @@ export const App: React.FC = () => {
   const [afterDate, setAfterDate] = useState<string>('2026-08-18');
 
   // UI state
-  const [activeView, setActiveView] = useState<NavView>('map');
+  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask'>('map');
   const [isMock, setIsMock] = useState<boolean>(isMockMode());
   const [sliderPos, setSliderPos] = useState<number>(50);
   const [isSwipeActive, setIsSwipeActive] = useState<boolean>(true);
@@ -112,17 +111,27 @@ export const App: React.FC = () => {
     setIsMock(next);
   };
 
-  const handleSelectBeforeDate = useCallback((newBefore: string) => {
-    const { before, after } = enforceMinGapForBefore(newBefore, afterDate);
-    setBeforeDate(before);
-    if (after !== afterDate) setAfterDate(after);
-  }, [afterDate]);
+  const handleSelectBeforeDate = useCallback(
+    (newBefore: string) => {
+      const { before, after } = enforceMinGapForBefore(newBefore, afterDate);
+      setBeforeDate(before);
+      if (after !== afterDate) {
+        setAfterDate(after);
+      }
+    },
+    [afterDate]
+  );
 
-  const handleSelectAfterDate = useCallback((newAfter: string) => {
-    const { before, after } = enforceMinGapForAfter(newAfter, beforeDate);
-    setAfterDate(after);
-    if (before !== beforeDate) setBeforeDate(before);
-  }, [beforeDate]);
+  const handleSelectAfterDate = useCallback(
+    (newAfter: string) => {
+      const { before, after } = enforceMinGapForAfter(newAfter, beforeDate);
+      setAfterDate(after);
+      if (before !== beforeDate) {
+        setBeforeDate(before);
+      }
+    },
+    [beforeDate]
+  );
 
   const handleSwapDates = () => {
     const temp = beforeDate;
@@ -131,7 +140,9 @@ export const App: React.FC = () => {
   };
 
   const handleConfirmEvidence = async (id: string) => {
-    setEvidenceList((prev) => prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e)));
+    setEvidenceList((prev) =>
+      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
+    );
     if (selectedEvidence?.change_object_id === id) {
       setSelectedEvidence((prev) => (prev ? { ...prev, status: 'confirmed' } : null));
     }
@@ -139,7 +150,9 @@ export const App: React.FC = () => {
   };
 
   const handleRejectEvidence = async (id: string) => {
-    setEvidenceList((prev) => prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e)));
+    setEvidenceList((prev) =>
+      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
+    );
     if (selectedEvidence?.change_object_id === id) {
       setSelectedEvidence((prev) => (prev ? { ...prev, status: 'rejected' } : null));
     }
@@ -313,6 +326,12 @@ export const App: React.FC = () => {
               presetTarget={presetTarget}
               onPresetConsumed={() => setPresetTarget(null)}
             />
+
+            {activeView === 'ask' && (
+              <div className="absolute left-6 top-6 z-[500] drop-shadow-2xl">
+                <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
+              </div>
+            )}
           </div>
 
           {/* SLOT-30: Timeline Strip */}
@@ -359,29 +378,15 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Upload Aerial / Satellite Image Modal */}
       {activeView === 'upload' && (
         <UploadModal
           detectionSet={detectionSet}
           onClose={() => setActiveView('map')}
-          onDetectionSetUpdate={(newSet) => {
-            setDetectionSet(newSet);
+          onDetectionSetUpdate={setDetectionSet}
+          onLoadSample={async (type) => {
+            const res = await getDetections(type);
+            if (res.kind === 'ok') setDetectionSet(res.data);
           }}
-        />
-      )}
-
-      {/* Ask AI Intelligence Panel */}
-      {activeView === 'ask' && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md select-none">
-          <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
-        </div>
-      )}
-
-      {/* OpenCLIP Semantic Vector Search Modal */}
-      {activeView === 'search' && (
-        <SearchModal
-          aoiId={selectedAoiId}
-          onClose={() => setActiveView('map')}
         />
       )}
     </div>

@@ -1,19 +1,81 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHAKSHU — Intelligence Console Design System v2
+   Source of truth: PRD/09_ui-context.md
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @layer base {
   :root {
-    --bg-base: #080B10;
-    --bg-surface: #0E1219;
-    --bg-elevated: #141A24;
-    --bg-sunken: #05070A;
-    --border-subtle: #1C2333;
-    --border-strong: #2D374D;
-    --accent-amber: #F2B84B;
-    --accent-amber-glow: rgba(242, 184, 75, 0.4);
-    --accent-cyan: #24C6C8;
-    --accent-cyan-glow: rgba(36, 198, 200, 0.35);
-    --metric-green: #35D07F;
-    --metric-green-glow: rgba(53, 208, 127, 0.3);
+    /* ── §2.1 Base — near-black, slightly cool, never pure black ── */
+    --bg: #0B0D10;
+    --bg-grid: rgba(240,180,95,0.055);
+    --panel: #121519;
+    --panel-2: #171B21;
+    --panel-3: #1E242B;
+    --well: #0E1114;
+    --line: #262C34;
+    --line-strong: #39424D;
+
+    /* ── §2.2 Ink ── */
+    --ink: #EDEAE3;
+    --ink-2: #A6ADB5;
+    --ink-3: #6B7480;
+    --ink-ghost: rgba(237,234,227,0.06);
+
+    /* ── §2.3 Accent — amber dossier family ── */
+    --amber: #F0B45F;
+    --amber-hot: #F5C15C;
+    --amber-deep: #8A4B12;
+    --amber-wash: rgba(240,180,95,0.12);
+    --teal: #35B8C0;
+    --teal-wash: rgba(53,184,192,0.12);
+
+    /* ── §2.4 Semantic states ── */
+    --measured-fill: rgba(47,191,113,0.12);
+    --measured-border: #2FBF71;
+    --measured-text: #5AD79A;
+    --inferred-fill: rgba(240,180,95,0.10);
+    --inferred-border: #F0B45F;
+    --inferred-text: #F0B45F;
+    --unverified-fill: transparent;
+    --unverified-border: #6B7480;
+    --unverified-text: #A6ADB5;
+    --confirmed-fill: rgba(47,191,113,0.12);
+    --confirmed-border: #2FBF71;
+    --confirmed-text: #5AD79A;
+    --rejected-fill: rgba(229,72,77,0.12);
+    --rejected-border: #E5484D;
+    --rejected-text: #F2767B;
+    --suppressed-fill: rgba(107,116,128,0.10);
+    --suppressed-border: #6B7480;
+    --suppressed-text: #A6ADB5;
+
+    /* Status colors */
+    --success: #2FBF71;
+    --warning: #F0B45F;
+    --danger: #E5484D;
+    --info: #35B8C0;
+    --neutral: #6B7480;
+
+    /* ── §3 Typography ── */
+    --font-cond: "Bahnschrift", "DIN Alternate", "Franklin Gothic Medium",
+                 "Arial Narrow", "Inter", sans-serif;
+    --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo,
+                 Consolas, "Liberation Mono", monospace;
+    --font-ui:   "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto,
+                 "Noto Sans", "Noto Sans Devanagari", sans-serif;
+
+    /* ── §7 Motion tokens ── */
+    --m-instant: 80ms ease-out;
+    --m-fast: 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    --m-base: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    --m-scan: 900ms linear;
+    --m-tick: 400ms ease-out;
+
+    /* Spacing & radius */
+    --radius: 4px;
+    --radius-sm: 2px;
   }
 
   html, body {
@@ -21,134 +83,417 @@
     padding: 0;
     height: 100%;
     width: 100%;
-    background-color: #080B10;
-    color: #F3F4F6;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: 13.5px;
+    line-height: 20px;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
 }
 
-/* Tactical Corner Brackets (for mission control cards) */
-.tactical-corners {
-  position: relative;
-}
-.tactical-corners::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  width: 8px;
-  height: 8px;
-  border-top: 2px solid #F2B84B;
-  border-left: 2px solid #F2B84B;
-  pointer-events: none;
-}
-.tactical-corners::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  right: -1px;
-  width: 8px;
-  height: 8px;
-  border-bottom: 2px solid #F2B84B;
-  border-right: 2px solid #F2B84B;
-  pointer-events: none;
+/* ═══════════════════════════════════════════════════════════════════════════
+   §3 Typography utility classes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.t-ghost {
+  font-family: var(--font-cond);
+  font-size: 96px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--ink-ghost);
 }
 
-/* Amber Glowing Border */
-.amber-glow-box {
-  border: 1px solid rgba(242, 184, 75, 0.45);
-  box-shadow: 0 0 12px rgba(242, 184, 75, 0.15);
+.t-display {
+  font-family: var(--font-cond);
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
-/* Cyan Telemetry Dot */
-.cyan-telemetry-dot {
-  box-shadow: 0 0 8px rgba(36, 198, 200, 0.8);
+.t-h1 {
+  font-family: var(--font-cond);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.t-h2 {
+  font-family: var(--font-cond);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.t-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 400;
+}
+
+.t-body {
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.t-body-strong {
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.t-figure {
+  font-family: var(--font-cond);
+  font-size: 30px;
+  line-height: 34px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Tabular figures for numbers, measurements, and coordinates */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
-/* Custom Tactical Scrollbar */
+.font-cond {
+  font-family: var(--font-cond);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Console UI utilities
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Dot grid background */
+.dot-grid {
+  background-image: radial-gradient(var(--bg-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Panel with corner ticks — 8px amber L-marks at TL and BR */
+.corner-ticks {
+  position: relative;
+}
+.corner-ticks::before,
+.corner-ticks::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+}
+.corner-ticks::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--amber);
+  border-left: 2px solid var(--amber);
+}
+.corner-ticks::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--amber);
+  border-right: 2px solid var(--amber);
+}
+
+/* Skewed dossier bar */
+.dossier-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--amber);
+  color: var(--amber-deep);
+  padding: 4px 12px 4px 8px;
+  transform: skewX(-10deg);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 14px;
+}
+.dossier-bar > * {
+  transform: skewX(10deg);
+}
+.dossier-bar::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: var(--amber-deep);
+  transform: skewX(10deg);
+  flex-shrink: 0;
+}
+
+/* Console panel */
+.console-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* Semantic state chips */
+.chip-measured {
+  background: var(--measured-fill);
+  border: 1.5px solid var(--measured-border);
+  color: var(--measured-text);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+.chip-inferred {
+  background: var(--inferred-fill);
+  border: 1.5px dashed var(--inferred-border);
+  color: var(--inferred-text);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+.chip-unverified {
+  background: var(--unverified-fill);
+  border: 1.5px dashed var(--unverified-border);
+  color: var(--unverified-text);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+.chip-confirmed {
+  background: var(--confirmed-fill);
+  border: 1.5px solid var(--confirmed-border);
+  color: var(--confirmed-text);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+.chip-rejected {
+  background: var(--rejected-fill);
+  border: 1.5px solid var(--rejected-border);
+  color: var(--rejected-text);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+.chip-suppressed {
+  background: var(--suppressed-fill);
+  border: 1.5px dotted var(--suppressed-border);
+  color: var(--suppressed-text);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+
+/* Console button — primary amber skewed */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--amber);
+  color: var(--amber-deep);
+  font-family: var(--font-cond);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 0;
+  transform: skewX(-10deg);
+  cursor: pointer;
+  min-height: 36px;
+  transition: background var(--m-instant);
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary > * {
+  transform: skewX(10deg);
+}
+.btn-primary:hover {
+  background: var(--amber-hot);
+}
+.btn-primary:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* Console button — secondary */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--line-strong);
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 0;
+  cursor: pointer;
+  min-height: 36px;
+  transition: all var(--m-instant);
+}
+.btn-secondary:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Custom Scrollbar — console-dark
+   ═══════════════════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #070A10;
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
+  background: var(--line);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: var(--line-strong);
 }
 
-/* Tactical Glassmorphism Card */
-.tactical-glass {
-  background: rgba(17, 24, 39, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(55, 65, 81, 0.6);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-}
-
-.tactical-glass-elevated {
-  background: rgba(30, 41, 59, 0.9);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 15px rgba(99, 102, 241, 0.15);
-}
-
-/* Leaflet Container & Overrides */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Leaflet Container & Overrides
+   ═══════════════════════════════════════════════════════════════════════════ */
 .leaflet-container {
   width: 100% !important;
   height: 100% !important;
-  background-color: #070A10 !important;
+  background-color: var(--well) !important;
   outline: none;
   font-family: inherit;
 }
 
 .leaflet-bar a {
-  background-color: #111827 !important;
-  color: #E2E8F0 !important;
-  border-bottom: 1px solid #1F2937 !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--panel) !important;
+  color: var(--ink-2) !important;
+  border-bottom: 1px solid var(--line) !important;
+  transition: all var(--m-instant);
 }
 .leaflet-bar a:hover {
-  background-color: #1E293B !important;
-  color: #818CF8 !important;
+  background-color: var(--panel-3) !important;
+  color: var(--amber) !important;
 }
 .leaflet-bar {
-  border: 1px solid #374151 !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6) !important;
-  border-radius: 8px !important;
+  border: 1px solid var(--line-strong) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+  border-radius: var(--radius) !important;
   overflow: hidden;
 }
 
 .leaflet-tactical-tooltip {
-  background: rgba(15, 23, 42, 0.95) !important;
-  color: #F8FAFC !important;
-  border: 1px solid #4F46E5 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 10px rgba(99, 102, 241, 0.3) !important;
+  background: rgba(11, 13, 16, 0.95) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--amber) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7), 0 0 8px rgba(240, 180, 95, 0.2) !important;
   padding: 4px 8px !important;
 }
 .leaflet-tooltip-top:before {
-  border-top-color: #4F46E5 !important;
+  border-top-color: var(--amber) !important;
 }
 
-/* Pulsing Center Pupil */
+/* ═══════════════════════════════════════════════════════════════════════════
+   §6 / §11 — Keyframe Animations
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* M2 — Scan sweep on stage enter */
+@keyframes scan-sweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(calc(100vh + 100%)); }
+}
+
+/* M3 — Lock-on brackets animate to bbox corners */
+@keyframes bracket-lock {
+  0% {
+    opacity: 0;
+    transform: translate(var(--bx, 12px), var(--by, 12px));
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+/* M6 — Tag slide in */
+@keyframes tag-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px) skewX(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) skewX(-2deg);
+  }
+}
+
+/* M8 — LIVE indicator dot pulse */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* SLOT-00 — Data stream marquee scroll */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* M9 — Ambient scanline */
+@keyframes ambient-scan {
+  0% { transform: translateY(-2px); }
+  100% { transform: translateY(100vh); }
+}
+
+/* M1 — Reticle fade on pointer-leave */
+@keyframes reticle-fade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* M10 — Ghost numeral scale in */
+@keyframes ghost-scale-in {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* M10 — Dossier slide in from right */
+@keyframes dossier-slide-in {
+  0% { transform: translateX(12px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* M10 — Stage fade in */
+@keyframes stage-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Iris pulse for brand lockup */
 @keyframes irisPulse {
   0%, 100% {
     opacity: 1;
@@ -163,8 +508,70 @@
   animation: irisPulse 3.5s ease-in-out infinite;
 }
 
-/* Subtle Tactical Grid Lines in background */
-.tactical-grid-bg {
-  background-image: radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
-  background-size: 24px 24px;
+/* Utility animation classes */
+.animate-dot-pulse {
+  animation: dot-pulse 2s ease-in-out infinite;
 }
+
+.animate-marquee {
+  animation: marquee 60s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+.animate-ambient-scan {
+  animation: ambient-scan 8s linear infinite;
+}
+
+.animate-scan-sweep {
+  animation: scan-sweep 900ms linear forwards;
+}
+
+.animate-ghost-in {
+  animation: ghost-scale-in 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-dossier-in {
+  animation: dossier-slide-in 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-stage-fade {
+  animation: stage-fade-in 140ms ease-out forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §6 — Reduced motion
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-dot-pulse,
+  .animate-marquee,
+  .animate-ambient-scan,
+  .animate-scan-sweep,
+  .animate-ghost-in,
+  .animate-dossier-in,
+  .animate-stage-fade,
+  .animate-iris-pulse {
+    animation: none !important;
+  }
+}
+
+/* Upload modal tactical styles */
+.tactical-corners {
+  position: relative;
+}
+.tactical-glass {
+  background: rgba(17, 24, 39, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(55, 65, 81, 0.6);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+.tactical-glass-elevated {
+  background: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 15px rgba(99, 102, 241, 0.15);
+}
+
