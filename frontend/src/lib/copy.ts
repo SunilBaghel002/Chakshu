@@ -316,6 +316,28 @@ export const TOAST_COPY = {
   undone: 'Action reverted.',
 } as const;
 
+export const AUDIT_PANEL_COPY = {
+  headerTitle: 'AUDIT & PROVENANCE TRAIL',
+  badgeVerified: 'VERIFIED 100% IMMUTABLE',
+  cryptoChain: 'CRYPTOGRAPHIC CHAIN',
+  merkleRoot: 'SHA-256 MERKLE ROOT',
+  merkleHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+  auditSummary: 'Deterministic state audited. Zero tamper events recorded across 36 scenes.',
+  analystDecisionsTitle: 'ANALYST DECISION AUDIT',
+  confirmed: 'CONFIRMED',
+  rejected: 'REJECTED',
+  modelBomTitle: 'MODEL BILL OF MATERIALS (BOM)',
+  model1: 'OpenCLIP ViT-B-32',
+  licence1: 'MIT · OpenAI / LAION',
+  model2: 'TinyCD Siamese CNN',
+  licence2: 'Apache 2.0 · On-Prem',
+  model3: 'Kruger UTM 43N Verifier',
+  licence3: 'Deterministic C++',
+  footerSigned: 'SHA-256 SIGNED',
+  exportBtn: 'EXPORT AUDIT REPORT',
+} as const;
+
+
 
 
 

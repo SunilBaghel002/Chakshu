@@ -1,6 +1,9 @@
 /**
  * Authoritative user-facing copy for Landing, Privacy, and Admin routes.
  * Specs: PRD 13 (W1–W7), PRD 15 §8 (T8), PRD 16 (D1–D9).
+ *
+ * W1.2: No number without a source. All numbers come from PROGRESS.md §I.
+ * W1.2: No superlatives ("revolutionary", "state-of-the-art", "world's first").
  */
 
 export const PRIVACY_COPY = {
@@ -45,27 +48,32 @@ export const ADMIN_COPY = {
 } as const;
 
 export const LANDING_COPY = {
+  // Lockup
   appNameDevanagari: 'चक्षु',
   appName: 'CHAKSHU',
   orbitToEvidence: 'ORBIT → EVIDENCE',
+
+  // W2.0 Nav links
+  navPlatform: 'PLATFORM',
   navHow: 'HOW IT WORKS',
-  navFeatures: 'FEATURES',
   navEvidence: 'EVIDENCE',
   navOffline: 'OFFLINE',
-  navPrivacy: 'PRIVACY',
+  navSignIn: 'SIGN IN',
   openConsole: 'OPEN CONSOLE',
+
+  // W2.1 Hero
   heroEyebrow: 'SIH 2026 · PS SIH26227 (MoD) + SIH26167 (ISRO/SAC)',
-  heroH1Line1: 'THE EYE THAT NEVER BLINKS.',
+  heroH1Line1: 'THE EYE THAT NEVER BLINKS',
   heroH1Line2: 'FROM ORBIT TO EVIDENCE.',
   heroSub:
     'Chakshu turns multi-year satellite imagery into measured, auditable change evidence — and answers questions about it in plain language. Fully on-prem. Runs with the network disabled.',
-  heroCtaConsole: 'OPEN THE CONSOLE →',
+  heroCtaConsole: 'OPEN THE CONSOLE',
   heroCtaHow: 'SEE HOW IT WORKS',
   trustItems: [
-    '✓ NO CLOUD',
-    '✓ NO THIRD-PARTY TRACKERS',
-    '✓ MODEL LICENCES DECLARED',
-    '✓ CPU ONLY (NO GPU MANDATE)',
+    'NO CLOUD',
+    'NO THIRD-PARTY TRACKERS',
+    'MODEL LICENCES DECLARED',
+    'CPU ONLY',
   ],
   previewTitle: 'CHAKSHU CONSOLE · JEWAR AIRPORT (UTM 43N)',
   previewLiveBadge: 'LIVE FIXTURE · NOT A SCREENSHOT',
@@ -82,6 +90,8 @@ export const LANDING_COPY = {
   previewAfterClass: 'RUNWAY',
   previewOnset: 'ONSET: OCT 2021 – MAR 2022 (±89d)',
   previewStatus: 'STATUS: VERIFIED BY ANALYST',
+
+  // W2.2 Ticker
   tickerItems: [
     '10 m Sentinel-2 archive',
     'change types: appear · disappear · expand · contract',
@@ -90,29 +100,68 @@ export const LANDING_COPY = {
     'GeoTIFF + COG ingestion',
     'runs with network disabled',
   ],
+
+  // W2.3 How It Works
   methodologyLabel: 'METHODOLOGY',
-  howTitle: 'HOW IT WORKS · 5 STAGES OF VERIFICATION',
+  howTitle: 'HOW IT WORKS',
+
+  // W2.4 Features
   capabilitiesLabel: 'CAPABILITIES',
-  capabilitiesTitle: 'ENGINEERED FOR NATIONAL SECURITY',
+  capabilitiesTitle: 'PLATFORM CAPABILITIES',
   seeIt: 'SEE IT',
+
+  // W2.5 Demo
+  demoTitle: 'TRY IT',
+  demoStep1: 'DRAG THE HANDLE',
+  demoStep2: 'HOVER A CHANGE',
+  demoStep3: 'READ THE MEASUREMENT',
+  demoFootnote: 'Fixture data from the demo AOI. No network calls.',
+
+  // W2.6 Evidence
   rigourLabel: 'RIGOUR',
   evidenceTitle: 'MEASURED BENCHMARKS · ZERO ESTIMATES',
   evidenceSub:
     'Every figure below exists in PROGRESS.md §I and is reproducible via repository scripts.',
   thMetric: 'WHAT WE MEASURED',
   thValue: 'VALUE',
-  thSource: 'SOURCE SCRIPT / METHOD',
+  thSource: 'SOURCE',
   gapsTitle: 'WHAT WE DID NOT BUILD (DECLARED GAPS)',
   gapsText:
     'Per PRD 1 §3.2: Chakshu does not perform Synthetic Aperture Radar (SAR) processing, model fine-tuning or training on user devices, or 3D mesh reconstruction. We focus strictly on 2D optical change detection, deterministic measurements, and zero-hallucination VLM verification.',
-  securityLabel: 'SECURITY',
-  securityTitle: 'RUNS WITH NETWORK PHYSICALLY DISABLED',
-  bomTitle: 'MODEL BILL OF MATERIALS (BOM)',
+
+  // W2.7 Offline / Sovereignty
+  securityLabel: 'SOVEREIGNTY',
+  securityTitle: 'RUNS WITH THE NETWORK DISABLED',
+  offlineChecklist: [
+    'Tiles served locally (PMTiles)',
+    'Weights packaged with licence + origin',
+    'No external APIs at eval time',
+    'Fonts and icons inline',
+    'GeoIP database bundled, no lookup service',
+  ],
+  bomTitle: 'MODEL BILL OF MATERIALS',
   thModel: 'MODEL',
-  thLicense: 'LICENSE',
+  thVersion: 'VERSION',
+  thLicense: 'LICENCE',
   thPurpose: 'PURPOSE',
+  depsLink: 'DEPENDENCIES.md',
+
+  // W2.8 Team + Footer
   teamName: 'TEAM BEYOND ORBIT',
-  teamSub: 'Developed for Smart India Hackathon 2026 (PS SIH26227 & SIH26167)',
+  teamSub: 'Smart India Hackathon 2026',
+  teamMembers: [
+    { name: 'Sunil Baghel', role: 'TEAM LEAD · ARCHITECTURE' },
+    { name: 'Member 2', role: 'BACKEND · DETECTION' },
+    { name: 'Member 3', role: 'FRONTEND · CONSOLE' },
+    { name: 'Member 4', role: 'DATA · INGESTION' },
+    { name: 'Member 5', role: 'DOMAIN · ANALYSIS' },
+    { name: 'Member 6', role: 'DESIGN · UX' },
+  ],
   copyright:
     '© 2026 BEYOND ORBIT · BUILT FOR SMART INDIA HACKATHON 2026 · NO THIRD-PARTY TRACKERS ON THIS SITE',
+  privacyLink: 'PRIVACY & TRACKING NOTICE',
+  sihRef: 'SIH26227 / SIH26167',
+
+  // Console notice for small screens
+  smallScreenNotice: 'THE CONSOLE NEEDS A DESKTOP · YOU ARE ON THE OVERVIEW',
 } as const;

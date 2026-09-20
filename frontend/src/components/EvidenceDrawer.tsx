@@ -39,7 +39,18 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
   onExport,
   onToggleBeforeAfter,
 }) => {
-  const [activeTab, setActiveTab] = useState<DossierTabKey>('evidence');
+  const initialTab = React.useMemo<DossierTabKey>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('tab');
+      if (t === 'suppressed' || t === 'trace' || t === 'analysis' || t === 'evidence') {
+        return t as DossierTabKey;
+      }
+    }
+    return 'evidence';
+  }, []);
+
+  const [activeTab, setActiveTab] = useState<DossierTabKey>(initialTab);
   const [decision, setDecision] = useState<'pending' | 'confirmed' | 'rejected'>(
     evidence?.status ?? 'pending'
   );

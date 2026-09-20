@@ -4,8 +4,12 @@ import { Button } from '../ui/Button';
 import { LANDING_COPY } from '../../lib/landingCopy';
 
 /**
- * W2.1 · Hero & W2.2 · Ticker
+ * W2.1 · Hero (min-height 88vh, two columns 5/7 above 1024px)
+ * W2.2 · Ticker
  * Specs: PRD 13 §2 W2.1, W2.2 & PRD 9 §5.8 (Tricolour rule)
+ *
+ * Right column: real console preview with fixture data
+ * labelled "LIVE FIXTURE · NOT A SCREENSHOT"
  */
 export const LandingHero: React.FC = () => {
   const navigate = useNavigate();
@@ -19,150 +23,230 @@ export const LandingHero: React.FC = () => {
         <div style={{ background: 'var(--tricolour-green)' }} className="flex-1" />
       </div>
 
-      {/* Hero Body */}
-      <div className="max-w-7xl mx-auto w-full px-6 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        {/* Left Column: Copy & CTAs */}
-        <div className="lg:col-span-6 flex flex-col gap-6">
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 text-xs font-mono tracking-wider text-[var(--signal)]">
-            <span className="w-2 h-2 rounded-full bg-[var(--signal)] animate-pulse" />
-            <span>{LANDING_COPY.heroEyebrow}</span>
-          </div>
-
-          {/* Heading */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight font-cond leading-tight text-[var(--ink)]">
-            <span>{LANDING_COPY.heroH1Line1}</span>{' '}
-            <span className="text-[var(--signal)] block mt-1">
-              {LANDING_COPY.heroH1Line2}
-            </span>
-          </h1>
-
-          {/* Subtext */}
-          <p className="text-base sm:text-lg text-[var(--ink-2)] leading-relaxed max-w-xl font-sans">
-            {LANDING_COPY.heroSub}
-          </p>
-
-          {/* CTAs */}
-          <div className="flex flex-wrap items-center gap-4 pt-2">
-            <Button
-              variant="bar"
-              size="lg"
-              onClick={() => navigate('/console')}
-              className="h-11 px-6 font-bold"
-            >
-              {LANDING_COPY.heroCtaConsole}
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => {
-                const el = document.getElementById('how-it-works');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="h-11 px-5"
-            >
-              {LANDING_COPY.heroCtaHow}
-            </Button>
-          </div>
-
-          {/* Trust Row */}
-          <div className="pt-4 border-t border-[var(--line)] flex flex-wrap gap-x-6 gap-y-2 text-xs font-mono text-[var(--ink-3)]">
-            {LANDING_COPY.trustItems.map((item, i) => (
-              <span key={i}>{item}</span>
-            ))}
-          </div>
+      {/* Hero Body — dot grid bg + ghost numeral */}
+      <div
+        className="relative w-full dot-grid"
+        style={{ minHeight: '88vh' }}
+      >
+        {/* Ghost numeral 01 (PRD 13 W2.1) */}
+        <div
+          className="absolute top-8 right-8 select-none pointer-events-none"
+          style={{
+            fontSize: 96,
+            fontFamily: 'var(--font-cond)',
+            fontWeight: 700,
+            color: 'var(--ink-ghost)',
+            lineHeight: 1,
+          }}
+        >
+          01
         </div>
 
-        {/* Right Column: Live Console Preview */}
-        <div className="lg:col-span-6">
-          <div className="relative rounded-[var(--r-panel)] border border-[var(--line-strong)] bg-[var(--well)] p-4 shadow-2xl overflow-hidden">
-            {/* Window bar */}
-            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3 mb-3 text-xs font-mono text-[var(--ink-3)]">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[var(--line-strong)]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[var(--line-strong)]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[var(--line-strong)]" />
-                <span className="text-[var(--ink-2)] ml-2">{LANDING_COPY.previewTitle}</span>
-              </div>
-              <span
-                style={{ fontSize: 10 }}
-                className="px-2 py-0.5 rounded-[var(--r-tag)] bg-[var(--signal-wash)] text-[var(--signal)] font-bold border border-[var(--signal)]"
-              >
-                {LANDING_COPY.previewLiveBadge}
-              </span>
+        <div className="px-6 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start landing-container">
+          {/* Left Column: Copy & CTAs — top-aligned at 22vh */}
+          <div className="lg:col-span-5 flex flex-col gap-6" style={{ paddingTop: '8vh' }}>
+            {/* Eyebrow */}
+            <div
+              className="inline-flex items-center gap-2 font-mono tracking-wider text-[var(--signal)]"
+              style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
+            >
+              <span className="w-2 h-2 rounded-full bg-[var(--signal)] animate-pulse" />
+              <span>{LANDING_COPY.heroEyebrow}</span>
             </div>
 
-            {/* Tactical Screen Representation */}
-            <div
-              style={{ aspectRatio: '16/10' }}
-              className="relative bg-[var(--panel)] rounded-[var(--r-panel)] border border-[var(--line)] p-4 flex flex-col justify-between overflow-hidden"
+            {/* H1 */}
+            <h1
+              className="font-extrabold tracking-tight font-cond leading-tight text-[var(--ink)]"
+              style={{ fontSize: 'clamp(34px, 5vw, 48px)', lineHeight: '1.08' }}
             >
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <div style={{ fontSize: 11 }} className="font-mono text-[var(--signal)]">
-                    {LANDING_COPY.previewTarget}
-                  </div>
-                  <div className="text-xl font-bold font-cond text-[var(--ink)]">
-                    {LANDING_COPY.previewArea}
-                  </div>
-                  <div style={{ fontSize: 10 }} className="font-mono text-[var(--measured-text)]">
-                    {LANDING_COPY.previewMeasured}
-                  </div>
-                </div>
-                <div className="px-2 py-1 bg-[var(--panel-2)] border border-[var(--line)] rounded text-right">
-                  <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
-                    {LANDING_COPY.previewConfidenceLabel}
-                  </div>
-                  <div className="text-sm font-bold font-mono text-[var(--signal)]">
-                    {LANDING_COPY.previewConfidenceValue}
-                  </div>
-                </div>
-              </div>
+              <span>{LANDING_COPY.heroH1Line1}</span>
+              <br />
+              <span className="text-[var(--signal)]">
+                {LANDING_COPY.heroH1Line2}
+              </span>
+            </h1>
 
-              {/* Triptych Mini Strip */}
-              <div className="grid grid-cols-3 gap-2 py-2">
-                <div className="bg-[var(--well)] border border-[var(--line)] p-1.5 rounded text-center">
-                  <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
-                    {LANDING_COPY.previewBeforeLabel}
-                  </div>
-                  <div style={{ fontSize: 11 }} className="font-mono text-[var(--ink-2)] mt-1">
-                    {LANDING_COPY.previewBeforeClass}
-                  </div>
-                </div>
-                <div className="bg-[var(--well)] border border-[var(--signal)]/40 p-1.5 rounded text-center">
-                  <div style={{ fontSize: 9 }} className="font-mono text-[var(--signal)]">
-                    {LANDING_COPY.previewDiffLabel}
-                  </div>
-                  <div style={{ fontSize: 11 }} className="font-mono text-[var(--signal)] mt-1">
-                    {LANDING_COPY.previewDiffValue}
-                  </div>
-                </div>
-                <div className="bg-[var(--well)] border border-[var(--line)] p-1.5 rounded text-center">
-                  <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
-                    {LANDING_COPY.previewAfterLabel}
-                  </div>
-                  <div style={{ fontSize: 11 }} className="font-mono text-[var(--ink-2)] mt-1">
-                    {LANDING_COPY.previewAfterClass}
-                  </div>
-                </div>
-              </div>
+            {/* Sub */}
+            <p
+              className="text-[var(--ink-2)] leading-relaxed font-sans"
+              style={{ fontSize: 17, lineHeight: '26px', maxWidth: '52ch' }}
+            >
+              {LANDING_COPY.heroSub}
+            </p>
 
-              <div
-                style={{ fontSize: 10 }}
-                className="flex justify-between items-center font-mono text-[var(--ink-3)] border-t border-[var(--line)] pt-2"
+            {/* CTAs — gap 12 */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+              <Button
+                variant="bar"
+                size="lg"
+                onClick={() => navigate('/console')}
+                className="font-bold tracking-wider"
+                iconRight={<span>→</span>}
               >
-                <span>{LANDING_COPY.previewOnset}</span>
-                <span className="text-[var(--signal)]">{LANDING_COPY.previewStatus}</span>
+                {LANDING_COPY.heroCtaConsole}
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => {
+                  const el = document.getElementById('how-it-works');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                {LANDING_COPY.heroCtaHow}
+              </Button>
+            </div>
+
+            {/* Trust Row */}
+            <div
+              className="pt-4 border-t border-[var(--line)] flex flex-wrap gap-x-4 gap-y-2 font-mono text-[var(--ink-3)]"
+              style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
+            >
+              {LANDING_COPY.trustItems.map((item, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  <span className="text-[var(--measured-text)]">✓</span>
+                  <span>{item}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Right Column: Live Console Preview */}
+          <div className="lg:col-span-7" style={{ paddingTop: '4vh' }}>
+            <div
+              className="relative rounded-[var(--r-panel)] border border-[var(--line-strong)] bg-[var(--well)] p-4 shadow-2xl overflow-hidden"
+              style={{ transform: 'scale(0.95)', transformOrigin: 'top right' }}
+            >
+              {/* Corner ticks */}
+              <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[var(--signal)]" />
+              <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[var(--signal)]" />
+              <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[var(--signal)]" />
+              <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[var(--signal)]" />
+
+              {/* Window bar */}
+              <div className="flex items-center justify-between border-b border-[var(--line)] pb-3 mb-3 text-xs font-mono text-[var(--ink-3)]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--line-strong)]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--line-strong)]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--line-strong)]" />
+                  <span className="text-[var(--ink-2)] ml-2">{LANDING_COPY.previewTitle}</span>
+                </div>
+                <span
+                  style={{ fontSize: 10 }}
+                  className="px-2 py-0.5 rounded-[var(--r-tag)] bg-[var(--signal-wash)] text-[var(--signal)] font-bold border border-[var(--signal)]"
+                >
+                  {LANDING_COPY.previewLiveBadge}
+                </span>
+              </div>
+
+              {/* Tactical Screen Representation */}
+              <div
+                style={{ aspectRatio: '16/10' }}
+                className="relative bg-[var(--panel)] rounded-[var(--r-panel)] border border-[var(--line)] p-4 flex flex-col justify-between overflow-hidden"
+              >
+                {/* Simulated map background with dot grid */}
+                <div className="absolute inset-0 dot-grid opacity-50" />
+
+                {/* Simulated polygon overlay */}
+                <div
+                  className="absolute"
+                  style={{
+                    top: '25%', left: '30%', width: '35%', height: '40%',
+                    border: '1.5px solid var(--signal)',
+                    background: 'rgba(255,148,38,0.12)',
+                    borderRadius: 2,
+                  }}
+                />
+
+                {/* Lock-on tag simulation */}
+                <div
+                  className="absolute"
+                  style={{
+                    top: '20%', left: '28%',
+                    transform: 'skewX(-2deg)',
+                  }}
+                >
+                  <div className="dossier-bar" style={{ fontSize: 9 }}>
+                    <span>{LANDING_COPY.previewArea}</span>
+                  </div>
+                </div>
+
+                <div className="relative flex justify-between items-start">
+                  <div className="space-y-1">
+                    <div style={{ fontSize: 11 }} className="font-mono text-[var(--signal)]">
+                      {LANDING_COPY.previewTarget}
+                    </div>
+                    <div className="text-xl font-bold font-cond text-[var(--ink)]">
+                      {LANDING_COPY.previewArea}
+                    </div>
+                    <div style={{ fontSize: 10 }} className="font-mono text-[var(--measured-text)]">
+                      {LANDING_COPY.previewMeasured}
+                    </div>
+                  </div>
+                  <div className="px-2 py-1 bg-[var(--panel-2)] border border-[var(--line)] rounded text-right">
+                    <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
+                      {LANDING_COPY.previewConfidenceLabel}
+                    </div>
+                    <div className="text-sm font-bold font-mono text-[var(--signal)]">
+                      {LANDING_COPY.previewConfidenceValue}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Triptych Mini Strip */}
+                <div className="relative grid grid-cols-3 gap-2 py-2">
+                  <div className="bg-[var(--well)] border border-[var(--line)] p-1.5 rounded text-center">
+                    <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
+                      {LANDING_COPY.previewBeforeLabel}
+                    </div>
+                    <div style={{ fontSize: 11 }} className="font-mono text-[var(--ink-2)] mt-1">
+                      {LANDING_COPY.previewBeforeClass}
+                    </div>
+                  </div>
+                  <div className="bg-[var(--well)] border border-[var(--signal)]/40 p-1.5 rounded text-center">
+                    <div style={{ fontSize: 9 }} className="font-mono text-[var(--signal)]">
+                      {LANDING_COPY.previewDiffLabel}
+                    </div>
+                    <div style={{ fontSize: 11 }} className="font-mono text-[var(--signal)] mt-1">
+                      {LANDING_COPY.previewDiffValue}
+                    </div>
+                  </div>
+                  <div className="bg-[var(--well)] border border-[var(--line)] p-1.5 rounded text-center">
+                    <div style={{ fontSize: 9 }} className="font-mono text-[var(--ink-3)]">
+                      {LANDING_COPY.previewAfterLabel}
+                    </div>
+                    <div style={{ fontSize: 11 }} className="font-mono text-[var(--ink-2)] mt-1">
+                      {LANDING_COPY.previewAfterClass}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{ fontSize: 10 }}
+                  className="relative flex justify-between items-center font-mono text-[var(--ink-3)] border-t border-[var(--line)] pt-2"
+                >
+                  <span>{LANDING_COPY.previewOnset}</span>
+                  <span className="text-[var(--signal)]">{LANDING_COPY.previewStatus}</span>
+                </div>
+              </div>
+
+              {/* Bottom-left caption */}
+              <div
+                className="mt-2 font-mono text-[var(--signal)] font-bold"
+                style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
+              >
+                {LANDING_COPY.previewLiveBadge}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* W2.2 · Ticker */}
+      {/* W2.2 · Ticker — 32px, full width */}
       <div className="h-8 w-full bg-[var(--panel)] border-y border-[var(--line)] overflow-hidden flex items-center">
         <div className="whitespace-nowrap animate-marquee flex gap-8 text-xs font-mono text-[var(--ink-2)]">
-          {LANDING_COPY.tickerItems.map((item, idx) => (
+          {/* Duplicate items for seamless loop */}
+          {[...LANDING_COPY.tickerItems, ...LANDING_COPY.tickerItems].map((item, idx) => (
             <React.Fragment key={idx}>
               <span>{item}</span>
               <span className="text-[var(--signal)]">{'//'}</span>
