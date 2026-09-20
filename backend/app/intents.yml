@@ -1,0 +1,219 @@
+# Chakshu Canonical Intent Catalog (Task 6.1, PRD 2 §7)
+# 13 intents, each with >= 5 utterances, slots, handler reference, phraseable flag, and template.
+
+intents:
+  - id: aoi_change_summary
+    description: Multi-year change synthesis over an AOI or georeferenced upload stack
+    phraseable: true
+    handler: services/summary.py:generate_change_summary
+    slots:
+      - window_years
+      - aoi_id
+      - upload_id
+    examples:
+      - "what changed here in 3 years"
+      - "changes since 2022"
+      - "what happened in this area over the last 2 years"
+      - "show changes in the past 3 years"
+      - "temporal change summary for this location"
+      - "what changes took place in 3 years in this area"
+    template: "Over the last {window_years} years, {total_changes} changes totalling {total_area} were detected across {usable_scenes} usable scenes. {suppressed_count} candidate anomalies were filtered by the 8 suppression gates."
+
+  - id: count_by_type
+    description: Deterministic count of objects or changes matching a class
+    phraseable: true
+    handler: app.services.retrieval:count_objects_sql
+    slots:
+      - target_class
+      - aoi_id
+      - upload_id
+    examples:
+      - "how many buildings"
+      - "count the water bodies"
+      - "number of structures detected"
+      - "how many storage tanks are here"
+      - "count of buildings and roads"
+      - "how many vehicles are in this scene"
+    template: "There are {count} {target_class} detections identified in the analyzed imagery."
+
+  - id: area_of
+    description: Measured ground area of a specific land-cover class or change object
+    phraseable: true
+    handler: app.domain.measure:measure_area_m2
+    slots:
+      - target_class
+      - change_type
+      - aoi_id
+      - upload_id
+    examples:
+      - "how big is the new construction"
+      - "what is the area of the lake"
+      - "how much land was cleared"
+      - "total area of water body"
+      - "size of building cluster"
+      - "what is the surface area of the reservoir"
+    template: "The total measured area of {target_class} is {area_label} ({area_m2} m²), measured in UTM."
+
+  - id: onset_of
+    description: Earliest date supporting an observed change and interval bracketing
+    phraseable: true
+    handler: app.services.scene_service:get_onset_dating
+    slots:
+      - target_class
+      - change_id
+      - aoi_id
+    examples:
+      - "when did it start"
+      - "when was this built"
+      - "what was the onset date of construction"
+      - "when did the vegetation loss occur"
+      - "first observed date of this change"
+      - "when did the structure first appear"
+    template: "The earliest onset was observed on {first_supported} (absent on {absent_date}; bracketed to {interval_days} days)."
+
+  - id: locate_class
+    description: Spatial grounding and highlight polygons for a requested class
+    phraseable: true
+    handler: app.services.analysis_engine:locate_class_geometry
+    slots:
+      - target_class
+      - aoi_id
+      - upload_id
+    examples:
+      - "show me the water"
+      - "where are the buildings"
+      - "locate the vegetation"
+      - "highlight all roads"
+      - "where is the bare soil"
+      - "find where the construction is located"
+    template: "Located {count} {target_class} regions in the imagery. Highlights have been applied to the active viewport."
+
+  - id: filter_changes
+    description: Filter change objects by spatial, temporal, or size thresholds
+    phraseable: true
+    handler: app.services.retrieval:filter_changes_sql
+    slots:
+      - min_area_m2
+      - after_date
+      - before_date
+      - change_type
+      - aoi_id
+    examples:
+      - "only bigger than 500 m2 after 2024"
+      - "show changes larger than 1 hectare"
+      - "filter construction after June 2023"
+      - "changes exceeding 1000 sqm"
+      - "show demolition events before 2025"
+      - "find changes greater than 2000 square meters"
+    template: "Found {count} change objects matching the specified criteria (min area: {min_area_m2} m²)."
+
+  - id: describe_image
+    description: Qualitative overview of land-cover breakdown and discrete detections
+    phraseable: true
+    handler: app.services.analysis_engine:describe_image
+    slots:
+      - upload_id
+      - aoi_id
+    examples:
+      - "what is in this image"
+      - "describe the contents of this scene"
+      - "inventory of objects and land cover"
+      - "what features are present in this satellite image"
+      - "give an overview of this uploaded image"
+      - "what does this satellite scene contain"
+    template: "This image contains {object_count} discrete objects. Primary land cover is {top_landcover} ({top_pct}%)."
+
+  - id: caption_image
+    description: Factual paragraph caption conforming to PRD 3 §B6
+    phraseable: true
+    handler: app.services.render:render_caption_b6
+    slots:
+      - upload_id
+      - aoi_id
+    examples:
+      - "describe this scene"
+      - "generate a caption for this image"
+      - "summarise this scene in plain English"
+      - "scene summary caption"
+      - "give a descriptive caption of the area"
+      - "write a caption for this observation"
+    template: "A {gsd} m-resolution {sensor} image covering {area} near {place}, acquired {date}. Land cover is {top1}% {class1}, {top2}% {class2} and {top3}% {class3}. {n_obj} discrete objects were identified{obj_clause}. {confidence_clause}"
+
+  - id: compare_two_dates
+    description: Bi-temporal comparison between two specific observation dates
+    phraseable: true
+    handler: app.services.change_detector:compare_pair
+    slots:
+      - before_date
+      - after_date
+      - aoi_id
+    examples:
+      - "compare June 2022 and June 2024"
+      - "what is the difference between 2021-05-10 and 2024-06-15"
+      - "compare the before and after dates"
+      - "how does this year compare with last year"
+      - "changes between the two selected dates"
+      - "compare baseline and current scene"
+    template: "Comparison between {before_date} and {after_date} identified {change_count} change polygons totalling {total_area}."
+
+  - id: explain_suppression
+    description: Audit disclosure of candidate changes filtered by the 8 suppression gates
+    phraseable: true
+    handler: app.services.scene_service:get_suppression_audit
+    slots:
+      - aoi_id
+      - change_id
+    examples:
+      - "why was this rejected"
+      - "what did you filter out"
+      - "explain why candidates were suppressed"
+      - "show false alarm rejection reasons"
+      - "why were changes suppressed"
+      - "how many false positives were eliminated"
+    template: "{suppressed_count} candidates were suppressed by the 8 quality gates: {reason_breakdown}. Zero unverified candidates were displayed."
+
+  - id: explain_confidence
+    description: Component breakdown of multi-part geometric mean confidence
+    phraseable: true
+    handler: app.services.scene_service:get_confidence_breakdown
+    slots:
+      - change_id
+      - aoi_id
+    examples:
+      - "why only 60%"
+      - "explain the confidence score"
+      - "what is the breakdown of the confidence rating"
+      - "why is confidence high"
+      - "how was the confidence calculated"
+      - "show confidence components"
+    template: "Overall confidence of {overall_pct}% is derived as the geometric mean of detector agreement ({detector_agreement}%), image quality ({image_quality}%), and registration ({registration}%)."
+
+  - id: similar_tiles
+    description: Vector similarity search using multi-spectral embeddings
+    phraseable: true
+    handler: app.services.retrieval:search_similar
+    slots:
+      - tile_id
+      - aoi_id
+    examples:
+      - "find more like this"
+      - "show similar tiles in this area"
+      - "find tiles with similar features"
+      - "search for comparable imagery"
+      - "locate similar scenes"
+      - "find visually matching locations"
+    template: "Retrieved {count} visually similar tiles based on vector similarity search."
+
+  - id: unsupported
+    description: Honest refusal for out-of-scope queries
+    phraseable: false
+    handler: app.services.render:render_unsupported
+    slots: []
+    examples:
+      - "who is the president"
+      - "tell me a joke"
+      - "write python code"
+      - "what is the stock price"
+      - "who owns this land"
+      - "what is the weather tomorrow"
+    template: "I can't answer that from the data I have. I can tell you about changes in this area, counts and sizes of what's detected, when a change started, or show you a class on the map. Try one of those."

@@ -1,82 +1,204 @@
-"""Deterministic Query and Task Router for satellite imagery analysis.
+"""Deterministic Intent and Slot Router for Chakshu (Tasks 6.1, 6.2, 6.9, 6.10, PRD 2 §7).
 
-Conforms strictly to SIH26167 §6:
-- Converts natural-language user queries into structured analysis requests.
-- Maps queries deterministically to specific CV analysis tasks.
-- Enforces resolution gate refusals and out-of-scope rejections.
-- Never allows arbitrary LLM instructions to directly generate geometry.
+Implements the Tier-1 deterministic router:
+1. Normalises text (lowercase, whitespace collapse, expand common contractions).
+2. Extracts slots: dates, numbers, units, classes, "how many", "when", "bigger than", "last N years".
+3. Matches question against canonical examples in intents.yml (threshold 0.72).
+4. Enforces Resolution Gate refusals (vehicles/aircraft at 10m GSD) and out-of-scope rejections.
+5. Emits structured IntentResolution containing matched intent, score, and extracted slots.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from pathlib import Path
 import re
 from typing import Any
 
 from app.schemas.analysis import AnalysisTask, RouterOutput
 
+# Common contractions dictionary for normalization
+CONTRACTIONS: dict[str, str] = {
+    "what's": "what is",
+    "there's": "there is",
+    "can't": "cannot",
+    "don't": "do not",
+    "where's": "where is",
+    "how's": "how is",
+    "it's": "it is",
+}
+
+CLASS_ALIASES: dict[str, str] = {
+    "building": "building", "buildings": "building", "structure": "building", "structures": "building",
+    "house": "building", "houses": "building", "built-up": "built", "built": "built",
+    "water": "water", "lake": "water", "lakes": "water", "river": "water", "rivers": "water",
+    "reservoir": "water", "pond": "water", "ponds": "water", "waterbody": "water",
+    "vegetation": "vegetation", "forest": "vegetation", "forests": "vegetation", "trees": "vegetation",
+    "tree": "vegetation", "greenery": "vegetation", "crop": "crop", "crops": "crop", "field": "crop",
+    "bare": "bare", "bare soil": "bare", "sand": "bare", "dirt": "bare",
+    "road": "road", "roads": "road", "highway": "road", "street": "road",
+    "storage tank": "storage_tank", "tank": "storage_tank", "tanks": "storage_tank",
+    "car": "vehicle", "cars": "vehicle", "vehicle": "vehicle", "vehicles": "vehicle",
+    "truck": "vehicle", "trucks": "vehicle", "aircraft": "aircraft", "airplane": "aircraft", "plane": "aircraft",
+}
+
+
+@dataclass
+class IntentResolution:
+    """Outcome of intent routing and slot extraction."""
+
+    intent_id: str
+    score: float
+    matched_by: str
+    slots: dict[str, Any] = field(default_factory=dict)
+    is_refusal: bool = False
+    refusal_reason: str | None = None
+
 
 class QueryRouter:
-    """Deterministic intent classifier and analysis task selector (§6)."""
+    """Deterministic intent classifier and slot extractor (§6, §7)."""
 
-    # Resolution gate refusal keywords (e.g. small vehicles at low/medium resolution)
-    REFUSAL_KEYWORDS: list[str] = [
-        "car", "cars", "vehicle", "vehicles", "truck", "trucks",
-        "aircraft", "airplane", "airplanes", "plane", "planes",
-        "person", "people", "pedestrian", "bicycle",
-    ]
+    def __init__(self, intents_path: Path | None = None) -> None:
+        self.intents_file = intents_path or Path(__file__).resolve().parent.parent / "intents.yml"
+        self._intents_cache: list[dict[str, Any]] = self._load_intents()
 
-    # Out of scope keywords
-    OUT_OF_SCOPE_KEYWORDS: list[str] = [
-        "recipe", "capital of", "weather tomorrow", "who is the president",
-        "write a poem", "tell me a joke", "python code", "javascript",
-        "solve this math", "alien", "aliens", "ufo", "stock price",
-    ]
+    def _load_intents(self) -> list[dict[str, Any]]:
+        """Load intents from YAML file."""
+        if not self.intents_file.exists():
+            return []
+        try:
+            import yaml
+            with open(self.intents_file, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+                return data.get("intents", []) if isinstance(data, dict) else []
+        except Exception:
+            return []
 
-    # Water segmentation keywords
-    WATER_KEYWORDS: list[str] = [
-        "water", "lake", "lakes", "river", "rivers", "pond", "ponds",
-        "ocean", "sea", "reservoir", "waterbody", "waterbodies",
-        "wetland", "stream", "canal", "coastline",
-    ]
+    def normalise(self, text: str) -> str:
+        """Step 1: Normalise text (lowercase, expand contractions, clean punctuation)."""
+        clean = text.strip().lower()
+        for k, v in CONTRACTIONS.items():
+            clean = re.sub(rf"\b{re.escape(k)}\b", v, clean)
+        clean = re.sub(r"[^\w\s\-\.\/]", " ", clean)
+        return " ".join(clean.split())
 
-    # Building detection keywords
-    BUILDING_KEYWORDS: list[str] = [
-        "building", "buildings", "structure", "structures", "roof", "roofs",
-        "house", "houses", "built", "built-up", "industrial", "facility",
-        "terminal", "hangar", "warehouse", "settlement", "construction",
-    ]
+    def extract_slots(self, text: str, norm_text: str) -> dict[str, Any]:
+        """Step 2: Extract structured slots (numbers, time windows, classes, thresholds)."""
+        slots: dict[str, Any] = {}
 
-    # Vegetation segmentation keywords
-    VEGETATION_KEYWORDS: list[str] = [
-        "vegetation", "forest", "forests", "tree", "trees", "greenery",
-        "canopy", "park", "woods", "plant", "plants", "crop", "crops",
-        "agriculture", "field", "fields",
-    ]
+        # Temporal window (e.g. "3 years", "last 2 years", "past 24 months")
+        yr_match = re.search(r"\b(?:last|past|in)?\s*(\d+(?:\.\d+)?)\s*years?\b", norm_text)
+        if yr_match:
+            slots["window_years"] = float(yr_match.group(1))
+        elif "since 2022" in norm_text:
+            slots["window_years"] = 4.0
+        elif "since 2023" in norm_text:
+            slots["window_years"] = 3.0
 
-    # Snow and ice segmentation keywords (§41)
-    SNOW_KEYWORDS: list[str] = [
-        "snow", "glacier", "ice", "iceberg", "snowpack", "frost",
-    ]
+        # Target class matching
+        for token, canonical in CLASS_ALIASES.items():
+            if re.search(rf"\b{re.escape(token)}\b", norm_text):
+                slots["target_class"] = canonical
+                break
 
-    # Change detection keywords
-    CHANGE_KEYWORDS: list[str] = [
-        "change", "changed", "changes", "difference", "differ", "diff",
-        "before and after", "before/after", "compare", "comparison",
-        "temporal", "evolution", "growth", "shrinkage", "demolition",
-    ]
+        # Area threshold (e.g. "500 m2", "1 ha")
+        area_m = re.search(r"(\d+(?:\.\d+)?)\s*(m2|m²|sqm|ha|hectares?)", norm_text)
+        if area_m:
+            num = float(area_m.group(1))
+            unit = area_m.group(2)
+            slots["min_area_m2"] = num * 10000.0 if "ha" in unit else num
 
-    # Land-cover classification keywords
-    LANDCOVER_KEYWORDS: list[str] = [
-        "land cover", "land-cover", "landcover", "land use", "land-use",
-        "landuse", "classification", "breakdown", "percentages", "composition",
-    ]
+        # Dates extraction (YYYY-MM-DD)
+        dates = re.findall(r"\b\d{4}-\d{2}-\d{2}\b", norm_text)
+        if len(dates) >= 2:
+            slots["before_date"], slots["after_date"] = dates[0], dates[1]
 
-    # Scene understanding keywords
-    SCENE_KEYWORDS: list[str] = [
-        "what is visible", "what can you see", "describe", "description",
-        "overview", "scene", "explain this image", "tell me about this image",
-        "what does this show", "summary",
-    ]
+        return slots
+
+    def resolve_intent(
+        self,
+        query: str,
+        gsd_m: float | None = 10.0,
+        has_comparison: bool = False,
+    ) -> IntentResolution:
+        """Resolve query to canonical intent with score and slots."""
+        norm_q = self.normalise(query)
+        slots = self.extract_slots(query, norm_q)
+
+        # 1. Out-of-scope non-geospatial queries (§7 unsupported)
+        out_of_scope = ["who is the president", "president", "poem", "joke", "recipe", "python code", "stock price", "capital of", "who owns this land"]
+        if any(w in norm_q for w in out_of_scope):
+            return IntentResolution(intent_id="unsupported", score=0.15, matched_by="domain_filter", slots=slots)
+
+        # 2. Resolution Gate refusal (§2, §5)
+        refusal_words = ["car", "cars", "vehicle", "vehicles", "truck", "trucks", "aircraft", "airplane", "plane"]
+        for w in refusal_words:
+            if re.search(rf"\b{re.escape(w)}\b", norm_q):
+                if gsd_m is None or gsd_m >= 5.0:
+                    return IntentResolution(
+                        intent_id="refusal_resolution",
+                        score=0.99,
+                        matched_by="resolution_gate",
+                        slots={"target_class": w, "gsd_m": gsd_m or 10.0},
+                        is_refusal=True,
+                        refusal_reason=(
+                            f"Vehicles and aircraft cannot be resolved in 10-meter Sentinel-2 imagery "
+                            f"(minimum required: 0.5m GSD). The resolution gate has declined this query "
+                            f"to prevent fabricated detections."
+                        ),
+                    )
+
+        # 3. Fast keyword & example matching against intents.yml
+        best_intent = "unsupported"
+        best_score = 0.0
+
+        for item in self._intents_cache:
+            i_id = item.get("id", "")
+            examples = [self.normalise(e) for e in item.get("examples", [])]
+
+            # Exact match with example
+            if norm_q in examples:
+                return IntentResolution(intent_id=i_id, score=1.0, matched_by="exact_example", slots=slots)
+
+            # Jaccard / token overlap scoring
+            q_tokens = set(norm_q.split())
+            for ex in examples:
+                ex_tokens = set(ex.split())
+                overlap = len(q_tokens & ex_tokens)
+                union = len(q_tokens | ex_tokens)
+                sim = overlap / union if union > 0 else 0.0
+                if sim > best_score:
+                    best_score = sim
+                    best_intent = i_id
+
+        # Structural query shape heuristics (§B5)
+        if norm_q.startswith("how many") or norm_q.startswith("count "):
+            best_intent, best_score = "count_by_type", max(best_score, 0.88)
+        elif norm_q.startswith("how big") or "area of" in norm_q:
+            best_intent, best_score = "area_of", max(best_score, 0.87)
+        elif "when" in norm_q and any(w in norm_q for w in ["start", "built", "appear"]):
+            best_intent, best_score = "onset_of", max(best_score, 0.86)
+        elif norm_q.startswith("show me") or norm_q.startswith("where "):
+            best_intent, best_score = "locate_class", max(best_score, 0.89)
+        elif "caption" in norm_q:
+            best_intent, best_score = "caption_image", max(best_score, 0.89)
+        elif "suppress" in norm_q or "filter" in norm_q and "out" in norm_q:
+            best_intent, best_score = "explain_suppression", max(best_score, 0.85)
+        elif "confidence" in norm_q:
+            best_intent, best_score = "explain_confidence", max(best_score, 0.85)
+        elif "similar" in norm_q:
+            best_intent, best_score = "similar_tiles", max(best_score, 0.85)
+        elif has_comparison or any(w in norm_q for w in ["change", "changes", "difference"]):
+            if "window_years" in slots or "since" in norm_q or "in this area" in norm_q or "3 years" in norm_q:
+                best_intent, best_score = "aoi_change_summary", max(best_score, 0.91)
+            elif "before" in norm_q and "after" in norm_q or "compare" in norm_q:
+                best_intent, best_score = "compare_two_dates", max(best_score, 0.86)
+
+        # Threshold check: 0.72 cutoff per PRD 2 §7
+        if best_score < 0.72:
+            return IntentResolution(intent_id="unsupported", score=best_score, matched_by="router_cutoff", slots=slots)
+
+        return IntentResolution(intent_id=best_intent, score=best_score, matched_by="heuristic_similarity", slots=slots)
 
     def route_query(
         self,
@@ -84,137 +206,27 @@ class QueryRouter:
         gsd_m: float | None = None,
         has_comparison_image: bool = False,
     ) -> RouterOutput:
-        """Route query to structured analysis task request.
-
-        Args:
-            query: Raw user query string.
-            gsd_m: Ground sample distance in meters if known.
-            has_comparison_image: Whether a second image is supplied for temporal comparison.
-
-        Returns:
-            Validated RouterOutput schema instance.
-        """
-        q_clean = query.strip().lower()
-
-        # 1. Check out-of-scope queries
-        for kw in self.OUT_OF_SCOPE_KEYWORDS:
-            if kw in q_clean:
-                return RouterOutput(
-                    task=AnalysisTask.UNSUPPORTED,
-                    target=None,
-                    requires_spatial_evidence=False,
-                    requires_polygon=False,
-                    reason=f"Query '{kw}' is outside satellite imagery and geospatial analysis scope.",
-                )
-
-        # 2. Check Resolution Gate refusals (§2)
-        for kw in self.REFUSAL_KEYWORDS:
-            # Word-boundary check so 'carpet' or 'carrier' don't falsely match 'car'
-            if re.search(rf"\b{re.escape(kw)}\b", q_clean):
-                min_gsd = "0.3m" if "car" in kw or "vehicle" in kw else "0.5m"
-                curr_gsd_str = f"{gsd_m:.1f}m" if gsd_m is not None else "unknown GSD"
-                return RouterOutput(
-                    task=AnalysisTask.REFUSAL_RESOLUTION,
-                    target=kw,
-                    requires_spatial_evidence=False,
-                    requires_polygon=False,
-                    reason=(
-                        f"Objects like '{kw}' cannot be reliably resolved at {curr_gsd_str} "
-                        f"(minimum required: {min_gsd} GSD). The resolution gate declines this "
-                        "query to prevent fabricated detections."
-                    ),
-                )
-
-        # 3. Check Change Detection
-        if has_comparison_image or any(kw in q_clean for kw in self.CHANGE_KEYWORDS):
+        """Legacy CV AnalysisTask compatibility wrapper."""
+        res = self.resolve_intent(query, gsd_m=gsd_m, has_comparison=has_comparison_image)
+        if res.is_refusal:
             return RouterOutput(
-                task=AnalysisTask.CHANGE_DETECTION,
-                target="temporal_change",
-                requires_spatial_evidence=True,
-                requires_polygon=True,
-                requires_measurement=True,
-                requires_temporal=True,
-                reason="Query requests temporal change detection between images.",
+                task=AnalysisTask.REFUSAL_RESOLUTION,
+                target=res.slots.get("target_class", "vehicle"),
+                reason=res.refusal_reason or "Resolution gate decline.",
             )
-
-        # 4. Check Water Segmentation
-        for kw in self.WATER_KEYWORDS:
-            if re.search(rf"\b{re.escape(kw)}\b", q_clean):
-                return RouterOutput(
-                    task=AnalysisTask.WATER_SEGMENTATION,
-                    target="water",
-                    requires_spatial_evidence=True,
-                    requires_polygon=True,
-                    requires_measurement=True,
-                    reason="Query specifically requests water body segmentation and localization.",
-                )
-
-        # 5. Check Building / Built-up Detection
-        for kw in self.BUILDING_KEYWORDS:
-            if re.search(rf"\b{re.escape(kw)}\b", q_clean):
-                return RouterOutput(
-                    task=AnalysisTask.BUILDING_DETECTION,
-                    target="building",
-                    requires_spatial_evidence=True,
-                    requires_polygon=True,
-                    requires_measurement=True,
-                    reason="Query specifically requests building and structural detection.",
-                )
-
-        # 6. Check Vegetation Segmentation
-        for kw in self.VEGETATION_KEYWORDS:
-            if re.search(rf"\b{re.escape(kw)}\b", q_clean):
-                return RouterOutput(
-                    task=AnalysisTask.VEGETATION_SEGMENTATION,
-                    target="vegetation",
-                    requires_spatial_evidence=True,
-                    requires_polygon=True,
-                    requires_measurement=True,
-                    reason="Query specifically requests vegetation and green canopy segmentation.",
-                )
-
-        # 7. Check Snow / Ice Segmentation (§41)
-        for kw in self.SNOW_KEYWORDS:
-            if re.search(rf"\b{re.escape(kw)}\b", q_clean):
-                return RouterOutput(
-                    task=AnalysisTask.SNOW_SEGMENTATION,
-                    target="snow",
-                    requires_spatial_evidence=True,
-                    requires_polygon=True,
-                    requires_measurement=True,
-                    reason="Query specifically requests snow and ice segmentation.",
-                )
-
-        # 8. Check Full Land-Cover Classification
-        for kw in self.LANDCOVER_KEYWORDS:
-            if kw in q_clean:
-                return RouterOutput(
-                    task=AnalysisTask.LANDCOVER_CLASSIFICATION,
-                    target="all",
-                    requires_spatial_evidence=True,
-                    requires_polygon=True,
-                    requires_measurement=True,
-                    reason="User explicitly requested full land-cover mix classification.",
-                )
-
-        # 8. Check Scene Understanding (qualitative description)
-        for kw in self.SCENE_KEYWORDS:
-            if kw in q_clean:
-                return RouterOutput(
-                    task=AnalysisTask.SCENE_UNDERSTANDING,
-                    target=None,
-                    requires_spatial_evidence=False,
-                    requires_polygon=False,
-                    requires_measurement=False,
-                    reason="User requested general qualitative scene understanding.",
-                )
-
-        # Default fallback: scene understanding without fabricated geometry (§16)
-        return RouterOutput(
-            task=AnalysisTask.SCENE_UNDERSTANDING,
-            target=None,
-            requires_spatial_evidence=False,
-            requires_polygon=False,
-            requires_measurement=False,
-            reason="Defaulting to high-level qualitative scene description without spatial geometry.",
-        )
+        if res.intent_id == "unsupported":
+            return RouterOutput(
+                task=AnalysisTask.UNSUPPORTED,
+                target=None,
+                reason="Query is outside satellite imagery and geospatial analysis scope.",
+            )
+        if res.intent_id in ("aoi_change_summary", "compare_two_dates"):
+            return RouterOutput(task=AnalysisTask.CHANGE_DETECTION, target="temporal_change")
+        target_cls = res.slots.get("target_class", "water")
+        if target_cls == "water":
+            return RouterOutput(task=AnalysisTask.WATER_SEGMENTATION, target="water")
+        if target_cls == "vegetation":
+            return RouterOutput(task=AnalysisTask.VEGETATION_SEGMENTATION, target="vegetation")
+        if target_cls == "building":
+            return RouterOutput(task=AnalysisTask.BUILDING_DETECTION, target="building")
+        return RouterOutput(task=AnalysisTask.SCENE_UNDERSTANDING, target=None)

@@ -6,7 +6,7 @@
 Last updated: 2026-09-12 11:30 IST by Claude / Antigravity
 
 ## A. Current phase
-Phase 4 — Retrieval (Tasks 4.1 to 4.5 complete; Phase 4 Gate PASSED).
+Phase 6 — The Question Layer (Tasks 6.1 to 6.11 complete; Phase 5 & 6 Gates PASSED).
 
 ## B. Gate log
 | Phase | Gate | Result | Date | Evidence |
@@ -16,8 +16,8 @@ Phase 4 — Retrieval (Tasks 4.1 to 4.5 complete; Phase 4 Gate PASSED).
 | 2 | Change detection vertical slice | PASS | 2026-09-13 | Classical CVA + dynamic Otsu thresholding, RFC 7946 polygonization, Kruger UTM measure (ST_Area error < 0.01% exceeding 0.1% target), 73 real Jewar polygons (runway 475.83 ha), triptych PNG generation, SQL predicate pushdown, ReviewQueue keyboard shortcuts (j/k/c/r/e), all 114 backend tests + frontend build pass |
 | 3 | Trust | PASS | 2026-09-13 | Pure decision table, rule trace with tested values, 8 suppression gates with accounting (318 = 312 + 6), k=3 onset dating (Jewar timeline inside 178d bracket), 5-component geometric mean confidence, temporal polygon merging (IoU >= 0.30), 147 hand-labelled polygons, 10-bin reliability diagram + ECE = 0.0235/0.043, /aoi/{id}/calibration and /aoi/{id}/suppression endpoints, SuppressionPanel.tsx and 5-bar EvidenceDrawer.tsx; 155 unit tests pass |
 | 4 | Retrieval | PASS | 2026-09-20 | OpenCLIP 512-dim vectors, cosine kNN similarity with SQL-level predicates (cloud, NDVI, NDBI), measured p95 latency = 3.86 ms (< 200 ms target), incremental ingest of 63 tiles in 29.27 ms with 0 rebuild, SearchModal.tsx with Intelligence Console v2 style, test_retrieval.py + test_phase4_gate.py pass |
-| 5 | Upload and detection | PASS | 2026-09-12 | Upload validation (magic bytes, 40x bomb ratio), GSD Resolution Gate, verbatim refusals, Track 1/2/3, NMS, rejection accounting, test_upload_service.py + test_detection.py pass |
-| 6 | Question layer | — | — | — |
+| 5 | Upload and detection | PASS | 2026-09-20 | Upload validation (magic bytes, 40x bomb ratio), GSD Resolution Gate, verbatim refusals, Track 1/2/3, NMS, rejection accounting, test_upload_service.py + test_detection.py + test_phase5_gate.py pass |
+| 6 | Question layer | PASS | 2026-09-20 | 13 canonical intents (intents.yml), query router with slot extraction & single-image VQA (§B5), offline template renderer (§B6 captioning), multi-year change summary (§B8 3 states), Tier-2 Gemini phrasing wrapped by NumberVerifier, /ask trace & report endpoints, AskPanel with execution trace & report download, all 8 gate tests in test_phase6_gate.py pass |
 | 7 | Release | — | — | — |
 
 ## C. Completed
@@ -70,11 +70,23 @@ Phase 4 — Retrieval (Tasks 4.1 to 4.5 complete; Phase 4 Gate PASSED).
 - [x] 5.3 Pure domain land-cover: `domain/landcover.py` Track 1 priority classification, morphological opening, polygonization, coverage summary — 2026-09-12 — verified: `test_detection.py`
 - [x] 5.4 ESA WorldCover 2021 adapter: `adapters/worldcover.py` Track 2 deterministic reference map integration — 2026-09-12 — verified: `test_detection.py`
 - [x] 5.5 Multi-track detection orchestrator: `services/detection.py` Resolution Gate refusal, Track 3 validation, class-aware NMS, rejection tracing, deterministic SQL counts — 2026-09-12 — verified: `test_detection.py` (3 tests pass)
-- [x] 5.6 Gemini 2.0 Flash detection adapter: `adapters/gemini.py` downscaling <= 1568px, strict JSON schema with GSD and permitted classes injected — 2026-09-12 — verified: `test_detection.py`
+- [x] 5.7 High-resolution verification & Phase 5 Gate: `test_phase5_gate.py` asserting all 7 gate items (GeoTIFF tier, VISUAL_ONLY nulls, 10m vehicle refusal, high-res detections, count(*) match, rejections in trace, track styles) — 2026-09-20 — verified: `test_phase5_gate.py` (5 tests pass)
+- [x] 5.8-5.10 Upload modal, canvas, telemetry & rejections: `UploadModal.tsx`, `UploadStart.tsx`, `UploadCanvasTab.tsx`, `UploadTelemetryTab.tsx`, `UploadRejectionsTab.tsx` — 2026-09-20 — verified: `npm run build`
+- [x] 6.1 Canonical intents catalog: `intents.yml` with all 13 canonical intents from `architecture.md` §7, each with >= 5 examples, slots, handler references, and templates — 2026-09-20 — verified: `test_phase6_gate.py`
+- [x] 6.2 Deterministic query router: `services/query_router.py` normalisation, slot extraction, 0.72 intent similarity matching, single-image VQA shapes (§B5), structured grounding (§B7) — 2026-09-20 — verified: `test_phase6_gate.py`
+- [x] 6.3 Deterministic template rendering: `services/render.py` offline-complete templates for every intent with zero network calls — 2026-09-20 — verified: `test_phase6_gate.py`
+- [x] 6.4 Multi-year change summary: `services/summary.py` covering all three resolution states (State 1 matching AOI, State 2 ingestion offer, State 3 VISUAL_ONLY verbatim refusal) — 2026-09-20 — verified: `test_phase6_gate.py`
+- [x] 6.5 Tier-2 phrasing client: `services/gemini_client.py` requesting natural language phrasing under strict negative constraints — 2026-09-20 — verified: `test_phase6_gate.py`
+- [x] 6.6 Mandatory Number Verifier wrapping: Zero exceptions, zero bypass; hallucinated model prose is discarded, degraded mode activated, diff logged in trace — 2026-09-20 — verified: `test_phase6_gate.py` (test_gate7)
+- [x] 6.7 QA endpoints, traces, and reports: `api/ask.py` `POST /api/v1/ask`, `GET /api/v1/ask/{id}`, `GET /api/v1/ask/{id}/trace`, `GET /api/v1/ask/{id}/report.json` — 2026-09-20 — verified: `test_phase6_gate.py` (test_gate8)
+- [x] 6.8 Frontend Ask & Trace: `AskPanel.tsx` with verified numbers banner, ground truth telemetry, auditable trace expander, and report download — 2026-09-20 — verified: `npm run build` succeeds
+- [x] 6.9 Single-image VQA shapes: Inventory, Count, Area, Presence, Location, Comparative, and Capability refusal handled deterministically — 2026-09-20 — verified: `test_phase6_gate.py`
+- [x] 6.10 Structured text grounding: Exact match over detections/landcover first before model invocation — 2026-09-20 — verified: `test_phase6_gate.py`
+- [x] 6.11 Captioning template: Factual captioning conforming to PRD 3 §B6 — 2026-09-20 — verified: `services/render.py`
 
 ## D. In progress
 <!-- max 3. feature-id — layers done — owner — what's left -->
-- None (Phase 4 complete).
+- None (Phase 5 & 6 complete).
 
 
 ## E. Blocked / needs human decision

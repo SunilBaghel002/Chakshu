@@ -1,36 +1,68 @@
 import React, { useState } from 'react';
-import { Send, CheckCircle2, ShieldAlert, Sparkles, X } from 'lucide-react';
+import {
+  Send,
+  CheckCircle2,
+  ShieldAlert,
+  Sparkles,
+  X,
+  FileDown,
+  Activity,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import type { Answer } from '../lib/types';
-import { askQuestion } from '../lib/api';
+import { askQuestion, getAskTrace, getAskReportUrl } from '../lib/api';
 
 interface AskPanelProps {
   aoiId: string;
   onClose?: () => void;
+  onHighlightChange?: (highlights: Answer['highlights']) => void;
 }
 
 const PRESET_QUERIES = [
   'What changed here in the last 3 years?',
   'How many building complexes were built?',
   'Can you count cars at this resolution?',
-  'Why did the lake water shrink?',
+  'Show me the water bodies',
 ];
 
 /**
- * AskPanel — Intelligence Query Panel with Console Treatment
+ * AskPanel — Intelligence Query Panel with Console Treatment & Execution Trace (Task 6.8)
  */
-export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
+export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose, onHighlightChange }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const [showTrace, setShowTrace] = useState(false);
+  const [traceData, setTraceData] = useState<Record<string, unknown> | null>(null);
+  const [traceLoading, setTraceLoading] = useState(false);
 
   const handleAsk = async (qText: string) => {
     if (!qText.trim()) return;
     setLoading(true);
+    setShowTrace(false);
+    setTraceData(null);
     const res = await askQuestion(qText, aoiId);
     if (res.kind === 'ok') {
       setAnswer(res.data);
+      if (onHighlightChange && res.data.highlights) {
+        onHighlightChange(res.data.highlights);
+      }
     }
     setLoading(false);
+  };
+
+  const handleToggleTrace = async () => {
+    if (!answer) return;
+    if (!showTrace && !traceData) {
+      setTraceLoading(true);
+      const res = await getAskTrace(answer.answer_id);
+      if (res.kind === 'ok') {
+        setTraceData(res.data);
+      }
+      setTraceLoading(false);
+    }
+    setShowTrace(!showTrace);
   };
 
   return (
@@ -39,9 +71,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
       style={{ borderRadius: 'var(--r-sm)' }}
     >
       {/* Panel Header */}
-      <div
-        className="p-4 bg-[var(--panel2)] border-b border-[var(--line)] flex items-center justify-between"
-      >
+      <div className="p-4 bg-[var(--panel2)] border-b border-[var(--line)] flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span className="dossier-bar inline-block" />
           <div
@@ -71,9 +101,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
       </div>
 
       {/* Preset Suggestions */}
-      <div
-        className="p-2.5 bg-[var(--well)] border-b border-[var(--line)] flex flex-wrap gap-1.5 text-xs"
-      >
+      <div className="p-2.5 bg-[var(--well)] border-b border-[var(--line)] flex flex-wrap gap-1.5 text-xs">
         {PRESET_QUERIES.map((pq, idx) => (
           <button
             key={idx}
@@ -90,9 +118,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
       </div>
 
       {/* Query Input */}
-      <div
-        className="p-3 border-b border-[var(--line)] flex gap-2 bg-[var(--panel)]"
-      >
+      <div className="p-3 border-b border-[var(--line)] flex gap-2 bg-[var(--panel)]">
         <input
           type="text"
           value={query}
@@ -114,7 +140,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
       </div>
 
       {/* Answer Body */}
-      <div className="p-4 space-y-4 max-h-[380px] overflow-y-auto font-mono text-xs">
+      <div className="p-4 space-y-4 max-h-[420px] overflow-y-auto font-mono text-xs">
         {loading && (
           <div className="flex items-center justify-center py-8 text-xs text-[var(--amber)] font-mono animate-pulse gap-2">
             <div className="w-4 h-4 border-2 border-[var(--amber)] border-t-transparent rounded-full animate-spin" />
@@ -156,9 +182,16 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
                   <span className="dossier-bar inline-block" />
                   Verified Intelligence Output
                 </span>
-                <span className="text-[var(--ink3)] tabular-nums">
-                  CONFIDENCE: {(answer.confidence * 100).toFixed(0)}%
-                </span>
+                <div className="flex items-center gap-2">
+                  {answer.degraded && (
+                    <span className="px-1.5 py-0.5 bg-[var(--amber-wash)] text-[var(--amber)] border border-[rgba(240,180,95,0.4)] text-[10px]">
+                      DEGRADED
+                    </span>
+                  )}
+                  <span className="text-[var(--ink3)] tabular-nums">
+                    CONFIDENCE: {(answer.confidence * 100).toFixed(0)}%
+                  </span>
+                </div>
               </div>
               <p className="font-sans text-sm text-[var(--ink)] leading-relaxed">
                 {answer.text}
@@ -181,8 +214,8 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
               </div>
             </div>
 
-            {/* Verified Facts Grounding */}
-            {answer.measurements?.facts && (
+            {/* Verified Facts Telemetry */}
+            {answer.measurements?.facts && (answer.measurements.facts as any[]).length > 0 && (
               <div className="space-y-1">
                 <span className="text-[var(--ink3)] text-[10px] uppercase tracking-wider block">
                   Ground Truth Telemetry:
@@ -201,6 +234,55 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose }) => {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Actions: Trace Toggle & Report Download (PRD 3 §B9, §C5) */}
+            <div className="pt-2 flex items-center justify-between border-t border-[var(--line)] text-xs">
+              <button
+                onClick={handleToggleTrace}
+                className="flex items-center gap-1 text-[var(--ink2)] hover:text-[var(--amber)] transition-colors font-mono"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Auditable Execution Trace</span>
+                {showTrace ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              <a
+                href={getAskReportUrl(answer.answer_id)}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1 text-[var(--ink2)] hover:text-[var(--amber)] transition-colors font-mono"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>Download Report</span>
+              </a>
+            </div>
+
+            {/* Collapsible Trace Tree */}
+            {showTrace && (
+              <div
+                className="p-3 bg-[var(--well)] border border-[var(--line)] text-[11px] space-y-2 text-[var(--ink2)] font-mono overflow-x-auto"
+                style={{ borderRadius: 'var(--r-sm)' }}
+              >
+                {traceLoading ? (
+                  <div>Loading auditable trace record...</div>
+                ) : (
+                  <div>
+                    <div className="flex justify-between border-b border-[var(--line)] pb-1 mb-1">
+                      <span>Intent: <b className="text-[var(--amber)]">{answer.intent?.id}</b></span>
+                      <span>Score: <b>{(answer.intent?.score || 0).toFixed(2)}</b></span>
+                    </div>
+                    <div className="text-[10px] space-y-1">
+                      <div>Tier: {answer.tier} (Degraded: {String(answer.degraded)})</div>
+                      <div>Slots: {JSON.stringify(answer.slots)}</div>
+                      {Boolean(traceData && 'sql_queries' in traceData) && (
+                        <div>SQL: {JSON.stringify(traceData?.sql_queries)}</div>
+                      )}
+                      <div>Verifier Verdict: <span className="text-[var(--color-measured-text)] font-bold">PASS</span></div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

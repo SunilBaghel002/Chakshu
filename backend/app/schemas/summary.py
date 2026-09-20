@@ -16,7 +16,7 @@ from app.schemas.common import ChangeType
 class WindowSpec(BaseModel):
     """Temporal analysis window parameters and source attribution."""
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     from_date: str = Field(alias="from")
     to_date: str = Field(alias="to")

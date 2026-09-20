@@ -312,15 +312,19 @@ export async function askQuestion(question: string, aoiId?: string, uploadId?: s
   const fallback = lower.includes('vehicle') || lower.includes('car') || lower.includes('weather')
     ? (answerUnsupportedFixture as unknown as Answer)
     : (answerPolishedFixture as unknown as Answer);
-  return safeFetch(
-    '/ask',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, aoi_id: aoiId, upload_id: uploadId }),
-    },
-    fallback
-  );
+  return safeFetch('/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, aoi_id: aoiId, upload_id: uploadId }),
+  }, fallback);
+}
+
+export async function getAskTrace(answerId: string): Promise<ApiResult<Record<string, unknown>>> {
+  return safeFetch(`/ask/${encodeURIComponent(answerId)}/trace`, undefined, {});
+}
+
+export function getAskReportUrl(answerId: string): string {
+  return `${API_BASE}/ask/${encodeURIComponent(answerId)}/report.json`;
 }
 
 export interface SemanticSearchResultItem {
