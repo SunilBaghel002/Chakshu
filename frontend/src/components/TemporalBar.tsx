@@ -1,6 +1,8 @@
 import React from 'react';
 import { ArrowLeftRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { getYearDifference, MIN_TEMPORAL_GAP_YEARS } from '../lib/satelliteProviders';
+import { Button } from './ui/Button';
+import { BUTTON_COPY } from '../lib/copy';
 
 interface TemporalBarProps {
   beforeDate: string;
@@ -107,24 +109,30 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
 
       {/* Center: DETECT CHANGES + SWAP + Gap Pill + Presets */}
       <div className="flex items-center gap-2">
-        <button
+        <Button
+          id="detect-changes"
+          variant="primary"
+          size="md"
+          shortcut="D"
+          loading={isAnalyzing}
+          loadingText={BUTTON_COPY.detecting}
           onClick={onRunAnalysis}
-          disabled={isAnalyzing}
-          className="btn-primary"
           title="Execute bi-temporal classical CVA detection pipeline"
-          style={{ opacity: isAnalyzing ? 0.5 : 1 }}
         >
-          <span>{isAnalyzing ? 'DETECTING…' : 'DETECT CHANGES'}</span>
-        </button>
+          {BUTTON_COPY.detect}
+        </Button>
 
-        <button
+        <Button
+          id="swap-dates"
+          variant="secondary"
+          size="md"
+          shortcut="S"
+          icon={<ArrowLeftRight className="w-3.5 h-3.5" style={{ color: 'var(--amber)' }} />}
           onClick={onSwapDates}
-          className="btn-secondary"
           title="Swap Before and After dates"
         >
-          <ArrowLeftRight className="w-3.5 h-3.5" style={{ color: 'var(--amber)' }} />
-          <span className="hidden sm:inline">SWAP</span>
-        </button>
+          {BUTTON_COPY.swap}
+        </Button>
 
         {/* 2-Year Minimum Gap Badge Pill */}
         <div

@@ -84,9 +84,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const isStateSelected = explicitState === 'selected' || selected;
 
     // Enforce one-primary rule per viewport via primaryOwner context (PRD 10 L4 / PRD 11 K1)
-    const isPrimaryAllowed = usePrimaryOwner(buttonId, variant === 'primary');
+    const isFilledAmber = variant === 'primary' || variant === 'bar';
+    const isPrimaryAllowed = usePrimaryOwner(buttonId, isFilledAmber);
     const effectiveVariant: ButtonVariant =
-      variant === 'primary' && !isPrimaryAllowed ? 'secondary' : variant;
+      isFilledAmber && !isPrimaryAllowed ? 'secondary' : variant;
 
     // Disabled reason tooltip copy
     const disabledTooltip = reason ? DISABLED_REASONS[reason] : undefined;
@@ -211,6 +212,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <Component
         ref={ref}
         id={buttonId}
+        data-variant={effectiveVariant}
         type={Component === 'button' ? rest.type || 'button' : undefined}
         disabled={isStateDisabled}
         aria-busy={isStateLoading ? 'true' : undefined}

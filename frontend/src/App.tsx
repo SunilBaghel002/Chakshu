@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { ConsoleShell } from './components/layout/ConsoleShell';
+import { useConsoleActions, getPresetMap } from './lib/useConsoleActions';
 import { AppHeader } from './components/AppHeader';
 import { DataStreamMarquee } from './components/DataStreamMarquee';
-import { TacticalTelemetryBar } from './components/TacticalTelemetryBar';
 import { IconRail } from './components/IconRail';
 import { StatusLine } from './components/StatusLine';
 import { AmbientScanline } from './components/AmbientScanline';
@@ -14,23 +15,12 @@ import { UploadModal } from './components/UploadModal';
 import { SearchModal } from './components/SearchModal';
 import { TemporalBar } from './components/TemporalBar';
 import {
-  getAois,
-  getScenes,
-  getChangeSummary,
-  getEvidenceList,
-  getDetections,
-  triggerAoiAnalyse,
-  submitDecision,
-  isMockMode,
-  setMockMode,
-  type AoiItem,
-  type SceneItem,
+  getAois, getScenes, getChangeSummary, getEvidenceList, getDetections,
+  triggerAoiAnalyse, submitDecision, isMockMode, setMockMode,
+  type AoiItem, type SceneItem,
 } from './lib/api';
 import type { Evidence, ChangeSummary, DetectionSet } from './lib/types';
-import {
-  enforceMinGapForBefore,
-  enforceMinGapForAfter,
-} from './lib/satelliteProviders';
+import { enforceMinGapForBefore, enforceMinGapForAfter } from './lib/satelliteProviders';
 
 import { ContactSheet } from './components/ContactSheet';
 
@@ -58,7 +48,7 @@ export const App: React.FC = () => {
   const [afterDate, setAfterDate] = useState<string>('2026-08-18');
 
   // UI state
-  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask' | 'search'>('map');
+  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit'>('map');
   const [isMock, setIsMock] = useState<boolean>(isMockMode());
   const [sliderPos, setSliderPos] = useState<number>(50);
   const [isSwipeActive, setIsSwipeActive] = useState<boolean>(true);
@@ -237,163 +227,167 @@ export const App: React.FC = () => {
   const availableDates = Array.from(new Set(scenes.map((s) => s.acquired_at))).sort();
 
   // Camera preset handler for TacticalTelemetryBar
-  const handlePreset = useCallback((preset: string) => {
-    const presetMap: Record<string, { center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]]; match?: string }> = {
-      runway: { center: [28.1782, 77.6045], zoom: 16, bounds: [[28.1740, 77.5830], [28.1825, 77.6260]], match: 'Runway 10/28' },
-      terminal: { center: [28.1748, 77.6075], zoom: 17, bounds: [[28.1725, 77.6010], [28.1772, 77.6140]], match: 'Passenger Terminal 1' },
-      atc: { center: [28.1756, 77.6155], zoom: 18, bounds: [[28.1742, 77.6138], [28.1770, 77.6172]], match: 'ATC Tower' },
-      full: { center: aoiCoords, zoom: 14, bounds: aoiBounds },
-    };
-    const p = presetMap[preset];
-    if (p) {
-      setPresetTarget(p);
-      if (p.match) {
-        const ev = evidenceList.find((e) => e.measurement.measured_by?.includes(p.match!));
-        if (ev) setSelectedEvidence(ev);
-      } else if (preset === 'full') {
-        setSelectedEvidence(null);
+  const handlePreset = useCallback(
+    (preset: string) => {
+      const p = getPresetMap(aoiCoords, aoiBounds)[preset];
+      if (p) {
+        setPresetTarget(p);
+        if (p.match) {
+          const ev = evidenceList.find((e) => e.measurement.measured_by?.includes(p.match!));
+          if (ev) setSelectedEvidence(ev);
+        } else if (preset === 'full') {
+          setSelectedEvidence(null);
+        }
       }
-    }
-  }, [aoiCoords, aoiBounds, evidenceList]);
+    },
+    [aoiCoords, aoiBounds, evidenceList]
+  );
 
   const [presetTarget, setPresetTarget] = useState<{ center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]] } | null>(null);
 
+  // Keyboard shortcut actions handler
+  const handleShortcutAction = useConsoleActions({
+    activeView,
+    setActiveView,
+    selectedEvidence,
+    setSelectedEvidence,
+    visibleEvidenceList,
+    handleSwapDates,
+    handleRunAnalysis,
+    setIsSwipeActive,
+    handleConfirmEvidence,
+    handleRejectEvidence,
+  });
+
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
-      {/* SLOT-00: Data Stream Marquee */}
-      <DataStreamMarquee />
-
-      {/* ISRO/RAW Tactical Telemetry Bar */}
-      <TacticalTelemetryBar
-        aoiName={currentAoi?.name ?? 'Jewar Airport'}
-        onPreset={handlePreset}
-      />
-
-      {/* SLOT-01: Command Bar */}
-      <AppHeader
-        aois={aois}
-        selectedAoiId={selectedAoiId}
-        onSelectAoi={setSelectedAoiId}
-        activeView={activeView}
-        onSelectView={setActiveView}
-        isMock={isMock}
-        onToggleMock={handleToggleMock}
-        areaLabel={totalAreaLabel}
-        sceneCount={scenes.length || 36}
-        usableScenes={scenes.filter((s) => s.usable).length || 29}
-      />
-
-      {/* SLOT-02: Temporal Bar */}
-      <TemporalBar
-        beforeDate={beforeDate}
-        afterDate={afterDate}
-        onBeforeDateChange={handleSelectBeforeDate}
-        onAfterDateChange={handleSelectAfterDate}
-        onSwapDates={handleSwapDates}
-        onRunAnalysis={handleRunAnalysis}
-        isAnalyzing={isAnalyzing}
-      />
-
-      {/* Main Stage: SLOT-05 Rail + SLOT-10 Map + SLOT-20 Dossier */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* SLOT-05: Icon Rail */}
-        <IconRail activeView={activeView} onSelectView={setActiveView} />
-
-        {/* SLOT-10: Map Stage + SLOT-30: Timeline */}
-        <main className="flex-1 flex flex-col relative overflow-hidden" style={{ background: 'var(--well)' }}>
-          <div className="flex-1 relative overflow-hidden">
-            <MapPane
-              selectedAoiId={selectedAoiId}
-              aoiCoords={aoiCoords}
-              aoiBounds={aoiBounds}
-              aoiName={currentAoi?.name ?? 'Jewar Airport'}
-              evidenceList={visibleEvidenceList}
-              selectedEvidenceId={selectedEvidence?.change_object_id ?? null}
-              onSelectEvidence={setSelectedEvidence}
-              detectionSet={detectionSet}
-              sliderPos={sliderPos}
-              onSliderChange={setSliderPos}
-              isSwipeActive={isSwipeActive}
-              onToggleSwipe={() => setIsSwipeActive(!isSwipeActive)}
-              beforeDate={beforeDate}
-              afterDate={afterDate}
-              availableDates={availableDates}
-              onSelectBeforeDate={handleSelectBeforeDate}
-              onSelectAfterDate={handleSelectAfterDate}
-              onSwapDates={handleSwapDates}
-              presetTarget={presetTarget}
-              onPresetConsumed={() => setPresetTarget(null)}
-            />
-
-            {activeView === 'ask' && (
-              <div className="absolute left-6 top-6 z-[500] drop-shadow-2xl">
-                <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
-              </div>
-            )}
-          </div>
-
-          {/* SLOT-30: Timeline Strip */}
-          <TimelineSlider
-            scenes={scenes}
+    <ConsoleShell
+      marqueeNode={<DataStreamMarquee />}
+      headerNode={
+        <AppHeader
+          aois={aois}
+          selectedAoiId={selectedAoiId}
+          onSelectAoi={setSelectedAoiId}
+          activeView={activeView}
+          onSelectView={setActiveView}
+          isMock={isMock}
+          onToggleMock={handleToggleMock}
+          areaLabel={totalAreaLabel}
+          sceneCount={scenes.length || 36}
+          usableScenes={scenes.filter((s) => s.usable).length || 29}
+        />
+      }
+      temporalBarNode={
+        <TemporalBar
+          beforeDate={beforeDate}
+          afterDate={afterDate}
+          onBeforeDateChange={handleSelectBeforeDate}
+          onAfterDateChange={handleSelectAfterDate}
+          onSwapDates={handleSwapDates}
+          onRunAnalysis={handleRunAnalysis}
+          isAnalyzing={isAnalyzing}
+        />
+      }
+      railNode={
+        <IconRail
+          activeView={activeView}
+          onSelectView={setActiveView}
+        />
+      }
+      stageNode={
+        <>
+          <MapPane
+            selectedAoiId={selectedAoiId}
+            aoiCoords={aoiCoords}
+            aoiBounds={aoiBounds}
+            aoiName={currentAoi?.name ?? 'Jewar Airport'}
+            evidenceList={visibleEvidenceList}
+            selectedEvidenceId={selectedEvidence?.change_object_id ?? null}
+            onSelectEvidence={setSelectedEvidence}
+            detectionSet={detectionSet}
+            sliderPos={sliderPos}
+            onSliderChange={setSliderPos}
+            isSwipeActive={isSwipeActive}
+            onToggleSwipe={() => setIsSwipeActive(!isSwipeActive)}
             beforeDate={beforeDate}
             afterDate={afterDate}
+            availableDates={availableDates}
             onSelectBeforeDate={handleSelectBeforeDate}
             onSelectAfterDate={handleSelectAfterDate}
+            onSwapDates={handleSwapDates}
+            presetTarget={presetTarget}
+            onPresetConsumed={() => setPresetTarget(null)}
           />
-        </main>
-
-        {/* SLOT-20: Dossier */}
-        {selectedEvidence && (
+          {activeView === 'ask' && (
+            <div className="absolute left-6 top-6" style={{ zIndex: 'var(--z-modal)' }}>
+              <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
+            </div>
+          )}
+        </>
+      }
+      timelineNode={
+        <TimelineSlider
+          scenes={scenes}
+          beforeDate={beforeDate}
+          afterDate={afterDate}
+          onSelectBeforeDate={handleSelectBeforeDate}
+          onSelectAfterDate={handleSelectAfterDate}
+        />
+      }
+      dossierNode={
+        selectedEvidence ? (
           <EvidenceDrawer
             evidence={selectedEvidence}
             onClose={() => setSelectedEvidence(null)}
             onConfirm={handleConfirmEvidence}
             onReject={handleRejectEvidence}
           />
-        )}
-      </div>
-
-      {/* SLOT-40: Status Line */}
-      <StatusLine
-        jobState={isAnalyzing ? 'ANALYSING' : 'READY'}
-        lastAction={selectedEvidence ? `Inspecting ${selectedEvidence.change_type}` : 'AOI loaded'}
-      />
-
-      {/* M9: Ambient Scanline */}
-      <AmbientScanline />
-
-      {/* Modals */}
-      {activeView === 'review' && (
-        <ReviewQueueModal
-          evidenceList={visibleEvidenceList}
-          onSelectEvidence={(ev) => {
-            setSelectedEvidence(ev);
-            setActiveView('map');
-          }}
-          onConfirm={handleConfirmEvidence}
-          onReject={handleRejectEvidence}
-          onClose={() => setActiveView('map')}
+        ) : undefined
+      }
+      statusLineNode={
+        <StatusLine
+          jobState={isAnalyzing ? 'ANALYSING' : 'READY'}
+          lastAction={selectedEvidence ? `Inspecting ${selectedEvidence.change_type}` : 'AOI loaded'}
         />
-      )}
+      }
+      hasActiveDossier={Boolean(selectedEvidence)}
+      onShortcutAction={handleShortcutAction}
+      overlayNode={
+        <>
+          <AmbientScanline />
 
-      {activeView === 'upload' && (
-        <UploadModal
-          detectionSet={detectionSet}
-          onClose={() => setActiveView('map')}
-          onDetectionSetUpdate={setDetectionSet}
-          onLoadSample={async (type) => {
-            const res = await getDetections(type);
-            if (res.kind === 'ok') setDetectionSet(res.data);
-          }}
-        />
-      )}
+          {activeView === 'review' && (
+            <ReviewQueueModal
+              evidenceList={visibleEvidenceList}
+              onSelectEvidence={(ev) => {
+                setSelectedEvidence(ev);
+                setActiveView('map');
+              }}
+              onConfirm={handleConfirmEvidence}
+              onReject={handleRejectEvidence}
+              onClose={() => setActiveView('map')}
+            />
+          )}
 
-      {activeView === 'search' && (
-        <SearchModal
-          aoiId={selectedAoiId}
-          onClose={() => setActiveView('map')}
-        />
-      )}
-    </div>
+          {activeView === 'upload' && (
+            <UploadModal
+              detectionSet={detectionSet}
+              onClose={() => setActiveView('map')}
+              onDetectionSetUpdate={setDetectionSet}
+              onLoadSample={async (type) => {
+                const res = await getDetections(type);
+                if (res.kind === 'ok') setDetectionSet(res.data);
+              }}
+            />
+          )}
+
+          {activeView === 'search' && (
+            <SearchModal
+              aoiId={selectedAoiId}
+              onClose={() => setActiveView('map')}
+            />
+          )}
+        </>
+      }
+    />
   );
 };

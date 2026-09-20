@@ -11,11 +11,14 @@ import { EvidenceTriptych } from './EvidenceTriptych';
 import { EvidenceConfidenceGauge } from './EvidenceConfidenceGauge';
 import { SuppressionPanel } from './SuppressionPanel';
 
+import { Button } from './ui/Button';
+
 interface EvidenceDrawerProps {
   evidence: Evidence | null;
   onClose: () => void;
   onConfirm?: (id: string) => void;
   onReject?: (id: string) => void;
+  onExport?: (id: string) => void;
 }
 
 /**
@@ -27,6 +30,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
   onClose,
   onConfirm,
   onReject,
+  onExport,
 }) => {
   const [activeTab, setActiveTab] = useState<'evidence' | 'rules' | 'history'>('evidence');
   const [analystDecision, setAnalystDecision] = useState<'pending' | 'confirmed' | 'rejected'>(
@@ -341,40 +345,51 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
         )}
       </div>
 
-      {/* Action Footer */}
+      {/* SLOT-25: Action Footer (Sticky Reflow Ban per PRD 10 §3 / L3) */}
       <div
-        className="p-3 flex items-center gap-2"
-        style={{ borderTop: '1px solid var(--line)', background: 'var(--bg)' }}
+        data-slot="SLOT-25"
+        className="p-3 flex items-center justify-between shrink-0"
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          background: 'var(--panel)',
+          borderTop: '1px solid var(--line)',
+          zIndex: 10,
+        }}
       >
-        <button
-          onClick={() => {
-            setAnalystDecision('rejected');
-            onReject?.(evidence.change_object_id);
-          }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 t-tag cursor-pointer transition-colors"
-          style={{
-            background: 'var(--rejected-fill)',
-            border: '1px solid var(--rejected-border)',
-            color: 'var(--rejected-text)',
-            borderRadius: 'var(--radius)',
-            fontSize: 10,
-          }}
+        <Button
+          variant="secondary"
+          size="md"
+          shortcut="E"
+          onClick={() => onExport?.(evidence.change_object_id)}
         >
-          <Ban className="w-3.5 h-3.5" />
-          <span>REJECT</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setAnalystDecision('confirmed');
-            onConfirm?.(evidence.change_object_id);
-          }}
-          className="btn-primary flex-1 flex items-center justify-center gap-1.5"
-          style={{ fontSize: 10, padding: '8px 12px' }}
-        >
-          <Check className="w-3.5 h-3.5" />
-          <span>CONFIRM</span>
-        </button>
+          EXPORT
+        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="danger-outline"
+            size="md"
+            shortcut="⌫"
+            onClick={() => {
+              setAnalystDecision('rejected');
+              onReject?.(evidence.change_object_id);
+            }}
+          >
+            REJECT
+          </Button>
+          <Button
+            id="dossier-confirm"
+            variant="primary"
+            size="md"
+            shortcut="⏎"
+            onClick={() => {
+              setAnalystDecision('confirmed');
+              onConfirm?.(evidence.change_object_id);
+            }}
+          >
+            CONFIRM
+          </Button>
+        </div>
       </div>
     </aside>
   );

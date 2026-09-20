@@ -143,4 +143,17 @@ export const CONTACT_SHEET_COPY = {
   returnToConsole: 'RETURN TO CONSOLE',
 } as const;
 
+export const CONSOLE_COPY = {
+  smallScreenNotice: 'THE CONSOLE NEEDS ≥ 1024 px · OPEN THE LANDING PAGE',
+  goToOverview: 'GO TO OVERVIEW',
+  shortcutsTitle: 'KEYBOARD SHORTCUTS',
+  shortcutsClose: 'CLOSE',
+  navigationGroup: 'NAVIGATION',
+  consoleGroup: 'CONSOLE',
+  reviewGroup: 'REVIEW & TRIAGE',
+  viewGroup: 'VIEW & INSPECT',
+  globalGroup: 'GLOBAL',
+  escHint: 'Esc to dismiss',
+} as const;
+
 

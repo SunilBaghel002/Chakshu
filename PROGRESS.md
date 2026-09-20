@@ -167,6 +167,8 @@ Phase 8 Stage A — Interface Work (Tasks 8.1, 8.3, 8.4 complete; Stage A ongoin
 |---|---|---|---|
 | 2026-09-12 | Phase 0 skeleton on development-sunil | Committing to main | Team workflow: user pushes from development-sunil |
 | 2026-09-12 | PowerShell make.ps1 companion to Makefile | Makefile only | Native execution support on Windows without mingw/msys dependency |
+| 2026-09-20 | Task 8.1 & 8.3: Design tokens, Button.tsx, UI linter | Ad-hoc CSS & components | PRD 10 L1/L2, PRD 11 K1 token and component compliance |
+| 2026-09-20 | Task 8.2: Slot grid, ConsoleShell, primaryOwner, shortcuts, sticky footers | Hand-rolled divs, multi-primary | PRD 10 L4/L8/L3 compliance; unslotted elements flagged under NEEDS A SLOT |
 
 ## K0. Next actions — Phase 8 Stage A (supersedes K below, which is stale)
 
@@ -176,10 +178,10 @@ Per user directive 20 Sep 2026: **Phase 8 before Phase 7.** Full task list and g
 1. **8.0** Router: `react-router-dom` v7; routes `/`, `/console`, `/admin`, `/privacy` — S
 2. **8.0a** ESLint config + wire `fe-check` into `make check` — S
 3. **8.0b** Remove all ten external requests; self-host fonts — S
-4. **8.1** Missing tokens: `--s-*`, `--h-ctl-*`, `--r-*`, `--w-*`, `--z-*` ladder — M
-5. **8.2** `Slot.tsx` + `slots.ts` — M
-6. **8.3** `Button.tsx` (7×3×7, 8 reason strings, `primaryOwner`) — M
-7. **8.4** Lint bans + plant-and-fail proof — S
+4. [x] **8.1** Missing tokens: `--s-*`, `--h-ctl-*`, `--r-*`, `--w-*`, `--z-*` ladder — M (DONE 2026-09-20)
+5. [x] **8.2** `Slot.tsx` + `slots.ts` + `ConsoleShell` on grid + `primaryOwner` + `shortcuts.ts` + sticky footers — M/L (DONE 2026-09-20)
+6. [x] **8.3** `Button.tsx` (7×3×7, 8 reason strings, `primaryOwner`) — M (DONE 2026-09-20)
+7. [x] **8.4** Lint bans + plant-and-fail proof — S (DONE 2026-09-20 via `scripts/lint_ui.py`)
 8. **8.0c** Un-modal the four screens onto slots — M
 9. **8.5** `shortcuts.ts` — M
 10. **8.6** ConsoleShell on the grid + sticky footers — L
