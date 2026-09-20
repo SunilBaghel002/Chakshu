@@ -53,7 +53,11 @@ def validate_polygon_geometry(
         if not (np.isfinite(x) and np.isfinite(y)):
             return False, "coordinate_nan_or_inf", None
         if x < -0.5 or x > img_width + 0.5 or y < -0.5 or y > img_height + 0.5:
-            return False, f"coordinate_out_of_bounds: ({x}, {y}) outside [0..{img_width}, 0..{img_height}]", None
+            return (
+                False,
+                f"coordinate_out_of_bounds: ({x}, {y}) outside [0..{img_width}, 0..{img_height}]",
+                None,
+            )
 
     try:
         poly = ShapelyPolygon(coords)
@@ -161,9 +165,7 @@ def mask_to_validated_polygons(
         return []
 
     component_sizes = ndimage.sum(cleaned, labeled, range(1, num_features + 1))
-    valid_component_ids = [
-        idx + 1 for idx, sz in enumerate(component_sizes) if sz >= min_pixels
-    ]
+    valid_component_ids = [idx + 1 for idx, sz in enumerate(component_sizes) if sz >= min_pixels]
 
     # Sort largest components first
     valid_component_ids.sort(key=lambda idx: float(component_sizes[idx - 1]), reverse=True)
@@ -179,7 +181,7 @@ def mask_to_validated_polygons(
 
         ymin, ymax = max(0, sl[0].start - 2), min(img_height, sl[0].stop + 2)
         xmin, xmax = max(0, sl[1].start - 2), min(img_width, sl[1].stop + 2)
-        sub_comp_mask = (labeled[ymin:ymax, xmin:xmax] == comp_id)
+        sub_comp_mask = labeled[ymin:ymax, xmin:xmax] == comp_id
 
         # Extract contours on localized component bounding box
         raw_contours: list[np.ndarray] = []
@@ -193,9 +195,11 @@ def mask_to_validated_polygons(
             ys, xs = np.where(sub_comp_mask)
             min_x, max_x = float(np.min(xs) + xmin), float(np.max(xs) + xmin) + 1
             min_y, max_y = float(np.min(ys) + ymin), float(np.max(ys) + ymin) + 1
-            raw_contours.append(np.array([
-                [min_x, min_y], [max_x, min_y], [max_x, max_y], [min_x, max_y], [min_x, min_y]
-            ]))
+            raw_contours.append(
+                np.array(
+                    [[min_x, min_y], [max_x, min_y], [max_x, max_y], [min_x, max_y], [min_x, min_y]]
+                )
+            )
 
         comp_mask = labeled == comp_id
 
@@ -214,7 +218,10 @@ def mask_to_validated_polygons(
 
             # 5. Geometry validation
             is_valid, reason, poly_obj = validate_polygon_geometry(
-                coords_list, img_width=img_width, img_height=img_height, min_area_px=float(min_pixels)
+                coords_list,
+                img_width=img_width,
+                img_height=img_height,
+                min_area_px=float(min_pixels),
             )
             if not is_valid or poly_obj is None:
                 log.debug("Rejected invalid polygon geometry: %s", reason)
@@ -230,20 +237,27 @@ def mask_to_validated_polygons(
                 continue
 
             minx, miny, maxx, maxy = poly_obj.bounds
-            surviving_polygons.append({
-                "type": "Polygon",
-                "coordinates": [validated_coords],
-                "polygon_px": validated_coords,
-                "area_px": float(round(poly_obj.area, 2)),
-                "bbox_px": [int(np.floor(miny)), int(np.floor(minx)), int(np.ceil(maxy)), int(np.ceil(maxx))],
-                "validation": {
-                    "geometry_valid": True,
-                    "mask_overlap_iou": round(iou, 3),
-                    "vertex_count": len(validated_coords),
-                    "closed_ring": True,
-                    "no_self_intersection": True,
-                },
-            })
+            surviving_polygons.append(
+                {
+                    "type": "Polygon",
+                    "coordinates": [validated_coords],
+                    "polygon_px": validated_coords,
+                    "area_px": float(round(poly_obj.area, 2)),
+                    "bbox_px": [
+                        int(np.floor(miny)),
+                        int(np.floor(minx)),
+                        int(np.ceil(maxy)),
+                        int(np.ceil(maxx)),
+                    ],
+                    "validation": {
+                        "geometry_valid": True,
+                        "mask_overlap_iou": round(iou, 3),
+                        "vertex_count": len(validated_coords),
+                        "closed_ring": True,
+                        "no_self_intersection": True,
+                    },
+                }
+            )
 
     surviving_polygons.sort(key=lambda item: item["area_px"], reverse=True)
     return surviving_polygons[:max_polygons]

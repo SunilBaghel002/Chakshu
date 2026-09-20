@@ -53,7 +53,9 @@ def test_blind_pipeline_no_location_leak() -> None:
         "stadium named",
     ]
     for term in forbidden_terms:
-        assert term not in raw_json_lower, f"Forbidden location term '{term}' leaked in detection JSON!"
+        assert term not in raw_json_lower, (
+            f"Forbidden location term '{term}' leaked in detection JSON!"
+        )
 
     # (c) Assert landcover bare < 40 and built > 40
     coverage_dict = {item["label"]: item["pct"] for item in det_data["coverage"]["by_class"]}

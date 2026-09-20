@@ -142,9 +142,8 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose, onHighlightC
       {/* Answer Body */}
       <div className="p-4 space-y-4 max-h-[420px] overflow-y-auto font-mono text-xs">
         {loading && (
-          <div className="flex items-center justify-center py-8 text-xs text-[var(--amber)] font-mono animate-pulse gap-2">
-            <div className="w-4 h-4 border-2 border-[var(--amber)] border-t-transparent rounded-full animate-spin" />
-            <span>Verifying satellite telemetry with Ground Truth Engine...</span>
+          <div className="flex items-center justify-center py-8 text-xs text-[var(--amber)] font-mono gap-2">
+            <span>VERIFYING SATELLITE TELEMETRY WITH GROUND TRUTH ENGINE…</span>
           </div>
         )}
 

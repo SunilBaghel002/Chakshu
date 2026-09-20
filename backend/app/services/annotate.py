@@ -12,36 +12,41 @@ from PIL import Image, ImageDraw, ImageFont
 
 CLASS_STYLE: dict[str, dict[str, tuple[int, int, int, int]]] = {
     "water": {
-        "fill": (37, 99, 235, 85),       # translucent blue ~33%
-        "stroke": (30, 64, 175, 255),    # dark rich navy blue
+        "fill": (37, 99, 235, 85),  # translucent blue ~33%
+        "stroke": (30, 64, 175, 255),  # dark rich navy blue
     },
     "building": {
-        "fill": (239, 68, 68, 88),      # translucent red ~35% (changed from orange per user instruction)
-        "stroke": (185, 28, 28, 255),    # dark red stroke
+        "fill": (
+            239,
+            68,
+            68,
+            88,
+        ),  # translucent red ~35% (changed from orange per user instruction)
+        "stroke": (185, 28, 28, 255),  # dark red stroke
     },
     "vegetation": {
-        "fill": (34, 197, 94, 88),       # translucent green ~35%
-        "stroke": (15, 95, 45, 255),      # dark forest green
+        "fill": (34, 197, 94, 88),  # translucent green ~35%
+        "stroke": (15, 95, 45, 255),  # dark forest green
     },
     "bare": {
-        "fill": (180, 130, 80, 75),      # translucent tan/brown ~30%
-        "stroke": (120, 75, 30, 255),     # dark earthy brown
+        "fill": (180, 130, 80, 75),  # translucent tan/brown ~30%
+        "stroke": (120, 75, 30, 255),  # dark earthy brown
     },
     "road": {
-        "fill": (156, 163, 175, 80),     # neutral gray ~31%
-        "stroke": (55, 65, 81, 255),      # dark charcoal slate
+        "fill": (156, 163, 175, 80),  # neutral gray ~31%
+        "stroke": (55, 65, 81, 255),  # dark charcoal slate
     },
     "built": {
-        "fill": (239, 68, 68, 88),      # translucent red ~35%
-        "stroke": (185, 28, 28, 255),    # dark red stroke
+        "fill": (239, 68, 68, 88),  # translucent red ~35%
+        "stroke": (185, 28, 28, 255),  # dark red stroke
     },
     "crop": {
-        "fill": (132, 204, 22, 85),      # translucent lime ~33%
-        "stroke": (63, 98, 18, 255),     # dark olive/lime
+        "fill": (132, 204, 22, 85),  # translucent lime ~33%
+        "stroke": (63, 98, 18, 255),  # dark olive/lime
     },
     "change": {
-        "fill": (217, 70, 239, 88),      # translucent magenta ~35%
-        "stroke": (162, 28, 175, 255),   # dark magenta
+        "fill": (217, 70, 239, 88),  # translucent magenta ~35%
+        "stroke": (162, 28, 175, 255),  # dark magenta
     },
 }
 
@@ -104,8 +109,11 @@ def annotate_image(
     # Pass 1: Draw water polygons, building polygons, and optional landcover polygons
     # Sort largest area first so finer features (buildings, water) layer cleanly on top
     poly_candidates = [
-        d for d in detections
-        if d.get("kind") == "polygon" or "points" in d or ("coordinates" in d and d.get("kind") != "box")
+        d
+        for d in detections
+        if d.get("kind") == "polygon"
+        or "points" in d
+        or ("coordinates" in d and d.get("kind") != "box")
     ]
     poly_candidates.sort(key=lambda d: float(d.get("area_px") or 0.0), reverse=True)
 
@@ -119,10 +127,13 @@ def annotate_image(
 
         pts = _extract_polygon_points(det, scale_x, scale_y, w, h)
         if len(pts) >= 3:
-            style = CLASS_STYLE.get(label, {
-                "fill": (16, 185, 129, 64),
-                "stroke": (16, 185, 129, 230),
-            })
+            style = CLASS_STYLE.get(
+                label,
+                {
+                    "fill": (16, 185, 129, 64),
+                    "stroke": (16, 185, 129, 230),
+                },
+            )
             if overlay_lc:
                 # Semi-transparent filled polygon with class-specific outline
                 overlay_draw.polygon(pts, fill=style["fill"], outline=style["stroke"], width=2)

@@ -103,7 +103,9 @@ class UploadService:
         self.uploads_dir = Path(uploads_dir or settings.UPLOADS_DIR)
         self.uploads_dir.mkdir(parents=True, exist_ok=True)
 
-    def validate_file_metadata(self, filename: str, content_length: int | None, header: bytes) -> str:
+    def validate_file_metadata(
+        self, filename: str, content_length: int | None, header: bytes
+    ) -> str:
         """Validate extension, size limit, and magic bytes before storing.
 
         Returns:
@@ -115,8 +117,8 @@ class UploadService:
 
         is_geo = ext in ALLOWED_EXTENSIONS_GEO
         max_bytes = (
-            settings.UPLOAD_MAX_MB_GEO if is_geo else settings.UPLOAD_MAX_MB_RGB
-        ) * 1024 * 1024
+            (settings.UPLOAD_MAX_MB_GEO if is_geo else settings.UPLOAD_MAX_MB_RGB) * 1024 * 1024
+        )
 
         if content_length is not None and content_length > max_bytes:
             size_mb = int(math.ceil(content_length / (1024 * 1024)))
@@ -225,12 +227,19 @@ class UploadService:
                         min_lat = origin_y - h * sy
 
                         # Sanity check: bounds should be valid geographic coordinates
-                        if (-180 <= min_lon <= 180 and -180 <= max_lon <= 180
-                                and -90 <= min_lat <= 90 and -90 <= max_lat <= 90
-                                and min_lon < max_lon and min_lat < max_lat):
+                        if (
+                            -180 <= min_lon <= 180
+                            and -180 <= max_lon <= 180
+                            and -90 <= min_lat <= 90
+                            and -90 <= max_lat <= 90
+                            and min_lon < max_lon
+                            and min_lat < max_lat
+                        ):
                             bounds_4326 = [min_lon, min_lat, max_lon, max_lat]
                         else:
-                            log.info("GeoTIFF bounds computed but outside valid range, leaving as None")
+                            log.info(
+                                "GeoTIFF bounds computed but outside valid range, leaving as None"
+                            )
                     else:
                         log.info("GeoTIFF has pixel scale but no tiepoint tag, bounds unavailable")
 

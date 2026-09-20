@@ -63,10 +63,13 @@ def test_gate1_what_changed_in_3_years_on_georeferenced():
     assert fact_map["f5"].value == 312  # suppression count
 
     # Through /ask API endpoint
-    resp = client.post("/api/v1/ask", json={
-        "question": "What changed here in 3 years?",
-        "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
-    })
+    resp = client.post(
+        "/api/v1/ask",
+        json={
+            "question": "What changed here in 3 years?",
+            "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["intent"]["id"] == "aoi_change_summary"
@@ -84,10 +87,13 @@ def test_gate2_visual_only_temporal_refusal():
     assert up_resp.status_code == 202
     upload_id = up_resp.json()["id"]
 
-    resp = client.post("/api/v1/ask", json={
-        "question": "what changed here in 3 years",
-        "upload_id": upload_id,
-    })
+    resp = client.post(
+        "/api/v1/ask",
+        json={
+            "question": "what changed here in 3 years",
+            "upload_id": upload_id,
+        },
+    )
     assert resp.status_code == 200
     ans = resp.json()
     assert ans["text"] == VISUAL_ONLY_TEMPORAL_REFUSAL
@@ -98,9 +104,15 @@ def test_gate3_count_by_type_returns_db_count_not_model_prose():
     # Feed model prose with fabricated count ("I see 42 buildings")
     verifier = NumberVerifier()
     db_count = 6
-    facts = [NarrativeFact(fact_id="f1", kind="count", value=db_count, unit="detections", type="building")]
+    facts = [
+        NarrativeFact(
+            fact_id="f1", kind="count", value=db_count, unit="detections", type="building"
+        )
+    ]
 
-    prose_with_fabricated_count = "In this satellite scene, I can clearly observe 42 buildings across the area."
+    prose_with_fabricated_count = (
+        "In this satellite scene, I can clearly observe 42 buildings across the area."
+    )
     verdict = verifier.verify(prose_with_fabricated_count, facts)
 
     # Verifier MUST fail because 42 != 6
@@ -121,7 +133,14 @@ def test_gate4_every_number_appears_in_facts_and_passes_verifier():
     verifier = NumberVerifier()
     facts = [
         NarrativeFact(fact_id="f1", kind="count", value=6, unit="changes", type="construction"),
-        NarrativeFact(fact_id="f2", kind="area", value=184320.5, unit="m2", label="18.43 ha", type="construction"),
+        NarrativeFact(
+            fact_id="f2",
+            kind="area",
+            value=184320.5,
+            unit="m2",
+            label="18.43 ha",
+            type="construction",
+        ),
         NarrativeFact(fact_id="f5", kind="count", value=312, unit="suppressed_candidates"),
     ]
     valid_prose = "Over the monitored window, 6 changes were detected totalling 18.43 ha. 312 candidates were suppressed."
@@ -166,7 +185,9 @@ def test_gate7_fabricated_model_response_degrades_to_template_and_logs_in_trace(
     template = "Found 3 structures."
 
     # Mock _call_gemini to inject a hallucinated number 999
-    with patch.object(gemini, "_call_gemini", return_value="There are 999 structures visible here."):
+    with patch.object(
+        gemini, "_call_gemini", return_value="There are 999 structures visible here."
+    ):
         with patch.object(gemini, "enabled", True):
             text, tier, degraded, verdict, trace_info = gemini.phrase_answer(
                 question="how many structures", template_text=template, facts=facts

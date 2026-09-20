@@ -156,7 +156,7 @@ class RetrievalService:
                 s.acquired_at
             FROM tile t
             JOIN scene s ON t.scene_id = s.id
-            WHERE {' AND '.join(where_clauses)}
+            WHERE {" AND ".join(where_clauses)}
             ORDER BY t.vector <=> %s::vector ASC
             LIMIT %s;
         """
@@ -167,10 +167,7 @@ class RetrievalService:
         with psycopg.connect(url, connect_timeout=5) as conn, conn.cursor() as cur:
             cur.execute(sql, query_params)
             for row in cur.fetchall():
-                (
-                    t_id, scene_id, x, y, geom_json,
-                    cloud_pct, ndvi, ndwi, ndbi, sim, acq_at
-                ) = row
+                (t_id, scene_id, x, y, geom_json, cloud_pct, ndvi, ndwi, ndbi, sim, acq_at) = row
                 results.append(
                     TileSearchResult(
                         tile_id=str(t_id),
@@ -225,7 +222,11 @@ class RetrievalService:
                 t_vec_raw = t.get("vector")
                 if not t_vec_raw:
                     png_path_val = t.get("png_path")
-                    target_png = Path(png_path_val) if png_path_val else manifest_path.parent / f"{t.get('x', 0)}_{t.get('y', 0)}.png"
+                    target_png = (
+                        Path(png_path_val)
+                        if png_path_val
+                        else manifest_path.parent / f"{t.get('x', 0)}_{t.get('y', 0)}.png"
+                    )
                     if target_png.exists():
                         try:
                             t_vec_raw = self.clip_adapter.embed_image(target_png)
@@ -237,7 +238,7 @@ class RetrievalService:
                     continue
 
                 t_vec = np.array(t_vec_raw, dtype=np.float32)
-                denom = (np.linalg.norm(q_vec) * np.linalg.norm(t_vec))
+                denom = np.linalg.norm(q_vec) * np.linalg.norm(t_vec)
                 sim = float(np.dot(q_vec, t_vec) / denom) if denom > 0 else 0.0
                 score = max(0.0, min(1.0, (sim + 1.0) / 2.0 if sim < 0 else sim))
 
@@ -258,4 +259,4 @@ class RetrievalService:
                 candidates.append((score, res))
 
         candidates.sort(key=lambda item: item[0], reverse=True)
-        return [item[1] for item in candidates[:filters.limit]]
+        return [item[1] for item in candidates[: filters.limit]]

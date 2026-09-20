@@ -33,7 +33,9 @@ from app.services.polygonizer import (
 from app.services.query_router import QueryRouter
 
 
-def _create_synthetic_test_image(pattern: str = "water", size: tuple[int, int] = (256, 256)) -> Image.Image:
+def _create_synthetic_test_image(
+    pattern: str = "water", size: tuple[int, int] = (256, 256)
+) -> Image.Image:
     """Generate synthetic optical RGB test image with distinct ground features."""
     w, h = size
     arr = np.zeros((h, w, 3), dtype=np.uint8)
@@ -130,7 +132,9 @@ def sample_upload_with_gsd(tmp_path: Path) -> tuple[Upload, Path]:
 # =========================================================================
 # Test A: Scene Understanding (Zero Fabricated Geometry)
 # =========================================================================
-def test_scene_understanding_no_fabricated_geometry(sample_upload_no_gsd: tuple[Upload, Path]) -> None:
+def test_scene_understanding_no_fabricated_geometry(
+    sample_upload_no_gsd: tuple[Upload, Path],
+) -> None:
     """Scene understanding query returns text and zero polygons (§16, §30.A)."""
     up, img_path = sample_upload_no_gsd
     engine = AnalysisEngine()
@@ -228,7 +232,10 @@ def test_low_confidence_rejection_no_hallucination(tmp_path: Path) -> None:
         status=UploadStatus.VISUAL_ONLY,
         capability_tier=CapabilityTier.T0_UNKNOWN,
         capabilities=CapabilityPermissions(
-            object_classes=[], landcover_classes=[], area_measurements=False, temporal_analysis=False
+            object_classes=[],
+            landcover_classes=[],
+            area_measurements=False,
+            temporal_analysis=False,
         ),
         checksum_sha256="c0ffee1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
         overview_url="/api/v1/uploads/up_desert_01/overview",

@@ -161,7 +161,15 @@ Phase 8 Stage A — Interface Work (Tasks 8.1, 8.3, 8.4 complete; Stage A ongoin
 | incremental ingest, 63 tiles | — | `bench.py` | — | < 90 s, no rebuild |
 | calibration ECE | 0.0235 (baseline 0.043) | `scripts/label_session.py`, n = 147 | 2026-09-13 | report, no target |
 | hand-labelled polygons | 147 | `scripts/label_session.py` | 2026-09-13 | ≥ 100 |
-| onset vs published construction date | Within bracket (110d after last clean baseline; 68d before 1st detection) | manual comparison + test_onset.py | 2026-09-13 | within bracket |
+| onset vs published construction date | Within bracket (110d after last clean baseline; 68d before 1st detection) | manual comparison + test_onset.py | 2026-09-20 | within bracket |
+| flow: first useful view | 0 clicks | ux-rules §5 evaluation | 2026-09-20 | 0 clicks |
+| flow: compare two years | 2 clicks | ux-rules §5 evaluation | 2026-09-20 | 2 clicks |
+| flow: inspect a change | 1 click | ux-rules §5 evaluation | 2026-09-20 | 1 click |
+| flow: reject 5 targets | 6 clicks (J×5 + ⌫×5) | ux-rules §5 evaluation | 2026-09-20 | 6 clicks |
+| flow: ask a question | 2 actions (type + ⏎) | ux-rules §5 evaluation | 2026-09-20 | 2 actions |
+| flow: upload and analyse | 3 actions (drop + manifest + analyse) | ux-rules §5 evaluation | 2026-09-20 | 3 actions |
+| flow: export a report | 3 clicks (export + format + confirm) | ux-rules §5 evaluation | 2026-09-20 | 3 clicks |
+| flow: shortcut help | 1 click (?) | ux-rules §5 evaluation | 2026-09-20 | 1 click |
 
 ## J. Decisions log
 | Date | Decision | Rejected alternative | Why |
@@ -170,6 +178,7 @@ Phase 8 Stage A — Interface Work (Tasks 8.1, 8.3, 8.4 complete; Stage A ongoin
 | 2026-09-12 | PowerShell make.ps1 companion to Makefile | Makefile only | Native execution support on Windows without mingw/msys dependency |
 | 2026-09-20 | Task 8.1 & 8.3: Design tokens, Button.tsx, UI linter | Ad-hoc CSS & components | PRD 10 L1/L2, PRD 11 K1 token and component compliance |
 | 2026-09-20 | Task 8.2: Slot grid, ConsoleShell, primaryOwner, shortcuts, sticky footers | Hand-rolled divs, multi-primary | PRD 10 L4/L8/L3 compliance; unslotted elements flagged under NEEDS A SLOT |
+| 2026-09-20 | Tasks 8.6 & 8.7: Dossier fixed sequence, un-modaled screen slot mapping, 5 feedback states, anti-pattern removal | Floating modals & ad-hoc feedback states | PRD 10 §4/§5, PRD 9 §5, PRD 12 §4/§5/§9 compliance; zero modals for core workflows; amber-wash refusals |
 
 ## K0. Next actions — Phase 8 Stage A (supersedes K below, which is stale)
 
@@ -183,11 +192,11 @@ Per user directive 20 Sep 2026: **Phase 8 before Phase 7.** Full task list and g
 5. [x] **8.2** `Slot.tsx` + `slots.ts` + `ConsoleShell` on grid + `primaryOwner` + `shortcuts.ts` + sticky footers — M/L (DONE 2026-09-20)
 6. [x] **8.3** `Button.tsx` (7×3×7, 8 reason strings, `primaryOwner`) — M (DONE 2026-09-20)
 7. [x] **8.4** Lint bans + plant-and-fail proof — S (DONE 2026-09-20 via `scripts/lint_ui.py`)
-8. **8.0c** Un-modal the four screens onto slots — M
-9. **8.5** `shortcuts.ts` — M
-10. **8.6** ConsoleShell on the grid + sticky footers — L
-11. **8.7** Dossier SLOT-20–26 + other screens — L
-12. **8.8** Five states everywhere; amber-wash refusals — L
+8. [x] **8.0c** Un-modal the four screens onto slots — M (DONE 2026-09-20)
+9. [x] **8.5** `shortcuts.ts` + Stage overlays & `map-fx` M1–M4 — M (DONE 2026-09-20)
+10. [x] **8.6** ConsoleShell on the grid + sticky footers — L (DONE 2026-09-20)
+11. [x] **8.7** Dossier SLOT-20–26 + other screens — L (DONE 2026-09-20)
+12. [x] **8.8** Five states everywhere; amber-wash refusals — L (DONE 2026-09-20)
 13. **8.20–8.22** MapLibre replacement + `map-fx` M1–M4 + local basemap — L·L·M
 14. **8.9–8.14** Landing, sessions, tracking, `/privacy`, `/admin`, seed script
 

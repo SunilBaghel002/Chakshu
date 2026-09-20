@@ -126,8 +126,22 @@ def test_annotated_image(monkeypatch: pytest.MonkeyPatch) -> None:
         "_call_rest_api",
         lambda *args, **kwargs: {
             "mode": "RECONCILE",
-            "objects": [{"bbox": [50, 50, 250, 250], "label": "building", "score": 0.88, "evidence": "large structure"}],
-            "landcover_pct": {"bare": 0, "built": 50, "crop": 0, "snow": 0, "vegetation": 50, "water": 0},
+            "objects": [
+                {
+                    "bbox": [50, 50, 250, 250],
+                    "label": "building",
+                    "score": 0.88,
+                    "evidence": "large structure",
+                }
+            ],
+            "landcover_pct": {
+                "bare": 0,
+                "built": 50,
+                "crop": 0,
+                "snow": 0,
+                "vegetation": 50,
+                "water": 0,
+            },
             "water_polygons": [],
             "reconciliation": [],
             "explanation": "A survey of the terrain showing a prominent built structure occupying the central sector surrounded by vegetation.",
@@ -197,7 +211,14 @@ def test_explanation_paragraph(monkeypatch: pytest.MonkeyPatch) -> None:
         detection_service.gemini_adapter,
         "_call_rest_api",
         lambda *a, **kw: {
-            "objects": [{"bbox": [50, 50, 250, 250], "label": "building", "score": 0.88, "visual_evidence": "large isolated structure"}],
+            "objects": [
+                {
+                    "bbox": [50, 50, 250, 250],
+                    "label": "building",
+                    "score": 0.88,
+                    "visual_evidence": "large isolated structure",
+                }
+            ],
             "explanation": valid_explanation,
             "scene_type": "rural",
         },
@@ -224,9 +245,9 @@ def test_explanation_paragraph(monkeypatch: pytest.MonkeyPatch) -> None:
 
     words = explanation.split()
     word_count = len(words)
-    assert (
-        80 <= word_count <= 120
-    ), f"Explanation word count {word_count} outside 80-120 word range: '{explanation}'"
+    assert 80 <= word_count <= 120, (
+        f"Explanation word count {word_count} outside 80-120 word range: '{explanation}'"
+    )
 
     # Blacklist check
     blacklist = ["jewar", "san diego", "qualcomm", "noida", "airport", "international"]
@@ -236,10 +257,20 @@ def test_explanation_paragraph(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Check that at least one detected or landcover class is mentioned
     classes = [
-        "building", "structure", "vegetation", "water",
-        "bare", "built", "crop", "green", "road", "surface",
+        "building",
+        "structure",
+        "vegetation",
+        "water",
+        "bare",
+        "built",
+        "crop",
+        "green",
+        "road",
+        "surface",
     ]
-    assert any(c in expl_lower for c in classes), "Explanation must mention visual structures/classes"
+    assert any(c in expl_lower for c in classes), (
+        "Explanation must mention visual structures/classes"
+    )
 
 
 def test_payload_hygiene(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -258,8 +289,22 @@ def test_payload_hygiene(monkeypatch: pytest.MonkeyPatch) -> None:
         captured_calls.append({"model": model, "prompt": prompt})
         return {
             "mode": "RECONCILE",
-            "objects": [{"bbox": [50, 50, 150, 150], "label": "building", "score": 0.9, "evidence": "red rooftop"}],
-            "landcover_pct": {"bare": 0, "built": 20, "crop": 0, "snow": 0, "vegetation": 80, "water": 0},
+            "objects": [
+                {
+                    "bbox": [50, 50, 150, 150],
+                    "label": "building",
+                    "score": 0.9,
+                    "evidence": "red rooftop",
+                }
+            ],
+            "landcover_pct": {
+                "bare": 0,
+                "built": 20,
+                "crop": 0,
+                "snow": 0,
+                "vegetation": 80,
+                "water": 0,
+            },
             "water_polygons": [],
             "reconciliation": [],
             "explanation": (
@@ -298,6 +343,7 @@ def test_payload_hygiene(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "aoi" not in prompt_text.lower(), "AOI identifier leaked into blind prompt!"
     # Prompt is now JSON with known keys
     import json as _json
+
     parsed = _json.loads(prompt_text)
     assert "reference_id" in parsed, "Prompt must contain a reference_id"
     assert "image_dimensions_px" in parsed, "Prompt must contain image dimensions"
@@ -324,7 +370,7 @@ def test_water_contour_geometry() -> None:
 
     mask = np.zeros((100, 100), dtype=bool)
     y, x = np.ogrid[:100, :100]
-    mask[(x - 50) ** 2 + (y - 50) ** 2 <= 30 ** 2] = True
+    mask[(x - 50) ** 2 + (y - 50) ** 2 <= 30**2] = True
 
     polys = vectorize_water_polygons(mask, gsd_m=1.0)
     assert len(polys) >= 1
@@ -360,7 +406,10 @@ def test_label_chip_render(monkeypatch: pytest.MonkeyPatch) -> None:
             "track": "gemini_blind",
             "label": "storage_tank",
             "kind": "box",
-            "geom_px": {"type": "Polygon", "coordinates": [[[50, 50], [150, 50], [150, 150], [50, 150], [50, 50]]]},
+            "geom_px": {
+                "type": "Polygon",
+                "coordinates": [[[50, 50], [150, 50], [150, 150], [50, 150], [50, 50]]],
+            },
             "area_px": 10000.0,
             "score": 0.88,
         },
@@ -369,7 +418,10 @@ def test_label_chip_render(monkeypatch: pytest.MonkeyPatch) -> None:
             "track": "gemini_blind",
             "label": "building",
             "kind": "box",
-            "geom_px": {"type": "Polygon", "coordinates": [[[200, 200], [300, 200], [300, 300], [200, 300], [200, 200]]]},
+            "geom_px": {
+                "type": "Polygon",
+                "coordinates": [[[200, 200], [300, 200], [300, 300], [200, 300], [200, 200]]],
+            },
             "area_px": 10000.0,
             "score": 0.75,
         },
@@ -427,19 +479,23 @@ def test_notable_objects_filter() -> None:
     mock_objects = []
     for i in range(25):
         score = round(0.40 + i * 0.025, 2)
-        mock_objects.append({
-            "bbox": [5 * i, 5 * i, 5 * i + 100, 5 * i + 100],
-            "label": "building",
-            "score": score,
-            "visual_evidence": "large isolated warehouse",
-        })
+        mock_objects.append(
+            {
+                "bbox": [5 * i, 5 * i, 5 * i + 100, 5 * i + 100],
+                "label": "building",
+                "score": score,
+                "visual_evidence": "large isolated warehouse",
+            }
+        )
     for j in range(5):
-        mock_objects.append({
-            "bbox": [600 + 40 * j, 600, 600 + 40 * j + 30, 640],
-            "label": "vehicle",
-            "score": 0.85,
-            "visual_evidence": "metallic vehicle shape",
-        })
+        mock_objects.append(
+            {
+                "bbox": [600 + 40 * j, 600, 600 + 40 * j + 30, 640],
+                "label": "vehicle",
+                "score": 0.85,
+                "visual_evidence": "metallic vehicle shape",
+            }
+        )
 
     upload = Upload(
         id="test_filter",
@@ -477,7 +533,16 @@ def test_notable_objects_filter() -> None:
 
 def test_blacklist_expanded() -> None:
     """T-5. Response JSON, explanation, labels must be free of blacklist words."""
-    blacklist = ["sattahip", "thailand", "chonburi", "san diego", "qualcomm", "jewar", "noida", "airport"]
+    blacklist = [
+        "sattahip",
+        "thailand",
+        "chonburi",
+        "san diego",
+        "qualcomm",
+        "jewar",
+        "noida",
+        "airport",
+    ]
     img_bytes = _create_synthetic_image(primary_color=(40, 100, 40))
     resp = client.post(
         "/api/v1/uploads",
@@ -492,4 +557,3 @@ def test_blacklist_expanded() -> None:
 
     for term in blacklist:
         assert term not in det_json_str, f"Blacklist term '{term}' leaked in detection response!"
-

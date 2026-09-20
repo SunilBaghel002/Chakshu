@@ -156,7 +156,9 @@ def test_get_aoi_suppression_endpoint(client: TestClient) -> None:
     assert "candidates_generated" in data
     assert "candidates_suppressed" in data
     assert "candidates_retained" in data
-    assert data["candidates_generated"] == data["candidates_suppressed"] + data["candidates_retained"]
+    assert (
+        data["candidates_generated"] == data["candidates_suppressed"] + data["candidates_retained"]
+    )
     assert "by_reason" in data
     assert "sample_reasons" in data
     assert len(data["sample_reasons"]) > 0
@@ -187,5 +189,3 @@ def test_get_aoi_calibration_endpoint(client: TestClient) -> None:
         assert 0.0 <= b["mean_confidence"] <= 1.0
         assert 0.0 <= b["accuracy"] <= 1.0
         assert b["count"] >= 0
-
-

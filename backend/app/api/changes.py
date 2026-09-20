@@ -304,26 +304,76 @@ async def get_aoi_calibration(
 
     # Standard fallback matching literature calibration dataset (N=147, ECE=0.043)
     default_bins = [
-        {"bin_index": 1, "confidence_range": [0.0, 0.1], "mean_confidence": 0.08,
-         "accuracy": 0.07, "count": 12},
-        {"bin_index": 2, "confidence_range": [0.1, 0.2], "mean_confidence": 0.16,
-         "accuracy": 0.14, "count": 10},
-        {"bin_index": 3, "confidence_range": [0.2, 0.3], "mean_confidence": 0.25,
-         "accuracy": 0.23, "count": 15},
-        {"bin_index": 4, "confidence_range": [0.3, 0.4], "mean_confidence": 0.36,
-         "accuracy": 0.38, "count": 14},
-        {"bin_index": 5, "confidence_range": [0.4, 0.5], "mean_confidence": 0.46,
-         "accuracy": 0.44, "count": 16},
-        {"bin_index": 6, "confidence_range": [0.5, 0.6], "mean_confidence": 0.55,
-         "accuracy": 0.57, "count": 18},
-        {"bin_index": 7, "confidence_range": [0.6, 0.7], "mean_confidence": 0.65,
-         "accuracy": 0.62, "count": 17},
-        {"bin_index": 8, "confidence_range": [0.7, 0.8], "mean_confidence": 0.76,
-         "accuracy": 0.74, "count": 15},
-        {"bin_index": 9, "confidence_range": [0.8, 0.9], "mean_confidence": 0.86,
-         "accuracy": 0.89, "count": 18},
-        {"bin_index": 10, "confidence_range": [0.9, 1.0], "mean_confidence": 0.95,
-         "accuracy": 0.96, "count": 12},
+        {
+            "bin_index": 1,
+            "confidence_range": [0.0, 0.1],
+            "mean_confidence": 0.08,
+            "accuracy": 0.07,
+            "count": 12,
+        },
+        {
+            "bin_index": 2,
+            "confidence_range": [0.1, 0.2],
+            "mean_confidence": 0.16,
+            "accuracy": 0.14,
+            "count": 10,
+        },
+        {
+            "bin_index": 3,
+            "confidence_range": [0.2, 0.3],
+            "mean_confidence": 0.25,
+            "accuracy": 0.23,
+            "count": 15,
+        },
+        {
+            "bin_index": 4,
+            "confidence_range": [0.3, 0.4],
+            "mean_confidence": 0.36,
+            "accuracy": 0.38,
+            "count": 14,
+        },
+        {
+            "bin_index": 5,
+            "confidence_range": [0.4, 0.5],
+            "mean_confidence": 0.46,
+            "accuracy": 0.44,
+            "count": 16,
+        },
+        {
+            "bin_index": 6,
+            "confidence_range": [0.5, 0.6],
+            "mean_confidence": 0.55,
+            "accuracy": 0.57,
+            "count": 18,
+        },
+        {
+            "bin_index": 7,
+            "confidence_range": [0.6, 0.7],
+            "mean_confidence": 0.65,
+            "accuracy": 0.62,
+            "count": 17,
+        },
+        {
+            "bin_index": 8,
+            "confidence_range": [0.7, 0.8],
+            "mean_confidence": 0.76,
+            "accuracy": 0.74,
+            "count": 15,
+        },
+        {
+            "bin_index": 9,
+            "confidence_range": [0.8, 0.9],
+            "mean_confidence": 0.86,
+            "accuracy": 0.89,
+            "count": 18,
+        },
+        {
+            "bin_index": 10,
+            "confidence_range": [0.9, 1.0],
+            "mean_confidence": 0.95,
+            "accuracy": 0.96,
+            "count": 12,
+        },
     ]
     return CalibrationResponse(
         aoi_id=aoi_id,
@@ -331,6 +381,3 @@ async def get_aoi_calibration(
         samples_count=147,
         bins=[CalibrationBin(**b) for b in default_bins],
     )
-
-
-

@@ -23,8 +23,6 @@ def ensure_synthetic_scene_tile() -> None:
         target_tile.write_bytes(generate_fallback_rgb_tile("S2A_JEWAR_20210315_SYNTH"))
 
 
-
-
 def test_get_imagery_tile() -> None:
     """Test serving contrast-stretched True-Color PNG tile."""
     scene_id = "S2A_JEWAR_20210315_SYNTH"

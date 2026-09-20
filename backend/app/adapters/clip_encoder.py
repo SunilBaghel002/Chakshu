@@ -74,7 +74,9 @@ class ClipEncoderAdapter:
         """Return True if real OpenCLIP model is active, False for deterministic fallback."""
         return self._is_live
 
-    def embed_image(self, image_input: Image.Image | np.ndarray[Any, Any] | bytes | Path) -> list[float]:
+    def embed_image(
+        self, image_input: Image.Image | np.ndarray[Any, Any] | bytes | Path
+    ) -> list[float]:
         """Encode an image into a 512-dimensional L2-normalized vector.
 
         Args:
@@ -197,23 +199,23 @@ class ClipEncoderAdapter:
 
         # Concept mappings to semantic feature indices aligned with chromatic features
         keyword_concept_map: dict[str, tuple[int, float]] = {
-            "water": (2, 2.0),     # Blue-correlated
+            "water": (2, 2.0),  # Blue-correlated
             "river": (2, 1.8),
             "lake": (2, 1.8),
             "ocean": (2, 2.0),
             "blue": (2, 1.5),
-            "vegetation": (1, 2.0), # Green-correlated
+            "vegetation": (1, 2.0),  # Green-correlated
             "forest": (1, 1.8),
             "crop": (1, 1.5),
             "green": (1, 1.5),
             "agriculture": (1, 1.6),
-            "built": (0, 1.8),     # Red/neutral-correlated
+            "built": (0, 1.8),  # Red/neutral-correlated
             "building": (0, 1.8),
             "structure": (0, 1.6),
             "urban": (0, 1.6),
-            "road": (6, 1.5),      # Texture/edge-correlated
+            "road": (6, 1.5),  # Texture/edge-correlated
             "runway": (6, 1.5),
-            "cloud": (8, 2.0),     # High brightness
+            "cloud": (8, 2.0),  # High brightness
             "white": (8, 1.5),
         }
 

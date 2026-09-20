@@ -52,7 +52,11 @@ class TestBackendNoStaticData:
                 # Check for actual fixture imports (not comments about them)
                 for line_no, line in enumerate(text.splitlines(), 1):
                     stripped = line.strip()
-                    if stripped.startswith("#") or stripped.startswith('"""') or stripped.startswith("'''"):
+                    if (
+                        stripped.startswith("#")
+                        or stripped.startswith('"""')
+                        or stripped.startswith("'''")
+                    ):
                         continue
                     if "import" in line.lower() and "fixture" in line.lower():
                         violations.append(f"{rel_path}:{line_no}: fixture import")
@@ -99,7 +103,9 @@ class TestBackendNoStaticData:
         # Must not contain coordinate-based generation patterns
         assert "np.random" not in lower, "WorldCover uses random generation"
         assert "seed" not in lower or "# seed" in lower, "WorldCover uses coordinate seeding"
-        assert "deterministic" not in lower or "no" in lower, "WorldCover has deterministic generation"
+        assert "deterministic" not in lower or "no" in lower, (
+            "WorldCover has deterministic generation"
+        )
 
     def test_no_jewar_specific_output(self) -> None:
         """No Jewar, airport, or site-specific output in production detection modules."""

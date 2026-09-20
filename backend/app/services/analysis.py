@@ -105,8 +105,7 @@ class AnalysisService:
     ) -> list[Evidence]:
         """Execute full change detection vertical slice over a scene pair (Task 2.4)."""
         if not before_scene_id or not after_scene_id:
-            s2a = list(self.scenes_dir.glob("S2A_*"))
-            s2b = list(self.scenes_dir.glob("S2B_*"))
+            s2a, s2b = list(self.scenes_dir.glob("S2A_*")), list(self.scenes_dir.glob("S2B_*"))
             before_scene_id = before_scene_id or (s2a[0].name if s2a else ("S2A_" + "JE" + "WAR_20210315_SYNTH"))
             after_scene_id = after_scene_id or (s2b[0].name if s2b else ("S2B_" + "JE" + "WAR_20240420_SYNTH"))
 
@@ -135,13 +134,7 @@ class AnalysisService:
 
         # 3. Classical change detection
         cd_res = detect_change_classical(
-            ndvi_before=ndvi_b,
-            ndvi_after=ndvi_a,
-            ndbi_before=ndbi_b,
-            ndbi_after=ndbi_a,
-            ndwi_before=ndwi_b,
-            ndwi_after=ndwi_a,
-            min_component_px=4,
+            ndvi_b, ndvi_a, ndbi_b, ndbi_a, ndwi_b, ndwi_a, min_component_px=4
         )
 
         # 4. Vectorise mask into GeoJSON polygons with Douglas-Peucker simplification
@@ -164,8 +157,7 @@ class AnalysisService:
             }
 
         supp_agg = SuppressionAggregator(aoi_id=aoi_id)
-        dropped_small = max(0, cd_res.component_count - len(polygons))
-        for i in range(dropped_small):
+        for i in range(max(0, cd_res.component_count - len(polygons))):
             supp_agg.record_evaluation(
                 f"subpixel_{i}",
                 SuppressionGateResult(
@@ -211,9 +203,14 @@ class AnalysisService:
             if not gate_res.passed:
                 continue
 
-            class_res = classify_change(                d_ndvi=m_d_ndvi, d_ndbi=m_d_ndbi, d_ndwi=m_d_ndwi,
-                prior_landcover="crop", ndwi_after=m_ndwi_a,
-                aspect_ratio=asp_ratio, isoperimetric_quotient=iso_quot,
+            class_res = classify_change(
+                d_ndvi=m_d_ndvi,
+                d_ndbi=m_d_ndbi,
+                d_ndwi=m_d_ndwi,
+                prior_landcover="crop",
+                ndwi_after=m_ndwi_a,
+                aspect_ratio=asp_ratio,
+                isoperimetric_quotient=iso_quot,
             )
             evaluated_candidates.append((poly, meas, class_res))
 
@@ -229,10 +226,18 @@ class AnalysisService:
             (ev_dir / "mask.png").write_bytes(mask_png)
 
             ev = build_evidence(
-                change_id=change_id, aoi_id=aoi_id, poly=poly, meas=meas, cd_res=cd_res,
-                reg=reg, meta_before=meta_before, meta_after=meta_after,
-                before_scene_id=before_scene_id, after_scene_id=after_scene_id,
-                total_retained=len(evaluated_candidates), classification_res=class_res,
+                change_id=change_id,
+                aoi_id=aoi_id,
+                poly=poly,
+                meas=meas,
+                cd_res=cd_res,
+                reg=reg,
+                meta_before=meta_before,
+                meta_after=meta_after,
+                before_scene_id=before_scene_id,
+                after_scene_id=after_scene_id,
+                total_retained=len(evaluated_candidates),
+                classification_res=class_res,
                 suppression_context=supp_agg.to_context_dict(),
             )
             generated_evidence.append(ev)
@@ -262,27 +267,24 @@ class AnalysisService:
         if db_url and "postgresql" in db_url:
             try:
                 import psycopg  # type: ignore[import-untyped]
+
                 with psycopg.connect(db_url, connect_timeout=3) as conn, conn.cursor() as cur:
                     query = (
                         "SELECT id, aoi_id, change_type, status, area_m2, confidence, rule_trace "
                         "FROM change_object WHERE 1=1"
                     )
                     params: list[Any] = []
-                    if aoi_id and aoi_id != "default":
-                        query += " AND aoi_id = %s"
-                        params.append(aoi_id)
-                    if min_area_m2 is not None:
-                        query += " AND area_m2 >= %s"
-                        params.append(min_area_m2)
-                    if max_area_m2 is not None:
-                        query += " AND area_m2 <= %s"
-                        params.append(max_area_m2)
-                    if min_confidence is not None:
-                        query += " AND confidence >= %s"
-                        params.append(min_confidence)
-                    if status:
-                        query += " AND status = %s"
-                        params.append(status)
+                    conds = [
+                        (bool(aoi_id and aoi_id != "default"), " AND aoi_id = %s", aoi_id),
+                        (min_area_m2 is not None, " AND area_m2 >= %s", min_area_m2),
+                        (max_area_m2 is not None, " AND area_m2 <= %s", max_area_m2),
+                        (min_confidence is not None, " AND confidence >= %s", min_confidence),
+                        (bool(status), " AND status = %s", status),
+                    ]
+                    for cond, clause, val in conds:
+                        if cond:
+                            query += clause
+                            params.append(val)
                     if sort == "area_desc":
                         query += " ORDER BY area_m2 DESC"
                     elif sort == "confidence_desc":

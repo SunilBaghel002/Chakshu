@@ -166,14 +166,7 @@ def classify_optical_pixels(
     is_crop = rem & ~is_built & (exg > 0.02) & (texture > 0.03)
 
     # Bare: earthy tones with warm red-over-blue dominance (not arbitrary dark/neutral pixels)
-    is_bare = (
-        rem
-        & ~is_built
-        & ~is_crop
-        & (r_norm > b_norm + 0.015)
-        & (lum > 0.12)
-        & (lum < 0.82)
-    )
+    is_bare = rem & ~is_built & ~is_crop & (r_norm > b_norm + 0.015) & (lum > 0.12) & (lum < 0.82)
 
     classified[is_snow] = "snow"
     classified[is_water] = "water"
@@ -222,7 +215,9 @@ def validate_polygon_iou(
     crop_mask = comp_mask[min_y : max_y + 1, min_x : max_x + 1]
     crop_h, crop_w = crop_mask.shape
     raster = np.zeros((crop_h, crop_w), dtype=np.uint8)
-    local_pts = np.array([[p[0] - min_x, p[1] - min_y] for p in poly_pts], dtype=np.int32).reshape((-1, 1, 2))
+    local_pts = np.array([[p[0] - min_x, p[1] - min_y] for p in poly_pts], dtype=np.int32).reshape(
+        (-1, 1, 2)
+    )
     cv2.fillPoly(raster, [local_pts], 1)
 
     intersection = int(np.count_nonzero((raster == 1) & (crop_mask > 0)))
@@ -264,7 +259,9 @@ def vectorize_class_mask(
         if num_features == 0:
             return []
         component_sizes = ndimage.sum(cleaned, labeled, range(1, num_features + 1))
-        valid_ids = [idx + 1 for idx, sz in enumerate(component_sizes) if sz >= float(effective_min)]
+        valid_ids = [
+            idx + 1 for idx, sz in enumerate(component_sizes) if sz >= float(effective_min)
+        ]
         valid_ids.sort(key=lambda idx: float(component_sizes[idx - 1]), reverse=True)
         if max_polygons is not None:
             valid_ids = valid_ids[: max_polygons * 3]
@@ -276,12 +273,20 @@ def vectorize_class_mask(
                 continue
             ymin, ymax = max(0, sl[0].start - 2), min(h_full, sl[0].stop + 2)
             xmin, xmax = max(0, sl[1].start - 2), min(w_full, sl[1].stop + 2)
-            sub = (labeled[ymin:ymax, xmin:xmax] == comp_id)
+            sub = labeled[ymin:ymax, xmin:xmax] == comp_id
             for c in find_contours(sub.astype(float), 0.5):
                 if len(c) >= 3:
-                    raw_contours.append(np.column_stack([c[:, 1] + xmin, c[:, 0] + ymin]).astype(float))
+                    raw_contours.append(
+                        np.column_stack([c[:, 1] + xmin, c[:, 0] + ymin]).astype(float)
+                    )
     else:
-        return []
+        from app.domain.vectorise import vectorise_mask
+
+        v_polys = vectorise_mask(cleaned, min_pixels=effective_min, simplify_tolerance=2.5)
+        for vp in v_polys:
+            coords = vp.geometry.get("coordinates", [[]])[0]
+            if len(coords) >= 4:
+                raw_contours.append(np.array(coords, dtype=float))
 
     raw_with_area = [(_polygon_area(c_pts), c_pts) for c_pts in raw_contours]
     raw_with_area = [item for item in raw_with_area if item[0] >= float(effective_min)]
@@ -307,7 +312,14 @@ def vectorize_class_mask(
                 idxs = np.linspace(0, len(c_pts) - 1, target_n, dtype=int)
                 poly = c_pts[idxs]
         else:
-            poly = c_pts[:25]
+            poly = c_pts
+
+        if is_water and len(poly) > 18:
+            idxs = np.linspace(0, len(poly) - 1, 16, dtype=int)
+            poly = poly[idxs]
+        elif len(poly) < 4 and len(c_pts) >= 4:
+            idxs = np.linspace(0, len(c_pts) - 1, 8, dtype=int)
+            poly = c_pts[idxs]
 
         poly_list = [[float(round(p[0], 2)), float(round(p[1], 2))] for p in poly]
         if poly_list and poly_list[0] != poly_list[-1]:
@@ -323,15 +335,17 @@ def vectorize_class_mask(
 
         xs = [p[0] for p in poly_list]
         ys = [p[1] for p in poly_list]
-        polygons.append({
-            "type": "Polygon",
-            "coordinates": [poly_list],
-            "polygon_px": poly_list,
-            "area_px": float(round(area, 2)),
-            "bbox_px": [min(xs), min(ys), max(xs), max(ys)],
-            "mask_iou": round(iou_score, 3),
-            "geometry_source": "segmentation_mask",
-        })
+        polygons.append(
+            {
+                "type": "Polygon",
+                "coordinates": [poly_list],
+                "polygon_px": poly_list,
+                "area_px": float(round(area, 2)),
+                "bbox_px": [min(xs), min(ys), max(xs), max(ys)],
+                "mask_iou": round(iou_score, 3),
+                "geometry_source": "segmentation_mask",
+            }
+        )
 
     polygons.sort(key=lambda item: item["area_px"], reverse=True)
     if max_polygons is not None and len(polygons) > max_polygons:
@@ -346,8 +360,9 @@ def vectorize_water_polygons(
     max_polygons: int | None = None,
 ) -> list[dict[str, Any]]:
     """Extract true water contours with Douglas-Peucker simplification (Task T-1)."""
-    return vectorize_class_mask(water_mask, min_pixels=min_pixels, is_water=True, max_polygons=max_polygons)
-
+    return vectorize_class_mask(
+        water_mask, min_pixels=min_pixels, is_water=True, max_polygons=max_polygons
+    )
 
 
 def compute_landcover_summary(

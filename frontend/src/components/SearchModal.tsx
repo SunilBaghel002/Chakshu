@@ -146,8 +146,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({ aoiId, onClose, onSele
             disabled={loading || !query.trim()}
             className="btn-primary flex items-center gap-1.5 px-4 text-xs font-mono uppercase tracking-wider"
           >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            <span>RETRIEVE</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{loading ? 'RETRIEVING…' : 'RETRIEVE'}</span>
           </button>
         </div>
 
@@ -157,10 +157,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({ aoiId, onClose, onSele
           style={{ background: 'var(--bg)' }}
         >
           {loading && (
-            <div className="flex flex-col items-center justify-center py-16 gap-2" style={{ color: 'var(--teal)' }}>
-              <Loader2 className="w-6 h-6 animate-spin" />
+            <div className="flex flex-col items-center justify-center py-16 gap-2" style={{ color: 'var(--amber)' }}>
               <span className="text-[11px] font-mono uppercase tracking-wider">
-                Computing OpenCLIP 512-dim cosine distance...
+                COMPUTING OPENCLIP 512-DIM COSINE DISTANCE…
               </span>
             </div>
           )}

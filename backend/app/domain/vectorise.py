@@ -142,8 +142,15 @@ def vectorise_mask(
         min_r, max_r = int(np.min(rows)), int(np.max(rows)) + 1
         bbox_px = [float(min_c), float(min_r), float(max_c), float(max_r)]
 
-        # Construct unit pixel boxes and merge them topologically
-        boxes = [box(c, r, c + 1, r + 1) for r, c in zip(rows, cols, strict=False)]
+        # Construct horizontal span boxes and merge them topologically
+        boxes = []
+        for r in np.unique(rows):
+            r_cols = np.sort(cols[rows == r])
+            diffs = np.diff(r_cols)
+            splits = np.where(diffs > 1)[0] + 1
+            for span in np.split(r_cols, splits):
+                if len(span) > 0:
+                    boxes.append(box(float(span[0]), float(r), float(span[-1] + 1), float(r + 1)))
         merged_geom = unary_union(boxes)
 
         if merged_geom.is_empty:

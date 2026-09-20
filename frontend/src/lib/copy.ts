@@ -186,6 +186,136 @@ export const MAP_OVERLAY_COPY = {
   prdCollisionRef: 'PRD 9 §5.1',
 } as const;
 
+export const REFUSAL_NOTICES = {
+  NOTICE_T3:
+    "This image is 10 m per pixel — that's Sentinel-2. At this scale one pixel covers 100 m², so I can't identify individual vehicles or aircraft; they're smaller than a pixel. What I can show you: building clusters, large ships, storage tanks, roads, and land cover. Here's what I found.",
+  NOTICE_T0:
+    "I don't know this image's resolution, so I can't safely identify specific object types or measure sizes — a 10 m satellite pixel and a 30 cm drone pixel look similar when you can't see the scale. Tell me the ground sample distance and I'll do the full analysis. For now, here's a qualitative description.",
+} as const;
+
+export const FEEDBACK_COPY = {
+  emptyDefault: 'NO CHANGES DETECTED FOR THIS PAIR · TRY A WIDER DATE RANGE',
+  widenRange: 'WIDEN RANGE',
+  loadingDefault: 'READING SCENE S2B_43RCU_20240609 …',
+  errorPrefix: 'ANALYSIS FAILED',
+  retry: 'RETRY',
+  copyTraceId: 'COPY TRACE_ID',
+  traceCopied: 'TRACE ID COPIED',
+  staleNotice: 'SHOWING RESULT FROM 09:41 · AOI CHANGED',
+  refresh: 'REFRESH',
+} as const;
+
+export const DOSSIER_COPY = {
+  verified: 'VERIFIED',
+  pending: 'PENDING',
+  rejected: 'REJECTED',
+  tabEvidence: 'EVIDENCE',
+  tabAnalysis: 'ANALYSIS',
+  tabTrace: 'TRACE',
+  tabSuppressed: (n: number): string => `SUPPRESSED (${n})`,
+  beforeAfterToggle: 'BEFORE ⇄ AFTER',
+  groundArea: 'GROUND AREA',
+  perimeter: 'Perimeter:',
+  projection: 'Projection:',
+  temporalOnset: 'TEMPORAL ONSET',
+  firstSupported: 'First Supported:',
+  gap: 'GAP:',
+  trend: 'Trend:',
+  decisionTrace: 'DECISION TRACE',
+  decisionDesc: 'Automated decision table — exact spectral and geometric criteria evaluated:',
+  alternativesTitle: 'ALTERNATIVES CONSIDERED',
+  confirm: 'CONFIRM',
+  reject: 'REJECT',
+  export: 'EXPORT',
+} as const;
+
+export const UPLOAD_COPY = {
+  sourceLabel: 'SOURCE',
+  sensorLabel: 'SENSOR',
+  resolutionLabel: 'RESOLUTION',
+  analyse: 'ANALYSE',
+  dropTitle: 'DROP A GeoTIFF OR PNG · ≤ 40 MB',
+  browseFiles: 'BROWSE FILES',
+  manifestTitle: 'UPLOAD MANIFEST',
+  filename: 'Filename',
+  size: 'Size',
+  crs: 'CRS',
+  resolution: 'Resolution',
+  bands: 'Bands',
+  checksum: 'SHA-256',
+  gateVerdict: 'RESOLUTION GATE VERDICT',
+  stages: ['READING', 'GATE', 'TILES', 'MODEL', 'VERIFY'] as const,
+  pngJpeg: 'PNG / JPEG',
+  geotiffOption: 'GEOTIFF (.tif)',
+  urlOffline: 'URL (OFFLINE)',
+  sentinel2Option: 'Sentinel-2 (10 m)',
+  planetOption: 'PlanetScope (3 m)',
+  droneOption: 'Drone / Aerial (0.2 m)',
+} as const;
+
+export const REVIEW_COPY = {
+  queueTitle: 'TARGET REVIEW QUEUE',
+  sortLabel: 'SORT',
+  sortConfidence: 'Confidence',
+  sortArea: 'Area (m²)',
+  filterLabel: 'FILTER',
+  reviewedProgress: (done: number, total: number): string => `${done} of ${total} reviewed`,
+  skip: 'SKIP',
+  confirm: 'CONFIRM',
+  reject: 'REJECT',
+  keyboardHints: 'J/K NAV · ⏎ CONFIRM · ⌫ REJECT · SPACE PEEK',
+} as const;
+
+export const ASK_COPY = {
+  questionPlaceholder: 'Ask a question about this AOI in plain language...',
+  examples: 'EXAMPLES',
+  ask: 'ASK',
+  verdictTitle: 'QUERY VERDICT',
+  answerTitle: 'INTELLIGENCE ANSWER',
+  sources: 'SOURCES',
+  exportReport: 'EXPORT REPORT',
+  copyAnswer: 'COPY ANSWER',
+  historyTitle: 'QUESTION HISTORY',
+} as const;
+
+export const SEARCH_COPY = {
+  searchPlaceholder: 'Search satellite catalog by scene, prompt, or semantics...',
+  aoiLabel: 'AOI',
+  dateRange: 'DATE RANGE',
+  sensor: 'SENSOR',
+  search: 'SEARCH',
+  rankedResults: 'RANKED RESULTS',
+  similarity: 'Similarity',
+  jewarAirport: 'Jewar Airport',
+  koderiPort: 'Koderi Port',
+  allSensors: 'ALL SENSORS',
+  sentinel2: 'Sentinel-2',
+  planetScope: 'PlanetScope',
+  retrievalSpread: 'RETRIEVAL SPREAD:',
+} as const;
+
+export const EXPORT_COPY = {
+  title: 'EXPORT REPORT',
+  formatLabel: 'EXPORT FORMAT',
+  contentsLabel: 'REPORT CONTENTS',
+  provenancePreview: 'PROVENANCE PREVIEW',
+  cancel: 'CANCEL',
+  export: 'EXPORT',
+  includeGeometry: 'Vector geometry (GeoJSON)',
+  includeMeasurements: 'Deterministic measurements (UTM)',
+  includeProvenance: 'Provenance & verification log',
+  includeTrace: 'Decision table rule trace',
+  integrityAttested: 'SHA-256 HASH CHAIN INTEGRITY ATTESTED',
+  auditorInfo: 'Deterministic Auditor: Chakshu v0.1.0',
+} as const;
+
+export const TOAST_COPY = {
+  targetConfirmed: 'Target confirmed and logged to audit trail.',
+  targetRejected: 'Target rejected and logged to audit trail.',
+  undo: 'UNDO',
+  undone: 'Action reverted.',
+} as const;
+
 
 
 

@@ -15,7 +15,10 @@ from app.main import create_app
 client = TestClient(create_app())
 
 
-def _create_image(primary: tuple[int, int, int], shapes: list[tuple[tuple[int, int, int, int], tuple[int, int, int]]] | None = None) -> bytes:
+def _create_image(
+    primary: tuple[int, int, int],
+    shapes: list[tuple[tuple[int, int, int, int], tuple[int, int, int]]] | None = None,
+) -> bytes:
     img = Image.new("RGB", (400, 400), color=primary)
     if shapes:
         d = ImageDraw.Draw(img)
@@ -53,7 +56,11 @@ class TestUniqueUploads:
         assert len(ids) == 3, "Three uploads must produce three unique IDs"
 
         # Unique checksums
-        checksums = {upload_a["checksum_sha256"], upload_b["checksum_sha256"], upload_c["checksum_sha256"]}
+        checksums = {
+            upload_a["checksum_sha256"],
+            upload_b["checksum_sha256"],
+            upload_c["checksum_sha256"],
+        }
         assert len(checksums) == 3, "Three different images must produce three unique checksums"
 
     def test_three_uploads_produce_different_results(self) -> None:
@@ -113,7 +120,9 @@ class TestNoStaticFallback:
         raw = json.dumps(det).lower()
         assert "jewar" not in raw, "Static Jewar fixture leaked"
         assert "fixture" not in raw, "Fixture reference leaked"
-        assert "sample" not in raw or "sample" in det.get("mode", "").lower() is False, "Sample data leaked"
+        assert "sample" not in raw or "sample" in det.get("mode", "").lower() is False, (
+            "Sample data leaked"
+        )
 
         # Must have a proper trace_id and upload reference
         assert det.get("upload", {}).get("id") == uid

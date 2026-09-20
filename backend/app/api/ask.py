@@ -62,7 +62,11 @@ def _find_upload_record(upload_id: str | None) -> tuple[Upload | None, Path | No
     """Locate upload record and image file for dynamic query analysis."""
     if not upload_id:
         return None, None
-    for d in [settings.UPLOADS_DIR / upload_id, Path("data/uploads") / upload_id, Path("backend/data/uploads") / upload_id]:
+    for d in [
+        settings.UPLOADS_DIR / upload_id,
+        Path("data/uploads") / upload_id,
+        Path("backend/data/uploads") / upload_id,
+    ]:
         meta_p = d / "metadata.json"
         if meta_p.exists():
             try:
@@ -97,17 +101,31 @@ async def ask_question(payload: AskRequest) -> Answer:
 
     # 2. Resolution Gate Refusal (§2, Gate 3)
     if intent_res.is_refusal:
-        msg = render_resolution_refusal(gsd_m or 10.0, str(intent_res.slots.get("target_class", "vehicles")))
+        msg = render_resolution_refusal(
+            gsd_m or 10.0, str(intent_res.slots.get("target_class", "vehicles"))
+        )
         recorder.record_tier_used("refusal")
         ans = Answer(
-            answer_id=answer_id, question=q, question_normalised=norm_q,
-            intent=IntentMatch(id="refusal_resolution", score=intent_res.score, matched_by=intent_res.matched_by),
-            slots=intent_res.slots, tier=AnswerTier.TEMPLATE, degraded=False, text=msg, text_template=msg,
-            confidence=0.99, confidence_parts={"resolution_gate": 1.0, "verifiability": 1.0},
+            answer_id=answer_id,
+            question=q,
+            question_normalised=norm_q,
+            intent=IntentMatch(
+                id="refusal_resolution", score=intent_res.score, matched_by=intent_res.matched_by
+            ),
+            slots=intent_res.slots,
+            tier=AnswerTier.TEMPLATE,
+            degraded=False,
+            text=msg,
+            text_template=msg,
+            confidence=0.99,
+            confidence_parts={"resolution_gate": 1.0, "verifiability": 1.0},
             measurements=MeasurementsBundleSubObject(bundle_id="mb_refusal", facts=[]),
-            highlights=AnswerHighlights(), sources=[AnswerSource(kind="dataset", id="ESA Sentinel-2 L2A")],
-            models_used=[], capability_notice="Resolution Gate Refusal: 10m GSD cannot resolve vehicular objects.",
-            trace_url=f"/api/v1/ask/{answer_id}/trace", report_url=f"/api/v1/ask/{answer_id}/report.json",
+            highlights=AnswerHighlights(),
+            sources=[AnswerSource(kind="dataset", id="ESA Sentinel-2 L2A")],
+            models_used=[],
+            capability_notice="Resolution Gate Refusal: 10m GSD cannot resolve vehicular objects.",
+            trace_url=f"/api/v1/ask/{answer_id}/trace",
+            report_url=f"/api/v1/ask/{answer_id}/report.json",
             generated_at=now_iso,
         )
         TRACES_CACHE[answer_id] = recorder.build()
@@ -119,14 +137,26 @@ async def ask_question(payload: AskRequest) -> Answer:
         msg = render_unsupported()
         recorder.record_tier_used("unsupported")
         ans = Answer(
-            answer_id=answer_id, question=q, question_normalised=norm_q,
-            intent=IntentMatch(id="unsupported", score=intent_res.score, matched_by=intent_res.matched_by),
-            slots=intent_res.slots, tier=AnswerTier.TEMPLATE, degraded=False, text=msg, text_template=msg,
-            confidence=0.0, confidence_parts={},
+            answer_id=answer_id,
+            question=q,
+            question_normalised=norm_q,
+            intent=IntentMatch(
+                id="unsupported", score=intent_res.score, matched_by=intent_res.matched_by
+            ),
+            slots=intent_res.slots,
+            tier=AnswerTier.TEMPLATE,
+            degraded=False,
+            text=msg,
+            text_template=msg,
+            confidence=0.0,
+            confidence_parts={},
             measurements=MeasurementsBundleSubObject(bundle_id="mb_empty", facts=[]),
-            highlights=AnswerHighlights(), sources=[], models_used=[],
+            highlights=AnswerHighlights(),
+            sources=[],
+            models_used=[],
             capability_notice="Query falls outside geospatial and satellite understanding scope.",
-            trace_url=f"/api/v1/ask/{answer_id}/trace", report_url=f"/api/v1/ask/{answer_id}/report.json",
+            trace_url=f"/api/v1/ask/{answer_id}/trace",
+            report_url=f"/api/v1/ask/{answer_id}/report.json",
             generated_at=now_iso,
         )
         TRACES_CACHE[answer_id] = recorder.build()
@@ -137,7 +167,9 @@ async def ask_question(payload: AskRequest) -> Answer:
     if intent_res.intent_id == "aoi_change_summary":
         window_yrs = float(intent_res.slots.get("window_years", 3.0))
         summary, fallback_msg, meta = summary_service.build_summary(
-            upload=up_record, aoi_id=payload.aoi_id, window_years=window_yrs,
+            upload=up_record,
+            aoi_id=payload.aoi_id,
+            window_years=window_yrs,
         )
 
         # State 3 or 2 refusal/offer
@@ -145,14 +177,28 @@ async def ask_question(payload: AskRequest) -> Answer:
             msg = fallback_msg or render_visual_only_refusal()
             recorder.record_tier_used("template")
             ans = Answer(
-                answer_id=answer_id, question=q, question_normalised=norm_q,
-                intent=IntentMatch(id="aoi_change_summary", score=intent_res.score, matched_by=intent_res.matched_by),
-                slots=intent_res.slots, tier=AnswerTier.TEMPLATE, degraded=False, text=msg, text_template=msg,
-                confidence=0.95, confidence_parts={"temporal_availability": 0.0},
+                answer_id=answer_id,
+                question=q,
+                question_normalised=norm_q,
+                intent=IntentMatch(
+                    id="aoi_change_summary",
+                    score=intent_res.score,
+                    matched_by=intent_res.matched_by,
+                ),
+                slots=intent_res.slots,
+                tier=AnswerTier.TEMPLATE,
+                degraded=False,
+                text=msg,
+                text_template=msg,
+                confidence=0.95,
+                confidence_parts={"temporal_availability": 0.0},
                 measurements=MeasurementsBundleSubObject(bundle_id="mb_refusal", facts=[]),
-                highlights=AnswerHighlights(), sources=[], models_used=[],
+                highlights=AnswerHighlights(),
+                sources=[],
+                models_used=[],
                 capability_notice="VISUAL_ONLY upload cannot undergo temporal archive lookup without georeferencing.",
-                trace_url=f"/api/v1/ask/{answer_id}/trace", report_url=f"/api/v1/ask/{answer_id}/report.json",
+                trace_url=f"/api/v1/ask/{answer_id}/trace",
+                report_url=f"/api/v1/ask/{answer_id}/report.json",
                 generated_at=now_iso,
             )
             TRACES_CACHE[answer_id] = recorder.build()
@@ -166,26 +212,46 @@ async def ask_question(payload: AskRequest) -> Answer:
 
         # Tier 2 Phrasing with Verifier Wrapping
         final_text, tier_str, degraded, verdict, trace_info = gemini_client.phrase_answer(
-            question=q, template_text=template_text, facts=facts,
+            question=q,
+            template_text=template_text,
+            facts=facts,
         )
         recorder.record_tier_used(tier_str)
         recorder.record_verifier(verdict.verdict, verdict.diff)
         if trace_info.get("model_invoked"):
-            recorder.record_model_call({"prompt": trace_info.get("prompt")}, trace_info.get("raw_response"))
+            recorder.record_model_call(
+                {"prompt": trace_info.get("prompt")}, trace_info.get("raw_response")
+            )
 
         ans = Answer(
-            answer_id=answer_id, question=q, question_normalised=norm_q,
-            intent=IntentMatch(id="aoi_change_summary", score=intent_res.score, matched_by=intent_res.matched_by),
+            answer_id=answer_id,
+            question=q,
+            question_normalised=norm_q,
+            intent=IntentMatch(
+                id="aoi_change_summary", score=intent_res.score, matched_by=intent_res.matched_by
+            ),
             slots=intent_res.slots,
             tier=AnswerTier.POLISHED if tier_str == "polished" else AnswerTier.TEMPLATE,
-            degraded=degraded, text=final_text, text_template=template_text,
-            confidence=0.86, confidence_parts={"data_completeness": 0.90, "detector_agreement": 0.88},
-            measurements=MeasurementsBundleSubObject(bundle_id=summary.summary_id, facts=[f.model_dump() for f in facts]),
+            degraded=degraded,
+            text=final_text,
+            text_template=template_text,
+            confidence=0.86,
+            confidence_parts={"data_completeness": 0.90, "detector_agreement": 0.88},
+            measurements=MeasurementsBundleSubObject(
+                bundle_id=summary.summary_id, facts=[f.model_dump() for f in facts]
+            ),
             highlights=AnswerHighlights(change_object_ids=summary.change_object_ids),
-            sources=[AnswerSource(kind="scene", id="S2B_43RCU_20240609_0_L2A"), AnswerSource(kind="dataset", id="ESA Sentinel-2")],
-            models_used=[{"name": "gemini-2.x-flash", "role": "phrasing", "verified": verdict.passed}],
-            capability_notice=None, trace_url=f"/api/v1/ask/{answer_id}/trace",
-            report_url=f"/api/v1/ask/{answer_id}/report.json", generated_at=now_iso,
+            sources=[
+                AnswerSource(kind="scene", id="S2B_43RCU_20240609_0_L2A"),
+                AnswerSource(kind="dataset", id="ESA Sentinel-2"),
+            ],
+            models_used=[
+                {"name": "gemini-2.x-flash", "role": "phrasing", "verified": verdict.passed}
+            ],
+            capability_notice=None,
+            trace_url=f"/api/v1/ask/{answer_id}/trace",
+            report_url=f"/api/v1/ask/{answer_id}/report.json",
+            generated_at=now_iso,
         )
         TRACES_CACHE[answer_id] = recorder.build()
         ANSWERS_CACHE[answer_id] = ans
@@ -202,46 +268,80 @@ async def ask_question(payload: AskRequest) -> Answer:
         recorder.add_sql_query(f"SELECT count(*) FROM detection WHERE label = '{target_cls}';")
         db_count = 6 if target_cls in ("building", "structure") else 2
         measurements["count"] = db_count
-        facts.append(NarrativeFact(fact_id="f_count", kind="count", value=db_count, unit="detections", type=target_cls))
+        facts.append(
+            NarrativeFact(
+                fact_id="f_count", kind="count", value=db_count, unit="detections", type=target_cls
+            )
+        )
         highlights.detection_ids = [f"det_{i}" for i in range(db_count)]
     elif intent_res.intent_id == "area_of":
         area_m2 = 184320.5 if target_cls in ("building", "construction") else 48210.0
         area_lbl = "18.43 ha" if area_m2 >= 10000 else f"{area_m2:.1f} m²"
         measurements["area_m2"] = area_m2
         measurements["area_label"] = area_lbl
-        facts.append(NarrativeFact(fact_id="f_area", kind="area", value=area_m2, unit="m2", label=area_lbl, type=target_cls))
+        facts.append(
+            NarrativeFact(
+                fact_id="f_area",
+                kind="area",
+                value=area_m2,
+                unit="m2",
+                label=area_lbl,
+                type=target_cls,
+            )
+        )
     elif intent_res.intent_id == "locate_class":
         count = 3
         measurements["count"] = count
-        facts.append(NarrativeFact(fact_id="f_loc", kind="count", value=count, unit="regions", type=target_cls))
+        facts.append(
+            NarrativeFact(
+                fact_id="f_loc", kind="count", value=count, unit="regions", type=target_cls
+            )
+        )
         highlights.detection_ids = ["det_loc_1", "det_loc_2", "det_loc_3"]
     else:
         measurements = {"count": 4, "area_label": "18.43 ha", "area_m2": 184320.5}
-        facts.append(NarrativeFact(fact_id="f_default", kind="count", value=4, unit="features", type=target_cls))
+        facts.append(
+            NarrativeFact(
+                fact_id="f_default", kind="count", value=4, unit="features", type=target_cls
+            )
+        )
 
     template_text = render_intent_template(intent_res.intent_id, intent_res.slots, measurements)
     recorder.set_measurement_bundle({"facts": [f.model_dump() for f in facts]})
 
     # Phrasing through Gemini & Verifier
     final_text, tier_str, degraded, verdict, trace_info = gemini_client.phrase_answer(
-        question=q, template_text=template_text, facts=facts,
+        question=q,
+        template_text=template_text,
+        facts=facts,
     )
     recorder.record_tier_used(tier_str)
     recorder.record_verifier(verdict.verdict, verdict.diff)
 
     ans = Answer(
-        answer_id=answer_id, question=q, question_normalised=norm_q,
-        intent=IntentMatch(id=intent_res.intent_id, score=intent_res.score, matched_by=intent_res.matched_by),
+        answer_id=answer_id,
+        question=q,
+        question_normalised=norm_q,
+        intent=IntentMatch(
+            id=intent_res.intent_id, score=intent_res.score, matched_by=intent_res.matched_by
+        ),
         slots=intent_res.slots,
         tier=AnswerTier.POLISHED if tier_str == "polished" else AnswerTier.TEMPLATE,
-        degraded=degraded, text=final_text, text_template=template_text,
-        confidence=0.88, confidence_parts={"data_grounding": 1.0, "verifier": 1.0 if verdict.passed else 0.0},
-        measurements=MeasurementsBundleSubObject(bundle_id=f"mb_{intent_res.intent_id}", facts=[f.model_dump() for f in facts]),
+        degraded=degraded,
+        text=final_text,
+        text_template=template_text,
+        confidence=0.88,
+        confidence_parts={"data_grounding": 1.0, "verifier": 1.0 if verdict.passed else 0.0},
+        measurements=MeasurementsBundleSubObject(
+            bundle_id=f"mb_{intent_res.intent_id}", facts=[f.model_dump() for f in facts]
+        ),
         highlights=highlights,
         sources=[AnswerSource(kind="dataset", id="ESA Sentinel-2")],
         models_used=[{"name": "cv_grounded", "role": "grounding", "verified": True}],
-        capability_notice=None, trace_url=f"/api/v1/ask/{answer_id}/trace",
-        report_url=f"/api/v1/ask/{answer_id}/report.json", generated_at=now_iso,
+        capability_notice=None,
+        trace_url=f"/api/v1/ask/{answer_id}/trace",
+        report_url=f"/api/v1/ask/{answer_id}/report.json",
+        generated_at=now_iso,
     )
     TRACES_CACHE[answer_id] = recorder.build()
     ANSWERS_CACHE[answer_id] = ans
@@ -264,7 +364,9 @@ async def get_answer_trace(answer_id: str) -> dict[str, Any]:
     if answer_id in ANSWERS_CACHE:
         # Generate on-demand trace envelope
         ans = ANSWERS_CACHE[answer_id]
-        rec = TraceRecorder(trace_id=f"t_{answer_id}", intent=ans.intent.id, intent_score=ans.intent.score)
+        rec = TraceRecorder(
+            trace_id=f"t_{answer_id}", intent=ans.intent.id, intent_score=ans.intent.score
+        )
         rec.set_measurement_bundle(ans.measurements.model_dump())
         return rec.build().model_dump()
     raise HTTPException(status_code=404, detail="Trace not found.")

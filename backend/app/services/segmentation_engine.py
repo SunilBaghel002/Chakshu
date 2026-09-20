@@ -79,7 +79,7 @@ class SegmentationEngine:
                     c_mask, img_width=w, img_height=h, min_pixels=50, max_polygons=5, min_iou=0.60
                 )
                 for p in polys:
-                    m2_val = round(p["area_px"] * (upload.gsd_m ** 2), 1) if upload.gsd_m else None
+                    m2_val = round(p["area_px"] * (upload.gsd_m**2), 1) if upload.gsd_m else None
                     ha_val = round(m2_val / 10000.0, 2) if m2_val else None
                     evidence_items.append(
                         EvidenceObject(
@@ -120,7 +120,7 @@ class SegmentationEngine:
             ev_id = f"{target_class}_{idx + 1:02d}_{uuid.uuid4().hex[:6]}"
             px_area = p["area_px"]
 
-            m2_area = round(px_area * (upload.gsd_m ** 2), 1) if upload.gsd_m else None
+            m2_area = round(px_area * (upload.gsd_m**2), 1) if upload.gsd_m else None
             ha_area = round(m2_area / 10000.0, 2) if m2_area else None
 
             evidence_items.append(
@@ -128,7 +128,9 @@ class SegmentationEngine:
                     evidence_id=ev_id,
                     task=task.value,
                     class_label=target_class,
-                    confidence=min(0.98, 0.70 + p["validation"].get("mask_overlap_iou", 0.7) * 0.28),
+                    confidence=min(
+                        0.98, 0.70 + p["validation"].get("mask_overlap_iou", 0.7) * 0.28
+                    ),
                     mask_available=True,
                     polygon_available=True,
                     bbox_available=True,

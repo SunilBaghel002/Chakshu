@@ -72,12 +72,18 @@ class TestUrbanClassification:
         img = _create_urban_image()
         _save_fixture(img, "urban_aerial.jpg")
         arr = np.asarray(img, dtype=np.uint16)
-        classified = classify_optical_pixels(arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0)
+        classified = classify_optical_pixels(
+            arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0
+        )
         summary = compute_landcover_summary(classified)
         values = {item["label"]: item["pct"] for item in summary["by_class"]}
 
-        assert values.get("built", 0) > 40.0, f"Urban built={values.get('built', 0):.1f}% must be > 40%"
-        assert values.get("bare", 0) < 40.0, f"Urban bare={values.get('bare', 0):.1f}% must be < 40%"
+        assert values.get("built", 0) > 40.0, (
+            f"Urban built={values.get('built', 0):.1f}% must be > 40%"
+        )
+        assert values.get("bare", 0) < 40.0, (
+            f"Urban bare={values.get('bare', 0):.1f}% must be < 40%"
+        )
 
 
 class TestFarmlandClassification:
@@ -86,11 +92,15 @@ class TestFarmlandClassification:
         img = _create_farmland_image()
         _save_fixture(img, "farmland_aerial.jpg")
         arr = np.asarray(img, dtype=np.uint16)
-        classified = classify_optical_pixels(arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0)
+        classified = classify_optical_pixels(
+            arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0
+        )
         summary = compute_landcover_summary(classified)
         values = {item["label"]: item["pct"] for item in summary["by_class"]}
 
-        assert values.get("vegetation", 0) > 40.0, f"Farmland vegetation={values.get('vegetation', 0):.1f}% must be > 40%"
+        assert values.get("vegetation", 0) > 40.0, (
+            f"Farmland vegetation={values.get('vegetation', 0):.1f}% must be > 40%"
+        )
 
 
 class TestCoastalWaterContours:
@@ -99,7 +109,9 @@ class TestCoastalWaterContours:
         img = _create_coastal_image()
         _save_fixture(img, "coastal_aerial.jpg")
         arr = np.asarray(img, dtype=np.uint16)
-        classified = classify_optical_pixels(arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0)
+        classified = classify_optical_pixels(
+            arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0
+        )
 
         water_mask = classified == "water"
         assert np.any(water_mask), "Coastal image must have water pixels"
@@ -115,7 +127,7 @@ class TestCoastalWaterContours:
         mask = np.zeros((200, 200), dtype=bool)
         # Create a large circular water body
         y, x = np.ogrid[:200, :200]
-        mask[(x - 100) ** 2 + (y - 100) ** 2 <= 70 ** 2] = True
+        mask[(x - 100) ** 2 + (y - 100) ** 2 <= 70**2] = True
 
         polys = vectorize_water_polygons(mask, gsd_m=1.0)
         assert len(polys) >= 1
@@ -143,7 +155,9 @@ class TestLandcoverSummary:
         """Land-cover percentages must total 100% within rounding tolerance."""
         img = _create_urban_image()
         arr = np.asarray(img, dtype=np.uint16)
-        classified = classify_optical_pixels(arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0)
+        classified = classify_optical_pixels(
+            arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0
+        )
         summary = compute_landcover_summary(classified)
 
         assert 98.0 <= summary["sum_check_pct"] <= 102.0, (
@@ -154,7 +168,9 @@ class TestLandcoverSummary:
         """Non-water classes must not produce thousands of tiny polygons."""
         img = _create_urban_image()
         arr = np.asarray(img, dtype=np.uint16)
-        classified = classify_optical_pixels(arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0)
+        classified = classify_optical_pixels(
+            arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], scale_factor=255.0
+        )
 
         for label in ("built", "vegetation", "bare"):
             mask = classified == label

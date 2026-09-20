@@ -181,10 +181,15 @@ export const SLOTS_REGISTRY: Record<SlotId, SlotDefinition> = {
     permittedChildren: [
       'EvidenceDrawer',
       'DossierPanel',
+      'DossierHeader',
       'ReviewQueue',
+      'ReviewQueuePanel',
       'UploadManifest',
+      'UploadManifestPanel',
       'AnswerPanel',
+      'AskAnswerPanel',
       'SearchResults',
+      'SearchResultsPanel',
     ],
     collapseBehaviour:
       '380px at >=1440px; 340px at 1280-1439px; collapses to 48px rail at 1024-1279px',
@@ -236,7 +241,7 @@ export const SLOTS_REGISTRY: Record<SlotId, SlotDefinition> = {
     width: 380,
     height: 52,
     zIndex: 'var(--z-base)',
-    permittedChildren: ['DossierActionsFooter', 'PanelFooter'],
+    permittedChildren: ['DossierActionsFooter', 'PanelFooter', 'ReviewActionsFooter', 'AskActionsFooter'],
     collapseBehaviour:
       'sticky bottom 0 in panel; moves to bottom action bar above SLOT-30 below 1280px',
     description: 'Primary action zone: EXPORT (secondary, left), REJECT (danger-outline), CONFIRM (primary, rightmost)',

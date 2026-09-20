@@ -130,7 +130,9 @@ class AnalysisEngine:
         # 5. Handle Scene Understanding (No fake geometry, §16)
         if route.task == AnalysisTask.SCENE_UNDERSTANDING:
             desc_res = self.gemini_adapter.describe_scene(img, gsd_m=upload.gsd_m, mode="DESCRIBE")
-            scene_desc = desc_res.get("description") or "Scene understanding could not be completed."
+            scene_desc = (
+                desc_res.get("description") or "Scene understanding could not be completed."
+            )
             return AnalysisResponse(
                 query=query,
                 task=route.task,
@@ -164,9 +166,17 @@ class AnalysisEngine:
             upload=upload,
         )
 
-        mask_url = self._save_mask_overlay(upload.id, mask_arr, f"{route.task.value}_mask.png") if mask_arr is not None else None
+        mask_url = (
+            self._save_mask_overlay(upload.id, mask_arr, f"{route.task.value}_mask.png")
+            if mask_arr is not None
+            else None
+        )
         poly_overlays = [ev.geom_px for ev in evidence_items if ev.geom_px]
-        box_overlays = [{"bbox_px": ev.bbox_px, "label": ev.class_label, "score": ev.confidence} for ev in evidence_items if ev.bbox_px]
+        box_overlays = [
+            {"bbox_px": ev.bbox_px, "label": ev.class_label, "score": ev.confidence}
+            for ev in evidence_items
+            if ev.bbox_px
+        ]
 
         overlays = OverlayCollection(polygons=poly_overlays, boxes=box_overlays, mask_url=mask_url)
 
@@ -251,14 +261,16 @@ class AnalysisEngine:
         overlays = OverlayCollection(
             changes=[ev.geom_px for ev in change_res.evidence_items if ev.geom_px],
             polygons=[ev.geom_px for ev in change_res.evidence_items if ev.geom_px],
-            boxes=[{"bbox_px": ev.bbox_px, "label": ev.class_label} for ev in change_res.evidence_items if ev.bbox_px],
+            boxes=[
+                {"bbox_px": ev.bbox_px, "label": ev.class_label}
+                for ev in change_res.evidence_items
+                if ev.bbox_px
+            ],
             mask_url=mask_url,
         )
 
         if change_res.status == "unaligned":
-            answer_text = (
-                "Reliable temporal comparison cannot be performed because the images are not sufficiently aligned."
-            )
+            answer_text = "Reliable temporal comparison cannot be performed because the images are not sufficiently aligned."
             status_str = "insufficient_evidence"
         elif change_res.evidence_items:
             explanation = self._explain_with_gemini(
@@ -353,7 +365,9 @@ class AnalysisEngine:
             f"All polygon boundaries have been validated against the underlying pixel mask. {scale_note}"
         )
 
-    def _save_mask_overlay(self, upload_id: str, mask: np.ndarray | None, filename: str) -> str | None:
+    def _save_mask_overlay(
+        self, upload_id: str, mask: np.ndarray | None, filename: str
+    ) -> str | None:
         """Save colored mask overlay with alpha channel for UI rendering."""
         if mask is None:
             return None

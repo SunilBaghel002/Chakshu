@@ -18,11 +18,15 @@ class SemanticSearchRequest(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    query: str = Field(..., description="Natural language search query, e.g. 'newly built structures near a river'")
+    query: str = Field(
+        ..., description="Natural language search query, e.g. 'newly built structures near a river'"
+    )
     aoi_id: str | None = Field(default=None, description="Filter by AOI UUID")
     start_date: str | None = Field(default=None, description="Start date YYYY-MM-DD")
     end_date: str | None = Field(default=None, description="End date YYYY-MM-DD")
-    max_cloud_pct: float | None = Field(default=20.0, description="Max tolerable cloud coverage percentage")
+    max_cloud_pct: float | None = Field(
+        default=20.0, description="Max tolerable cloud coverage percentage"
+    )
     min_ndvi: float | None = Field(default=None, description="Minimum NDVI threshold")
     max_ndvi: float | None = Field(default=None, description="Maximum NDVI threshold")
     min_ndbi: float | None = Field(default=None, description="Minimum NDBI built-up threshold")

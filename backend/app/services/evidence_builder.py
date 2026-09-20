@@ -171,9 +171,7 @@ def build_evidence(
 
     if onset_res is None:
         obs_seq = [
-            SceneObservation(
-                before_scene_id, date_before, usable=True, change_detected=False
-            ),
+            SceneObservation(before_scene_id, date_before, usable=True, change_detected=False),
             SceneObservation(
                 "gap_monsoon",
                 "2023-08-15",
@@ -181,9 +179,7 @@ def build_evidence(
                 unusable_reason="monsoon cloud obstruction",
                 cloud_cover_pct=85.0,
             ),
-            SceneObservation(
-                after_scene_id, date_after, usable=True, change_detected=True
-            ),
+            SceneObservation(after_scene_id, date_after, usable=True, change_detected=True),
         ]
         onset_res = compute_onset(obs_seq, persistence_k=1)
 
