@@ -1,93 +1,121 @@
 /**
- * Design system color tokens for Chakshu — Intelligence Console v2.
- * Source: PRD/09_ui-context.md §2
+ * Design system color tokens for Chakshu.
+ * Source: Dark slate/indigo defense palette for MoD & ISRO / SIH26227.
  *
  * Enforces:
- * 1. Near-black base (#0B0D10), never pure black — prevents halation and dot-grid crushing.
- * 2. Amber accent family (#F0B45F) for operator attention and ground truth.
- * 3. Teal (#35B8C0) reserved for satellite/live data path only.
- * 4. Dark-retuned categorical palette for land-cover and object classes.
+ * 1. Dark slate base (#0B0F19) with deep elevated surfaces (#111827, #1E293B).
+ * 2. High contrast inks with AAA compliance on primary text.
+ * 3. Accent Indigo (#6366F1 / #4F46E5 / #818CF8) for focus and tactical highlights.
+ * 4. Fixed categorical palette for detections and land-cover.
  */
 
 export const PALETTE = {
-  // §2.1 Base — near-black, slightly cool
-  bg: '#0B0D10',
-  bgGrid: 'rgba(240,180,95,0.055)',
-  panel: '#121519',
-  panel2: '#171B21',
-  panel3: '#1E242B',
-  well: '#0E1114',
-  line: '#262C34',
-  lineStrong: '#39424D',
+  // Base background layers (Dark Slate Defense Palette)
+  bg: '#0B0F19',             // App background. Deep dark slate.
+  surface: '#111827',        // Cards, panels, popovers - raised layer (slate-900)
+  surfaceSunken: '#0F172A',  // Wells, insets, code blocks (slate-950)
+  surfaceHover: '#1E293B',   // Interactive hover (slate-800)
+  surfaceActive: '#334155',  // Pressed / selected row
+  mapWell: '#070A10',        // Frame around the satellite imagery viewport
 
-  // §2.2 Ink
-  ink: '#EDEAE3',
-  ink2: '#A6ADB5',
-  ink3: '#6B7480',
-  inkGhost: 'rgba(237,234,227,0.06)',
+  // Typography Ink
+  ink: '#F9FAFB',            // Headings, primary text, numbers (high contrast AAA)
+  ink2: '#CBD5E1',           // Body text, secondary labels
+  ink3: '#94A3B8',           // Metadata, timestamps, placeholders (non-body only)
+  inkInverse: '#0B0F19',     // Text on bright fills
 
-  // §2.3 Accent — amber dossier family
-  amber: '#F0B45F',
-  amberHot: '#F5C15C',
-  amberDeep: '#8A4B12',
-  amberWash: 'rgba(240,180,95,0.12)',
-  teal: '#35B8C0',
-  tealWash: 'rgba(53,184,192,0.12)',
+  // Borders and dividers
+  line: '#1F2937',           // Default 1px border, dividers (slate-800)
+  lineStrong: '#374151',     // Inputs, active table borders (slate-700)
+  lineFocus: '#6366F1',      // Focus ring inner edge (indigo-500)
 
-  // §2.4 Semantic states (restyled for dark)
+  // Accent Indigo (Defense Brand Accent)
+  indigo900: '#312E81',      // Deep indigo tint
+  indigo700: '#4338CA',      // Active indicator
+  indigo600: '#4F46E5',      // Primary action button
+  indigo500: '#6366F1',      // Core brand accent, focus ring, highlight
+  indigo400: '#818CF8',      // Bright indigo hover
+  indigo100: '#E0E7FF',      // Light tint on dark
+
+  // Tactical Accent Colors (Matching Reference Screenshot)
+  amber: '#F2B84B',
+  amberGlow: 'rgba(242, 184, 75, 0.4)',
+  cyan: '#24C6C8',
+  cyanGlow: 'rgba(36, 198, 200, 0.35)',
+
+  // Epistemic Chips (PRD 4 §3 & Rule 1: The AI never produces a number)
   measured: '#2FBF71',
-  measuredFill: 'rgba(47,191,113,0.12)',
+  measuredGreen: '#35D07F',  // Solid chip for MEASURED / Deterministic facts
+  measuredBg: 'rgba(53, 208, 127, 0.15)',
+  measuredFill: 'rgba(47, 191, 113, 0.12)',
   measuredText: '#5AD79A',
-  measuredBg: 'rgba(47,191,113,0.12)',
-  measuredGreen: '#5AD79A',
-  measuredBorder: 'rgba(47,191,113,0.3)',
+  measuredBorder: '#059669',
   inferred: '#F0B45F',
-  inferredFill: 'rgba(240,180,95,0.10)',
+  inferredAmber: '#F2B84B',  // Outlined chip for INFERRED claims
+  inferredBg: 'rgba(242, 184, 75, 0.15)',
+  inferredFill: 'rgba(240, 180, 95, 0.10)',
   inferredText: '#F0B45F',
+  inferredBorder: '#D97706',
   unverified: '#6B7480',
   unverifiedText: '#A6ADB5',
   confirmed: '#2FBF71',
   confirmedText: '#5AD79A',
   rejected: '#E5484D',
-  rejectedFill: 'rgba(229,72,77,0.12)',
+  rejectedFill: 'rgba(229, 72, 77, 0.12)',
   rejectedText: '#F2767B',
-
-  // Status
-  success: '#2FBF71',
-  warning: '#F0B45F',
-  danger: '#E5484D',
-  info: '#35B8C0',
   neutral: '#6B7480',
 
-  // §2.5 Land Cover — dark-retuned
+  // Categorical Class Colors (Fixed map, never generated at runtime)
   classes: {
-    water: '#4FA3E0',
-    vegetation: '#4FB37A',
-    crop: '#A8C256',
-    built: '#E08A5A',
-    bare: '#C9A227',
-    snow: '#B9C6D2',
-    unclassified: '#6B7480',
-    construction: '#F0B45F',
-    clearance: '#D9A441',
-    vegetation_gain: '#4FB37A',
-    water_gain: '#4FA3E0',
-    water_loss: '#7FA8C4',
-    demolition: '#8A93A0',
-    road: '#A6ADB5',
-    other: '#A6ADB5',
+    // Land Cover (PRD 2 §6 Track 1/2)
+    built: '#EF4444',        // Red (switched from orange per user instruction)
+    water: '#0284C7',        // Sky-600
+    vegetation: '#10B981',   // Emerald-500
+    bare: '#D97706',         // Amber-600
+    crop: '#84CC16',         // Lime-500
+    snow: '#64748B',         // Mapped to Road per user instruction
+    unclassified: '#64748B', // Slate-500
 
-    // Object classes
-    building: '#E08A5A',
-    building_cluster: '#F0B45F',
-    vehicle: '#9B7BE0',
-    aircraft: '#5A9BE0',
-    ship: '#4FA3E0',
-    ship_large: '#2E7BB5',
-    storage_tank: '#D9A441',
-    swimming_pool: '#4FD0E0',
-    tower: '#B07BE0',
-    container: '#E07B5A',
+    // Discrete Objects (PRD 2 §6 Track 3)
+    building: '#EF4444',     // Red
+    building_cluster: '#EF4444', // Red
+    vehicle: '#A855F7',
+    aircraft: '#38BDF8',
+    ship: '#14B8A6',
+    ship_large: '#0D9488',
+    storage_tank: '#EAB308',
+    swimming_pool: '#06B6D4',
+    tower: '#C084FC',
+    container: '#F59E0B',
+    road: '#64748B',
+    construction: '#EF4444', // Red
+    clearance: '#D97706',
+    water_loss: '#38BDF8',
+  } as const,
+
+  // Darker outline colors for crisp polygon and geometry strokes
+  darkOutlines: {
+    built: '#991B1B',        // Dark Red
+    water: '#1E40AF',        // Deep dark blue
+    vegetation: '#065F46',   // Deep dark forest green
+    bare: '#78350F',         // Dark rich brown
+    crop: '#3F6212',         // Dark lime/olive
+    snow: '#1E293B',         // Dark slate
+    unclassified: '#1E293B',
+    building: '#991B1B',     // Dark Red
+    building_cluster: '#991B1B', // Dark Red
+    vehicle: '#6B21A8',      // Dark purple
+    aircraft: '#0369A1',     // Dark sky blue
+    ship: '#0F766E',         // Dark teal
+    ship_large: '#115E59',
+    storage_tank: '#A16207',  // Dark gold
+    swimming_pool: '#0E7490', // Dark cyan
+    tower: '#7E22CE',
+    container: '#B45309',
+    road: '#1E293B',         // Dark slate gray
+    construction: '#991B1B', // Dark Red
+    clearance: '#78350F',
+    water_loss: '#0369A1',
   } as const,
 } as const;
 
@@ -98,5 +126,21 @@ export function getClassColor(label: string): string {
   if (normalized in PALETTE.classes) {
     return PALETTE.classes[normalized as ClassLabel];
   }
-  return PALETTE.neutral;
+  return '#64748B';
+}
+
+/** Formats class label for display, mapping 'snow' to 'Road' per user instruction. */
+export function formatClassLabel(label: string): string {
+  const norm = label.toLowerCase();
+  if (norm === 'snow') return 'Road';
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** Returns a darker, high-contrast outline color for polygon and boundary strokes. */
+export function getDarkerClassColor(label: string): string {
+  const normalized = label.toLowerCase();
+  if (normalized in PALETTE.darkOutlines) {
+    return PALETTE.darkOutlines[normalized as keyof typeof PALETTE.darkOutlines];
+  }
+  return '#1E293B';
 }

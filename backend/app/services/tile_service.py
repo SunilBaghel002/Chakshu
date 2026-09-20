@@ -113,15 +113,11 @@ class TileService:
             return evidence_path.read_bytes()
 
         # Check in demo scenes if evidence_id refers to a scene or demo site
-        if stage_clean in {"before", "after"}:
-            scene_candidate = (
-                "S2A_JEWAR_20210315_SYNTH"
-                if stage_clean == "before"
-                else "S2B_JEWAR_20240420_SYNTH"
-            )
-            cand_tile = self.tiles_dir / scene_candidate / "0_0.png"
-            if cand_tile.exists():
-                return cand_tile.read_bytes()
+        if stage_clean in {"before", "after"} and self.tiles_dir.exists():
+            for scene_dir in self.tiles_dir.iterdir():
+                cand_tile = scene_dir / "0_0.png"
+                if cand_tile.exists():
+                    return cand_tile.read_bytes()
 
         return generate_fallback_rgb_tile(f"{evidence_id}_{stage_clean}")
 

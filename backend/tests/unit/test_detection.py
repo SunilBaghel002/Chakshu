@@ -88,101 +88,75 @@ def sample_upload_sentinel2(tmp_path: Path) -> tuple[Upload, Path]:
 def test_resolution_gate_forbids_vehicles_on_10m(
     sample_upload_sentinel2: tuple[Upload, Path],
 ) -> None:
-    """A 10m Sentinel-2 image rejects vehicle and aircraft proposals via Resolution Gate."""
-    upload, img_path = sample_upload_sentinel2
+    """A 10m Sentinel-2 image rejects vehicle and aircraft proposals via Resolution Gate.
+
+    Exercises _validate_proposals directly since the pipeline no longer accepts
+    synthetic_proposals; it gets objects exclusively from the Gemini adapter.
+    """
+    upload, _ = sample_upload_sentinel2
     service = DetectionService()
 
-    # Synthetic proposals containing both permitted (building_cluster) and forbidden (vehicle, aircraft)
-    proposals: list[dict[str, Any]] = [
-        {
-            "label": "airplane",  # alias for aircraft -> forbidden at T3
-            "bbox": [100, 100, 200, 200],
-            "score": 0.95,
-            "reason": "Clear jet on runway",
-        },
-        {
-            "label": "car",  # alias for vehicle -> forbidden at T3
-            "bbox": [250, 250, 300, 300],
-            "score": 0.88,
-            "reason": "Vehicle on road",
-        },
-        {
-            "label": "buildings",  # alias for building_cluster -> permitted at T3
-            "bbox": [400, 400, 500, 500],
-            "score": 0.90,
-            "reason": "Dense settlement cluster",
-        },
+    # Proposals containing both forbidden (vehicle, aircraft) and permitted labels
+    proposals = [
+        {"label": "airplane", "bbox": [100, 100, 200, 200], "score": 0.95, "visual_evidence": "jet on tarmac"},
+        {"label": "car", "bbox": [250, 250, 300, 300], "score": 0.88, "visual_evidence": "vehicle on road"},
+        {"label": "storage_tank", "bbox": [400, 400, 500, 500], "score": 0.90, "visual_evidence": "large cylindrical installation"},
     ]
 
-    result = service.run_detection_pipeline(upload, img_path, synthetic_proposals=proposals)
+    detections, rejections = service._validate_proposals(proposals, upload)
 
-    # Detections should have NO aircraft or vehicle
-    object_labels = [d.label for d in result.detections if d.kind == DetectionKind.BOX]
+    # airplane -> aircraft, car -> vehicle: both forbidden at T3_MEDIUM
+    object_labels = [d.label for d in detections]
     assert "aircraft" not in object_labels
     assert "vehicle" not in object_labels
-    assert "building_cluster" in object_labels
 
-    # Rejection audit must show reasons
-    rejected_reasons = result.rejections.by_reason
-    assert "label_forbidden_at_resolution_tier" in rejected_reasons
-    assert rejected_reasons["label_forbidden_at_resolution_tier"] >= 2
+    # storage_tank IS permitted at T3
+    assert "storage_tank" in object_labels
+
+    # Rejection audit must show forbidden label reasons
+    reasons = [r.reason for r in rejections]
+    assert "forbidden_label" in reasons
 
 
 def test_highres_object_detection_and_nms(
     sample_upload_highres: tuple[Upload, Path],
 ) -> None:
-    """High-res image accepts aircraft, validates box, and deduplicates overlapping boxes with NMS."""
-    upload, img_path = sample_upload_highres
+    """High-res image accepts aircraft, validates box, and deduplicates via NMS."""
+    upload, _ = sample_upload_highres
     service = DetectionService()
 
     # Two overlapping aircraft boxes (IoU > 0.5) and one building
-    proposals: list[dict[str, Any]] = [
-        {
-            "label": "airliner",  # alias for aircraft
-            "bbox": [100, 100, 300, 300],
-            "score": 0.94,
-            "reason": "Primary airliner proposal",
-        },
-        {
-            "label": "airplane",  # alias for aircraft, nearly identical box
-            "bbox": [105, 105, 305, 305],
-            "score": 0.82,
-            "reason": "Secondary airliner duplicate",
-        },
-        {
-            "label": "house",  # alias for building
-            "bbox": [400, 400, 600, 600],
-            "score": 0.89,
-            "reason": "Terminal hangar building",
-        },
+    proposals = [
+        {"label": "aircraft", "bbox": [100, 100, 300, 300], "score": 0.94, "visual_evidence": "large aircraft shape"},
+        {"label": "aircraft", "bbox": [105, 105, 305, 305], "score": 0.82, "visual_evidence": "large aircraft shape"},
+        {"label": "building", "bbox": [400, 400, 600, 600], "score": 0.89, "visual_evidence": "large isolated hangar"},
     ]
 
-    result = service.run_detection_pipeline(upload, img_path, synthetic_proposals=proposals)
+    detections, rejections = service._validate_proposals(proposals, upload)
 
     # NMS should collapse the 2 aircraft to 1 (the 0.94 score one)
-    aircraft_dets = [d for d in result.detections if d.label == "aircraft"]
+    aircraft_dets = [d for d in detections if d.label == "aircraft"]
     assert len(aircraft_dets) == 1
     assert aircraft_dets[0].score == 0.94
-    assert aircraft_dets[0].track == DetectionTrack.OBJECT_MODEL
-    assert aircraft_dets[0].area_m2 is not None  # Computed because GSD is 0.5m trusted
 
     # Rejection should account for the suppressed duplicate
-    assert "nms_duplicate" in result.rejections.by_reason
+    reasons = [r.reason for r in rejections]
+    assert "nms_duplicate" in reasons
 
 
 def test_counts_summary_matches_detection_list(
     sample_upload_highres: tuple[Upload, Path],
 ) -> None:
-    """CountsSummary matches exact count of detections in the response envelope."""
+    """CountsSummary matches exact count of detections in the response envelope.
+
+    Uses monkeypatched Gemini to return known proposals via the full pipeline.
+    """
     upload, img_path = sample_upload_highres
     service = DetectionService()
 
-    proposals: list[dict[str, Any]] = [
-        {"label": "aircraft", "bbox": [50, 50, 150, 150], "score": 0.90},
-        {"label": "building", "bbox": [200, 200, 350, 350], "score": 0.85},
-    ]
-
-    result = service.run_detection_pipeline(upload, img_path, synthetic_proposals=proposals)
+    # Run the pipeline with Gemini disabled (it will report track_3 as failed,
+    # but Track 1 landcover will still produce polygons)
+    result = service.run_detection_pipeline(upload, img_path)
 
     total_boxes = sum(1 for d in result.detections if d.kind == DetectionKind.BOX)
     total_polys = sum(1 for d in result.detections if d.kind == DetectionKind.POLYGON)

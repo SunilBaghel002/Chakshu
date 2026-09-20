@@ -95,12 +95,32 @@ export interface RejectionsSummary {
   detail: RejectionDetail[];
 }
 
+export interface LandcoverClassStats {
+  pct: number;
+  m2: number | null;
+  ha: number | null;
+}
+
+export interface DetectionStats {
+  total_objects: number;
+  objects_by_class: Record<string, number>;
+  total_area_m2: number | null;
+  landcover_area: Record<string, LandcoverClassStats>;
+}
+
 export interface DetectionSet {
   upload: Upload;
   detections: Detection[];
   coverage?: CoverageSummary | null;
   counts: CountsSummary;
   rejections: RejectionsSummary;
+  stats?: DetectionStats | null;
   job_id?: string | null;
   trace_id?: string | null;
+  annotated_url?: string | null;
+  explanation?: string | null;
+  status?: string | null;
+  error?: string | null;
+  artifact_version?: string | null;
+  track_status?: Record<string, string>;
 }

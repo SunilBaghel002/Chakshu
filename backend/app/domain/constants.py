@@ -72,6 +72,23 @@ MAX_IMAGE_EDGE_PX: int = 1568
 # --- Image Registration Tolerance (PRD 6 §9, Kuglin & Hines 1975) ---
 # Maximum shift magnitude in pixels permitted between temporal observation pairs
 MAX_REGISTRATION_SHIFT_PX: float = 2.0
+MAX_REGISTRATION_SHIFT: float = 15.0
+
+# --- Central Model & Analysis Configuration (§4, §46) ---
+MODEL_NAME: str = "Chakshu-Calibrated-RS-Segmenter"
+MODEL_VERSION: str = "2.1.0-appearance-invariant"
+INPUT_MAX_SIZE: int = 2048
+MIN_POLYGON_IOU: float = 0.60
+MAX_DISCRETE_FEATURE_AREA: float = 150000.0
+CLASS_THRESHOLDS: dict[str, float] = {
+    "water": 0.65,
+    "building": 0.60,
+    "vegetation": 0.65,
+    "snow": 0.80,
+    "crop": 0.60,
+    "bare": 0.60,
+    "change": 0.65,
+}
 
 # --- Change Classification Decision Table Thresholds (PRD 2 §6, PRD 3 §A8) ---
 # Construction: rising NDBI (built-up) and falling NDVI (vegetation loss)
@@ -108,4 +125,3 @@ SUPPRESS_SNOW_NDSI_MIN: float = 0.40
 
 # Minimum change confidence score threshold
 SUPPRESS_CONFIDENCE_MIN: float = 0.30
-

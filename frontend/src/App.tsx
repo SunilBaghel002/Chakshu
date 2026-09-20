@@ -1,25 +1,19 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AppHeader } from './components/AppHeader';
-import { DataStreamMarquee } from './components/DataStreamMarquee';
-import { TacticalTelemetryBar } from './components/TacticalTelemetryBar';
-import { IconRail } from './components/IconRail';
-import { StatusLine } from './components/StatusLine';
-import { AmbientScanline } from './components/AmbientScanline';
 import { MapPane } from './components/MapPane';
 import { TimelineSlider } from './components/TimelineSlider';
 import { EvidenceDrawer } from './components/EvidenceDrawer';
 import { AskPanel } from './components/AskPanel';
 import { ReviewQueueModal } from './components/ReviewQueueModal';
 import { UploadModal } from './components/UploadModal';
-import { TemporalBar } from './components/TemporalBar';
+import { SearchModal } from './components/SearchModal';
+import { ComparisonControlBar } from './components/ComparisonControlBar';
+import { Layers, Search, UploadCloud, CheckCircle2, MessageSquare } from 'lucide-react';
 import {
   getAois,
   getScenes,
   getChangeSummary,
   getEvidenceList,
-  getDetections,
-  triggerAoiAnalyse,
-  submitDecision,
   isMockMode,
   setMockMode,
   type AoiItem,
@@ -37,25 +31,26 @@ export const App: React.FC = () => {
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
   const [detectionSet, setDetectionSet] = useState<DetectionSet | null>(null);
 
-  // Date states for Before and After
+  // Date states for Before (Old baseline) and After (Recent observation)
   const [beforeDate, setBeforeDate] = useState<string>('2021-01-15');
   const [afterDate, setAfterDate] = useState<string>('2026-08-18');
 
   // UI state
-  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask'>('map');
+  const [activeView, setActiveView] = useState<'map' | 'review' | 'upload' | 'ask' | 'search'>('map');
   const [isMock, setIsMock] = useState<boolean>(isMockMode());
   const [sliderPos, setSliderPos] = useState<number>(50);
   const [isSwipeActive, setIsSwipeActive] = useState<boolean>(true);
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
-  // Load initial AOIs
+  // Load initial data
   useEffect(() => {
     async function init() {
       const aoiRes = await getAois();
       if (aoiRes.kind === 'ok' && aoiRes.data.length > 0) {
         setAois(aoiRes.data);
         const defaultAoi = aoiRes.data[0];
-        if (defaultAoi) setSelectedAoiId(defaultAoi.id);
+        if (defaultAoi) {
+          setSelectedAoiId(defaultAoi.id);
+        }
       }
     }
     init();
@@ -66,19 +61,12 @@ export const App: React.FC = () => {
     if (!selectedAoiId) return;
 
     async function loadAoiData() {
-      const [scenesRes, sumRes, evListRes, detRes] = await Promise.all([
-        getScenes(selectedAoiId),
-        getChangeSummary(selectedAoiId),
-        getEvidenceList(selectedAoiId),
-        getDetections('jewar_crop'),
-      ]);
-
+      const scenesRes = await getScenes(selectedAoiId);
       if (scenesRes.kind === 'ok' && scenesRes.data.length > 0) {
-        // Sort chronologically (oldest baseline first, newest observation last)
-        const sorted = [...scenesRes.data].sort((a, b) => a.acquired_at.localeCompare(b.acquired_at));
-        setScenes(sorted);
-        const firstUsable = sorted.find((s) => s.usable) || sorted[0];
-        const lastUsable = [...sorted].reverse().find((s) => s.usable) || sorted[sorted.length - 1];
+        setScenes(scenesRes.data);
+        const firstUsable = scenesRes.data.find((s) => s.usable) || scenesRes.data[0];
+        const lastUsable =
+          [...scenesRes.data].reverse().find((s) => s.usable) || scenesRes.data[scenesRes.data.length - 1];
         if (firstUsable) setBeforeDate(firstUsable.acquired_at);
         if (lastUsable) {
           setAfterDate(lastUsable.acquired_at);
@@ -86,16 +74,18 @@ export const App: React.FC = () => {
         }
       }
 
-      if (sumRes.kind === 'ok') setChangeSummary(sumRes.data);
+      const sumRes = await getChangeSummary(selectedAoiId);
+      if (sumRes.kind === 'ok') {
+        setChangeSummary(sumRes.data);
+      }
 
+      const evListRes = await getEvidenceList(selectedAoiId);
       if (evListRes.kind === 'ok') {
         setEvidenceList(evListRes.data);
         if (evListRes.data.length > 0 && evListRes.data[0]) {
           setSelectedEvidence(evListRes.data[0]);
         }
       }
-
-      if (detRes.kind === 'ok') setDetectionSet(detRes.data);
     }
 
     loadAoiData();
@@ -113,72 +103,27 @@ export const App: React.FC = () => {
     setAfterDate(temp);
   };
 
-  const handleConfirmEvidence = async (id: string) => {
-    setEvidenceList((prev) =>
-      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
-    );
-    if (selectedEvidence?.change_object_id === id) {
-      setSelectedEvidence((prev) => (prev ? { ...prev, status: 'confirmed' } : null));
-    }
-    await submitDecision('change_object', id, 'confirm');
-  };
-
-  const handleRejectEvidence = async (id: string) => {
-    setEvidenceList((prev) =>
-      prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
-    );
-    if (selectedEvidence?.change_object_id === id) {
-      setSelectedEvidence((prev) => (prev ? { ...prev, status: 'rejected' } : null));
-    }
-    await submitDecision('change_object', id, 'reject');
-  };
-
-  const handleRunAnalysis = async () => {
-    if (!selectedAoiId || isAnalyzing) return;
-    setIsAnalyzing(true);
-    try {
-      const res = await triggerAoiAnalyse(selectedAoiId);
-      if (res.kind === 'ok') {
-        setTimeout(async () => {
-          const [evListRes, sumRes] = await Promise.all([
-            getEvidenceList(selectedAoiId),
-            getChangeSummary(selectedAoiId),
-          ]);
-          if (evListRes.kind === 'ok') {
-            setEvidenceList(evListRes.data);
-            if (evListRes.data.length > 0 && !selectedEvidence) {
-              const first = evListRes.data[0];
-              if (first) setSelectedEvidence(first);
-            }
-          }
-          if (sumRes.kind === 'ok') setChangeSummary(sumRes.data);
-          setIsAnalyzing(false);
-        }, 1800);
-      } else {
-        setIsAnalyzing(false);
-      }
-    } catch {
-      setIsAnalyzing(false);
-    }
-  };
-
+  // Dynamic filtering of evidence based on selected afterDate
   const visibleEvidenceList = useMemo(() => {
-    const maxObservationDate = beforeDate < afterDate ? afterDate : beforeDate;
     return evidenceList.filter((ev) => {
       const date = ev.temporal.first_supported || ev.sources.after.acquired_at;
-      return date <= maxObservationDate;
+      return date <= afterDate;
     });
-  }, [evidenceList, beforeDate, afterDate]);
+  }, [evidenceList, afterDate]);
 
+  // Compute total area dynamically based on visible evidence
   const totalAreaM2 = useMemo(() => {
     return visibleEvidenceList.reduce((acc, ev) => acc + (ev.measurement.area_m2 || 0), 0);
   }, [visibleEvidenceList]);
 
   const totalAreaLabel = useMemo(() => {
-    if (totalAreaM2 >= 10000) return `${(totalAreaM2 / 10000).toFixed(2)} ha`;
+    if (totalAreaM2 >= 10000) {
+      return `${(totalAreaM2 / 10000).toFixed(2)} ha`;
+    }
     return `${Math.round(totalAreaM2)} m²`;
   }, [totalAreaM2]);
 
+  // Ensure selected evidence is in visible set
   useEffect(() => {
     if (visibleEvidenceList.length > 0) {
       const exists = visibleEvidenceList.some((e) => e.change_object_id === selectedEvidence?.change_object_id);
@@ -190,56 +135,14 @@ export const App: React.FC = () => {
   }, [visibleEvidenceList, selectedEvidence]);
 
   const currentAoi = aois.find((a) => a.id === selectedAoiId);
-
-  // Compute center and bounds dynamically from AOI polygon geometry
-  const { aoiCoords, aoiBounds } = useMemo(() => {
-    const geom = currentAoi?.geom as { coordinates?: [number, number][][] } | undefined;
-    if (geom?.coordinates?.[0]) {
-      const ring = geom.coordinates[0];
-      let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
-      for (const [lon, lat] of ring) {
-        if (lon < minLon) minLon = lon;
-        if (lon > maxLon) maxLon = lon;
-        if (lat < minLat) minLat = lat;
-        if (lat > maxLat) maxLat = lat;
-      }
-      return {
-        aoiCoords: [(minLat + maxLat) / 2, (minLon + maxLon) / 2] as [number, number],
-        aoiBounds: [[minLat, minLon], [maxLat, maxLon]] as [[number, number], [number, number]],
-      };
-    }
-    return { aoiCoords: [28.1725, 77.6125] as [number, number], aoiBounds: [[28.155, 77.580], [28.190, 77.645]] as [[number, number], [number, number]] };
-  }, [currentAoi]);
+  const aoiCoords: [number, number] =
+    currentAoi?.name.includes('Bhadla') ? [27.53, 71.91] : [28.1305, 77.7612];
 
   const availableDates = Array.from(new Set(scenes.map((s) => s.acquired_at))).sort();
 
-  // Camera preset handler for TacticalTelemetryBar
-  const handlePreset = useCallback((preset: string) => {
-    // Presets will be consumed by MapPane via a ref/callback
-    const presetMap: Record<string, { center: [number, number]; zoom: number }> = {
-      runway: { center: [28.1695, 77.6080], zoom: 16 },
-      terminal: { center: [28.1765, 77.6160], zoom: 17 },
-      atc: { center: [28.1748, 77.6125], zoom: 18 },
-      full: { center: aoiCoords, zoom: 14 },
-    };
-    const p = presetMap[preset];
-    if (p) setPresetTarget(p);
-  }, [aoiCoords]);
-
-  const [presetTarget, setPresetTarget] = useState<{ center: [number, number]; zoom: number } | null>(null);
-
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
-      {/* SLOT-00: Data Stream Marquee */}
-      <DataStreamMarquee />
-
-      {/* ISRO/RAW Tactical Telemetry Bar */}
-      <TacticalTelemetryBar
-        aoiName={currentAoi?.name ?? 'Jewar Airport'}
-        onPreset={handlePreset}
-      />
-
-      {/* SLOT-01: Command Bar */}
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#080B10] text-slate-100 font-sans">
+      {/* Top Application Bar with Telemetry */}
       <AppHeader
         aois={aois}
         selectedAoiId={selectedAoiId}
@@ -249,33 +152,101 @@ export const App: React.FC = () => {
         isMock={isMock}
         onToggleMock={handleToggleMock}
         areaLabel={totalAreaLabel}
-        sceneCount={scenes.length || 36}
-        usableScenes={scenes.filter((s) => s.usable).length || 29}
+        sceneCount={scenes.length || 56}
+        usableScenes={scenes.filter((s) => s.usable).length || 56}
       />
 
-      {/* SLOT-02: Temporal Bar */}
-      <TemporalBar
+      {/* Interactive Date & Comparison Controls Bar */}
+      <ComparisonControlBar
         beforeDate={beforeDate}
         afterDate={afterDate}
-        onBeforeDateChange={setBeforeDate}
-        onAfterDateChange={setAfterDate}
+        scenes={scenes}
+        onSelectBeforeDate={setBeforeDate}
+        onSelectAfterDate={setAfterDate}
         onSwapDates={handleSwapDates}
-        onRunAnalysis={handleRunAnalysis}
-        isAnalyzing={isAnalyzing}
+        onDetectChanges={() => {
+          if (scenes.length > 0) {
+            const cur = scenes.find((s) => s.acquired_at === afterDate) || scenes[scenes.length - 1];
+            if (cur) setCurrentScene(cur);
+          }
+        }}
       />
 
-      {/* Main Stage: SLOT-05 Rail + SLOT-10 Map + SLOT-20 Dossier */}
+      {/* Main Workspace: Left Sidebar + Satellite Map + Right Evidence Drawer */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* SLOT-05: Icon Rail */}
-        <IconRail activeView={activeView} onSelectView={setActiveView} />
+        {/* Left Tactical Navigation Sidebar */}
+        <nav className="w-14 bg-[#080B10] border-r border-[#1C2333] flex flex-col items-center py-2 gap-3 z-20 select-none shrink-0">
+          <button
+            onClick={() => setActiveView('map')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'map'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B] shadow-[0_0_10px_rgba(242,184,75,0.2)]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Satellite Map Workspace"
+          >
+            <Layers className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">MAP</span>
+          </button>
 
-        {/* SLOT-10: Map Stage + SLOT-30: Timeline */}
-        <main className="flex-1 flex flex-col relative overflow-hidden" style={{ background: 'var(--well)' }}>
+          <button
+            onClick={() => setActiveView('search')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'search'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Search Location / Features"
+          >
+            <Search className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">SEARCH</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('upload')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'upload'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Upload Aerial / Satellite Photo"
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">UPLOAD</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('review')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'review'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Review Detected Changes"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">REVIEW</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('ask')}
+            className={`w-11 h-11 rounded flex flex-col items-center justify-center transition-all ${
+              activeView === 'ask'
+                ? 'bg-[#111622] text-[#F2B84B] border-l-2 border-[#F2B84B]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+            title="Ask AI Intelligence"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="text-[8px] font-mono font-bold mt-0.5">ASK</span>
+          </button>
+        </nav>
+
+        {/* Map & Timeline Main Stage */}
+        <main className="flex-1 flex flex-col relative overflow-hidden bg-[#05070A]">
           <div className="flex-1 relative overflow-hidden">
             <MapPane
-              selectedAoiId={selectedAoiId}
               aoiCoords={aoiCoords}
-              aoiBounds={aoiBounds}
               aoiName={currentAoi?.name ?? 'Jewar Airport'}
               evidenceList={visibleEvidenceList}
               selectedEvidenceId={selectedEvidence?.change_object_id ?? null}
@@ -291,18 +262,10 @@ export const App: React.FC = () => {
               onSelectBeforeDate={setBeforeDate}
               onSelectAfterDate={setAfterDate}
               onSwapDates={handleSwapDates}
-              presetTarget={presetTarget}
-              onPresetConsumed={() => setPresetTarget(null)}
             />
-
-            {activeView === 'ask' && (
-              <div className="absolute left-6 top-6 z-[500] drop-shadow-2xl">
-                <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
-              </div>
-            )}
           </div>
 
-          {/* SLOT-30: Timeline Strip */}
+          {/* Bottom Timeline Scrubber */}
           <TimelineSlider
             scenes={scenes}
             beforeDate={beforeDate}
@@ -312,27 +275,26 @@ export const App: React.FC = () => {
           />
         </main>
 
-        {/* SLOT-20: Dossier */}
+        {/* Right Evidence Inspection Drawer */}
         {selectedEvidence && (
           <EvidenceDrawer
             evidence={selectedEvidence}
             onClose={() => setSelectedEvidence(null)}
-            onConfirm={handleConfirmEvidence}
-            onReject={handleRejectEvidence}
+            onConfirm={(id) => {
+              setEvidenceList((prev) =>
+                prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
+              );
+            }}
+            onReject={(id) => {
+              setEvidenceList((prev) =>
+                prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
+              );
+            }}
           />
         )}
       </div>
 
-      {/* SLOT-40: Status Line */}
-      <StatusLine
-        jobState={isAnalyzing ? 'ANALYSING' : 'READY'}
-        lastAction={selectedEvidence ? `Inspecting ${selectedEvidence.change_type}` : 'AOI loaded'}
-      />
-
-      {/* M9: Ambient Scanline */}
-      <AmbientScanline />
-
-      {/* Modals */}
+      {/* Review Queue Modal */}
       {activeView === 'review' && (
         <ReviewQueueModal
           evidenceList={visibleEvidenceList}
@@ -340,20 +302,43 @@ export const App: React.FC = () => {
             setSelectedEvidence(ev);
             setActiveView('map');
           }}
-          onConfirm={handleConfirmEvidence}
-          onReject={handleRejectEvidence}
+          onConfirm={(id) => {
+            setEvidenceList((prev) =>
+              prev.map((e) => (e.change_object_id === id ? { ...e, status: 'confirmed' } : e))
+            );
+          }}
+          onReject={(id) => {
+            setEvidenceList((prev) =>
+              prev.map((e) => (e.change_object_id === id ? { ...e, status: 'rejected' } : e))
+            );
+          }}
           onClose={() => setActiveView('map')}
         />
       )}
 
+      {/* Ask AI Centered Modal */}
+      {activeView === 'ask' && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none">
+          <AskPanel aoiId={selectedAoiId} onClose={() => setActiveView('map')} />
+        </div>
+      )}
+
+      {/* Single-Image Upload Modal */}
       {activeView === 'upload' && (
         <UploadModal
           detectionSet={detectionSet}
           onClose={() => setActiveView('map')}
-          onLoadSample={async (type) => {
-            const res = await getDetections(type);
-            if (res.kind === 'ok') setDetectionSet(res.data);
+          onDetectionSetUpdate={(newSet) => {
+            setDetectionSet(newSet);
           }}
+        />
+      )}
+
+      {/* OpenCLIP Semantic Vector Search Modal */}
+      {activeView === 'search' && (
+        <SearchModal
+          aoiId={selectedAoiId}
+          onClose={() => setActiveView('map')}
         />
       )}
     </div>

@@ -1,275 +1,289 @@
-import React, { useRef, useState } from 'react';
-import { X, UploadCloud, ShieldAlert, Layers, FileUp } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  X,
+  UploadCloud,
+  ShieldAlert,
+  Layers,
+  FileImage,
+  Loader2,
+  AlertTriangle,
+  Sparkles,
+  Maximize2,
+} from 'lucide-react';
 import type { DetectionSet } from '../lib/types';
-import { COPY } from '../lib/copy';
-import { getClassColor } from '../lib/palette';
-import uploadGeoreferencedFixture from '../fixtures/upload_georeferenced.json';
+import { uploadImageFile, getDetections } from '../lib/api';
+import { UploadTelemetryTab } from './UploadTelemetryTab';
+import { UploadRejectionsTab } from './UploadRejectionsTab';
+import { UploadCanvasTab } from './UploadCanvasTab';
+import { UploadStart } from './UploadStart';
 
 interface UploadModalProps {
-  detectionSet?: DetectionSet | null;
+  detectionSet: DetectionSet | null;
   onClose: () => void;
-  onLoadSample: (type: 'georeferenced' | 'visual_only' | 'unknown_gsd') => void;
+  onDetectionSetUpdate?: (newSet: DetectionSet) => void;
 }
 
-/**
- * UploadModal — Satellite Image Inspector with Console Treatment
- */
 export const UploadModal: React.FC<UploadModalProps> = ({
   detectionSet,
   onClose,
-  onLoadSample,
+  onDetectionSetUpdate,
 }) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [customGsd, setCustomGsd] = useState<string>('0.5');
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'visual' | 'telemetry' | 'rejections'>('visual');
+  const [showAnnotated, setShowAnnotated] = useState<boolean>(true);
+  const [imageLoadFailed, setImageLoadFailed] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [customFile, setCustomFile] = useState<string | null>(null);
 
-  const currentSet = detectionSet || (uploadGeoreferencedFixture as unknown as DetectionSet);
-  const { upload, coverage, rejections } = currentSet;
-  const uploadId = upload.id || '';
-  const isVisualOnly = uploadId.includes('visual_only');
-  const isUnknownGsd = uploadId.includes('unknown_gsd');
-  const isJewar = !isVisualOnly && !isUnknownGsd;
+  useEffect(() => {
+    setImageLoadFailed(false);
+  }, [detectionSet?.upload.id, showAnnotated]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setCustomFile(file.name);
-      onLoadSample('georeferenced');
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+      setUploadError(null);
     }
   };
 
+  const handleRunAiAnalysis = async () => {
+    if (!selectedFile) return;
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const gsdVal = customGsd ? parseFloat(customGsd) : undefined;
+      const uploadRes = await uploadImageFile(selectedFile, selectedFile.name, gsdVal);
+
+      if (uploadRes.kind !== 'ok') {
+        const errMsg = 'message' in uploadRes ? uploadRes.message : 'Upload failed';
+        setUploadError(errMsg);
+        setIsUploading(false);
+        return;
+      }
+
+      // Fetch dynamically computed detections
+      const detRes = await getDetections(uploadRes.data.id, false);
+      if (detRes.kind === 'ok') {
+        if (onDetectionSetUpdate) {
+          onDetectionSetUpdate(detRes.data);
+        }
+      } else if (detRes.kind === 'error') {
+        setUploadError(`${detRes.code}: ${detRes.message}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      setUploadError(msg);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  if (!detectionSet) return <UploadStart onClose={onClose} onComplete={value => onDetectionSetUpdate?.(value)} />;
+  const { upload, coverage, rejections, counts } = detectionSet;
+  const objectDetections = detectionSet.detections.filter((d) => d.kind === 'box');
+  const rawOverviewUrl = upload.overview_url || `/api/v1/uploads/${upload.id}/overview`;
+  const cacheKey = (detectionSet as any)?.stats ? `${(detectionSet as any).stats.total_objects}_${(detectionSet as any).stats.total_area_m2}` : upload.checksum_sha256 || 'v1';
+  const annotatedImageUrl = `${(detectionSet as any).annotated_url || `/api/v1/uploads/${upload.id}/annotated`}?v=${encodeURIComponent(cacheKey)}`;
+  const explanationText = (detectionSet as any).explanation;
+
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 select-none animate-fadeIn">
-      <div
-        className="bg-[var(--panel)] border border-[var(--line-strong)] shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden text-[var(--ink)] corner-ticks"
-        style={{ borderRadius: 'var(--r-sm)' }}
-      >
-        {/* Header */}
-        <div
-          className="p-4 bg-[var(--panel2)] border-b border-[var(--line)] flex items-center justify-between"
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="dossier-bar inline-block" />
-            <div
-              className="p-1.5 border border-[rgba(240,180,95,0.3)] bg-[var(--amber-wash)] text-[var(--amber)]"
-              style={{ borderRadius: 'var(--r-sm)' }}
-            >
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md select-none font-mono">
+      <div className="bg-[#0E131F] border border-[#2A3447] rounded-lg shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden text-slate-200 tactical-corners">
+        {/* Top Tactical Header */}
+        <div className="px-4 py-3 bg-[#0B0D10] border-b border-[#1E2638] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 rounded bg-[#F2B84B]/15 text-[#F2B84B] border border-[#F2B84B]/30">
               <UploadCloud className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider font-mono text-[var(--ink)]">
-                Satellite Photo Inspector
-              </h2>
-              <p className="text-[11px] text-[var(--ink3)] font-mono">
-                Inspect land cover and detect building complexes in uploaded satellite images.
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                  CHAKSHU AI/ML SATELLITE INSPECTOR
+                </h2>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#24C6C8]/15 text-[#24C6C8] border border-[#24C6C8]/40">
+                  DYNAMIC ENGINE
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-sans">
+                Resolution-Gated Multi-Track Detection, Spectral Land-Cover & Reasoning
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1 text-xs font-mono font-medium flex items-center gap-1.5 bg-[var(--well)] hover:bg-[var(--line)] text-[var(--amber)] border border-[var(--amber)]/40 transition-colors"
-              style={{ borderRadius: 'var(--r-sm)' }}
-              title="Upload custom GeoTIFF or satellite image"
-            >
-              <FileUp className="w-3.5 h-3.5" />
-              <span>UPLOAD FILE</span>
-            </button>
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Live File Upload Banner */}
+        <div className="px-3.5 py-2 bg-[#070A10] border-b border-[#1E2638] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
             <input
-              ref={fileInputRef}
               type="file"
-              accept=".tif,.tiff,.png,.jpg,.jpeg,.geojson"
+              id="upload-file-input"
+              ref={fileInputRef}
               onChange={handleFileChange}
+              accept=".tif,.tiff,.png,.jpg,.jpeg"
               className="hidden"
             />
             <button
-              onClick={onClose}
-              className="p-1.5 text-[var(--ink3)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
-              style={{ borderRadius: 'var(--r-sm)' }}
+              id="choose-image-btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="px-3 py-1.5 rounded bg-[#161D2B] hover:bg-[#1C2436] text-slate-200 border border-[#2A3447] hover:border-[#F2B84B]/50 flex items-center gap-1.5 text-xs transition-all font-mono"
             >
-              <X className="w-4 h-4" />
+              <FileImage className="w-3.5 h-3.5 text-[#24C6C8]" />
+              <span className="truncate max-w-[220px]">
+                {selectedFile ? selectedFile.name : 'Choose Image (GeoTIFF / PNG / JPG)'}
+              </span>
+            </button>
+
+            <div className="flex items-center gap-1 bg-[#111827] border border-[#2A3447] px-2 py-1 rounded text-[11px] font-mono">
+              <span className="text-slate-400">GSD:</span>
+              <input
+                type="number"
+                step="0.1"
+                min="0.1"
+                max="100"
+                value={customGsd}
+                onChange={(e) => setCustomGsd(e.target.value)}
+                placeholder="0.5"
+                className="w-12 bg-transparent text-[#F2B84B] font-bold focus:outline-none text-right"
+              />
+              <span className="text-slate-500">m/px</span>
+            </div>
+
+            <button
+              id="run-pipeline-btn"
+              onClick={handleRunAiAnalysis}
+              disabled={!selectedFile || isUploading}
+              className="px-3.5 py-1.5 rounded bg-[#F2B84B] hover:bg-[#f5c76d] disabled:opacity-40 text-black font-extrabold uppercase tracking-wider text-xs flex items-center gap-1.5 shadow-[0_0_12px_rgba(242,184,75,0.35)] transition-all active:translate-y-0.5"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>ANALYZING IMAGE...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>RUN DETECTION PIPELINE</span>
+                </>
+              )}
             </button>
           </div>
         </div>
 
-        {/* Sample Switcher Buttons */}
-        <div
-          className="p-2.5 bg-[var(--well)] border-b border-[var(--line)] flex items-center gap-2 text-xs font-mono flex-wrap"
-        >
-          <span className="text-[var(--ink3)] text-[10px] uppercase tracking-wider">Feeds:</span>
+        {uploadError && (
+          <div className="px-4 py-2 bg-rose-950/40 border-b border-rose-800/60 flex items-center gap-2 text-xs text-rose-300 font-mono">
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+        )}
+
+        {/* Tactical Tabs */}
+        <div className="flex border-b border-[#1E2638] bg-[#090D13] text-xs font-mono">
           <button
-            onClick={() => { setCustomFile(null); onLoadSample('georeferenced'); }}
-            className={`px-2.5 py-1 text-xs font-mono transition-colors ${
-              isJewar && !customFile
-                ? 'bg-[var(--amber)] text-black font-semibold'
-                : 'bg-[var(--panel2)] hover:bg-[var(--line)] text-[var(--ink2)] hover:text-[var(--ink)] border border-[var(--line)]'
+            onClick={() => setActiveTab('visual')}
+            className={`px-4 py-2 font-bold uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all ${
+              activeTab === 'visual'
+                ? 'border-[#F2B84B] text-[#F2B84B] bg-[#F2B84B]/10'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
-            style={{ borderRadius: 'var(--r-sm)' }}
           >
-            Jewar Airport (10m GSD)
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span>DETECTION CANVAS ({objectDetections.length} OBJECTS)</span>
           </button>
           <button
-            onClick={() => { setCustomFile(null); onLoadSample('visual_only'); }}
-            className={`px-2.5 py-1 text-xs font-mono transition-colors ${
-              isVisualOnly
-                ? 'bg-[var(--amber)] text-black font-semibold'
-                : 'bg-[var(--panel2)] hover:bg-[var(--line)] text-[var(--ink2)] hover:text-[var(--ink)] border border-[var(--line)]'
+            onClick={() => setActiveTab('telemetry')}
+            className={`px-4 py-2 font-bold uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all ${
+              activeTab === 'telemetry'
+                ? 'border-[#F2B84B] text-[#F2B84B] bg-[#F2B84B]/10'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
-            style={{ borderRadius: 'var(--r-sm)' }}
           >
-            Photo Without GPS Data
+            <Layers className="w-3.5 h-3.5" />
+            <span>LAND-COVER BREAKDOWN</span>
           </button>
           <button
-            onClick={() => { setCustomFile(null); onLoadSample('unknown_gsd'); }}
-            className={`px-2.5 py-1 text-xs font-mono transition-colors ${
-              isUnknownGsd
-                ? 'bg-[var(--amber)] text-black font-semibold'
-                : 'bg-[var(--panel2)] hover:bg-[var(--line)] text-[var(--ink2)] hover:text-[var(--ink)] border border-[var(--line)]'
+            onClick={() => setActiveTab('rejections')}
+            className={`px-4 py-2 font-bold uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all ${
+              activeTab === 'rejections'
+                ? 'border-[#F2B84B] text-[#F2B84B] bg-[#F2B84B]/10'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
-            style={{ borderRadius: 'var(--r-sm)' }}
           >
-            Unknown Image Scale
+            <ShieldAlert className="w-3.5 h-3.5 text-[#F2B84B]" />
+            <span>RESOLUTION GATE ({rejections?.count ?? 0})</span>
           </button>
-          {customFile && (
-            <span className="px-2 py-0.5 bg-[var(--teal)]/20 border border-[var(--teal)] text-[var(--teal)] text-[11px]">
-              CUSTOM: {customFile}
-            </span>
-          )}
         </div>
 
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-xs">
-          {/* Metadata Card */}
-          <div
-            className="bg-[var(--well)] border border-[var(--line)] p-3.5 grid grid-cols-2 sm:grid-cols-4 gap-3 corner-ticks"
-            style={{ borderRadius: 'var(--r-sm)' }}
-          >
+        {/* Tab Contents */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs bg-[#070A10]">
+          {/* Metadata Strip */}
+          <div className="bg-[#0B0D10] border border-[#1E2638] p-3 rounded grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <span className="text-[var(--ink3)] text-[10px] block uppercase">File Name</span>
-              <span className="text-[var(--ink)] font-semibold truncate block">{upload.filename}</span>
+              <span className="text-slate-500 text-[10px] block uppercase tracking-wider">FILE NAME</span>
+              <span className="text-white font-semibold truncate block" title={upload.filename}>
+                {upload.filename}
+              </span>
             </div>
             <div>
-              <span className="text-[var(--ink3)] text-[10px] block uppercase">Image Detail (GSD)</span>
-              <span className="text-[var(--amber)] font-bold tabular-nums">
+              <span className="text-slate-500 text-[10px] block uppercase tracking-wider">RESOLUTION (GSD)</span>
+              <span className="text-[#24C6C8] font-bold tabular-nums">
                 {upload.gsd_m ? `${upload.gsd_m} m/pixel` : 'Unknown'}
               </span>
             </div>
             <div>
-              <span className="text-[var(--ink3)] text-[10px] block uppercase">Capability Level</span>
-              <span className="text-[var(--teal)] font-bold">{upload.capability_tier}</span>
+              <span className="text-slate-500 text-[10px] block uppercase tracking-wider">TIER</span>
+              <span className="text-[#F2B84B] font-bold">{upload.capability_tier}</span>
             </div>
             <div>
-              <span className="text-[var(--ink3)] text-[10px] block uppercase">GPS Coordinate Zone</span>
-              <span className="text-[var(--ink2)] tabular-nums">{upload.crs_epsg ? `EPSG:${upload.crs_epsg}` : 'No GPS'}</span>
+              <span className="text-slate-500 text-[10px] block uppercase tracking-wider">COORDINATES</span>
+              <span className="text-slate-300 tabular-nums">
+                {upload.bounds_4326 ? 'Georeferenced (WGS84)' : 'Visual-Only'}
+              </span>
             </div>
           </div>
 
-          {/* Resolution Gate Notice / Refusal */}
-          <div
-            className="bg-[var(--amber-wash)] border border-[rgba(240,180,95,0.3)] p-3.5 space-y-1.5 font-sans"
-            style={{ borderRadius: 'var(--r-sm)' }}
-          >
-            <div className="flex items-center gap-2 text-[var(--amber)] font-bold text-xs font-mono">
-              <ShieldAlert className="w-4 h-4 text-[var(--amber)]" />
-              <span>{COPY.refusalInsufficientResolution}</span>
-            </div>
-            <p className="text-xs text-[var(--ink2)] leading-relaxed">
-              {upload.capability_notice || COPY.refusal10mVehicles}
-            </p>
-          </div>
-
-          {/* Land-cover Coverage Summary Bar */}
-          {coverage && (
-            <div
-              className="bg-[var(--panel2)] border border-[var(--line)] p-3.5 space-y-2 corner-ticks"
-              style={{ borderRadius: 'var(--r-sm)' }}
-            >
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[var(--ink)] font-semibold flex items-center gap-1.5 font-mono">
-                  <span className="dossier-bar inline-block" />
-                  <Layers className="w-3.5 h-3.5 text-[var(--amber)]" />
-                  LAND-COVER PERCENTAGE BREAKDOWN
-                </span>
-                <span className="text-[var(--ink3)] text-[10px] font-mono">
-                  TOTAL: 100% COMPUTED
-                </span>
-              </div>
-
-              {/* Progress Bar Stack */}
-              <div
-                className="w-full h-3 bg-[var(--well)] overflow-hidden flex border border-[var(--line)]"
-                style={{ borderRadius: 'var(--r-sm)' }}
-              >
-                {coverage.by_class.map((item) => (
-                  <div
-                    key={item.label}
-                    style={{
-                      width: `${item.pct}%`,
-                      backgroundColor: getClassColor(item.label),
-                    }}
-                    title={`${item.label}: ${item.pct.toFixed(1)}%`}
-                  />
-                ))}
-              </div>
-
-              {/* Legend Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[11px] font-mono">
-                {coverage.by_class.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between text-[var(--ink2)]">
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className="w-2.5 h-2.5 rounded-sm"
-                        style={{ backgroundColor: getClassColor(item.label) }}
-                      />
-                      <span className="capitalize">{item.label}</span>
-                    </span>
-                    <span className="font-semibold tabular-nums text-[var(--ink)]">
-                      {item.pct.toFixed(1)}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {activeTab === 'visual' && (
+            <UploadCanvasTab
+              upload={upload}
+              detectionSet={detectionSet}
+              showAnnotated={showAnnotated}
+              setShowAnnotated={setShowAnnotated}
+              annotatedImageUrl={annotatedImageUrl}
+              rawOverviewUrl={rawOverviewUrl}
+              imageLoadFailed={imageLoadFailed}
+              setImageLoadFailed={setImageLoadFailed}
+              explanationText={explanationText}
+            />
           )}
 
-          {/* Rejections Log */}
-          {rejections && rejections.count > 0 && (
-            <div
-              className="bg-[var(--panel2)] border border-[rgba(229,72,77,0.3)] p-3 space-y-1.5"
-              style={{ borderRadius: 'var(--r-sm)' }}
-            >
-              <div className="flex justify-between text-xs text-[var(--color-rejected-text)] font-semibold font-mono">
-                <span className="uppercase tracking-wider">Objects Excluded from Counting</span>
-                <span className="tabular-nums">{rejections.count} items filtered</span>
-              </div>
-              <div className="space-y-1 text-[11px] text-[var(--ink3)] font-sans">
-                {rejections.detail.map((rej, i) => (
-                  <div
-                    key={i}
-                    className="flex items-start gap-2 bg-[var(--well)] p-2 border border-[var(--line)]"
-                    style={{ borderRadius: 'var(--r-sm)' }}
-                  >
-                    <span className="text-[var(--color-rejected-text)] font-bold uppercase font-mono">{rej.label_raw}:</span>
-                    <span className="text-[var(--ink2)]">{rej.detail}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {activeTab === 'telemetry' && (
+            <UploadTelemetryTab coverage={coverage} counts={counts} stats={detectionSet.stats} />
+          )}
+
+          {activeTab === 'rejections' && (
+            <UploadRejectionsTab upload={upload} rejections={rejections} />
           )}
         </div>
 
-        {/* Footer */}
-        <div
-          className="p-3 bg-[var(--panel2)] border-t border-[var(--line)] flex items-center justify-between text-xs"
-        >
-          <span className="text-[var(--ink3)] font-mono text-[10px]">
-            SECURITY CHECKSUM: {upload.checksum_sha256.substring(0, 24)}...
+        {/* Tactical Footer */}
+        <div className="px-4 py-2.5 bg-[#0B0D10] border-t border-[#1E2638] flex items-center justify-between text-xs font-mono">
+          <span className="text-slate-500 text-[10px]">
+            SHA-256: {upload.checksum_sha256 ? `${upload.checksum_sha256.substring(0, 24)}...` : 'N/A'}
           </span>
           <button
             onClick={onClose}
-            className="btn-primary"
-            style={{ borderRadius: 'var(--r-sm)', padding: '6px 16px' }}
+            className="px-4 py-1.5 rounded bg-[#161D2B] hover:bg-[#F2B84B]/20 hover:text-[#F2B84B] hover:border-[#F2B84B]/50 text-slate-200 border border-[#2A3447] font-bold uppercase tracking-wider text-xs transition-all"
           >
-            DONE
+            CLOSE INSPECTOR
           </button>
         </div>
       </div>
