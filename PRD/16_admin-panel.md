@@ -36,7 +36,7 @@ The admin panel is a console screen, not a new design. Same slots (`ui-context.m
 
 Rail order (SLOT-05): `OVERVIEW` `VISITORS` `LIVE` `OPERATIONS` `PAGES` `AUDIT`, then divider, then `SETTINGS` bottom-anchored. Shortcuts `G` then `1`–`6`.
 
-**`DEMO DATA` badge:** if any row in `event` came from `scripts/seed_telemetry.py`, SLOT-01 shows an amber chip `DEMO DATA` with a tooltip `SEEDED FIXTURE EVENTS · NOT REAL TRAFFIC` (§7). This is non-negotiable: showing fabricated traffic to a judge without labelling it is the same class of failure as fabricating a benchmark.
+**`DEMO DATA` badge:** if any row in `event` came from `scripts/seed_telemetry.py`, SLOT-01 shows an signal chip `DEMO DATA` with a tooltip `SEEDED FIXTURE EVENTS · NOT REAL TRAFFIC` (§7). This is non-negotiable: showing fabricated traffic to a judge without labelling it is the same class of failure as fabricating a benchmark.
 
 ---
 
@@ -44,11 +44,11 @@ Rail order (SLOT-05): `OVERVIEW` `VISITORS` `LIVE` `OPERATIONS` `PAGES` `AUDIT`,
 
 | # | Control | Position | Variant | Notes |
 |---|---|---|---|---|
-| 01.1 | Lockup + `ADMIN` tag | left | static | tag in `--danger`? No — `--amber`, `--t-tag` |
+| 01.1 | Lockup + `ADMIN` tag | left | static | tag in `--danger`? No — `--signal`, `--t-tag` |
 | 01.2 | `RANGE ▾` | left, gap `--s-3` | `select` | `LAST 24 H` `7 D` `30 D` `ALL` `CUSTOM…`; default `7 D` |
 | 01.3 | Search | gap `--s-3` | `search` 240 px | matches session label, email, path, event name |
 | 01.4 | spacer | — | — | |
-| 01.5 | `stat` × 3 | right group | `stat` | `VISITORS` / `VISITS` / `ACTIVE NOW` (teal dot if > 0) |
+| 01.5 | `stat` × 3 | right group | `stat` | `VISITORS` / `VISITS` / `ACTIVE NOW` (ion dot if > 0) |
 | 01.6 | Account chip | far right | `chip` | must show the admin's name, not `GUEST-…` |
 | 02.1–02.5 | Filters | left, gap `--s-2` | `select` / `chip-toggle` | device, country, operation, entry path, `INCLUDE FILTERED BOTS` toggle (default off) |
 | 02.6 | `RESET` | right of filters | `ghost` | clears 02.1–02.5 only, never the range |
@@ -81,9 +81,9 @@ Four zones, fixed positions:
 | `DEVICE` | 200 | `DESKTOP · CHROME 141 · WINDOWS` | yes |
 | `LOCATION` | 160 | `Delhi, IN` / `LOCAL` / `UNKNOWN` | yes |
 | `ENTRY` | 140 | path, mono, truncated left | — |
-| `STATE` | 90 | `ACTIVE` teal · `IDLE` grey · `SIGNED UP` amber | yes |
+| `STATE` | 90 | `ACTIVE` ion · `IDLE` grey · `SIGNED UP` signal | yes |
 
-Row height 36, hover per M6 (2 px shift + amber bar), click selects → SLOT-20 detail. Cursor pagination, 50 rows, `LOAD MORE` secondary at the table footer (never infinite scroll in a data table — it destroys the scrollbar as a position indicator). Empty state: `NO VISITORS IN THIS RANGE · WIDEN THE RANGE OR SHARE THE LINK`.
+Row height 36, hover per M6 (2 px shift + signal bar), click selects → SLOT-20 detail. Cursor pagination, 50 rows, `LOAD MORE` secondary at the table footer (never infinite scroll in a data table — it destroys the scrollbar as a position indicator). Empty state: `NO VISITORS IN THIS RANGE · WIDEN THE RANGE OR SHARE THE LINK`.
 
 ### D3.3 `LIVE`
 Auto-refresh every 10 s (poll, no websockets — a websocket adds a component for zero benefit at this scale). Shows: `ACTIVE NOW` count in `--t-figure`, the last 20 events as a monospace feed (`09:58:12  GUEST-7F3A  op.result  change_detect  ok  8.4s`), and a 60-bucket activity strip. A `PAUSE` toggle (secondary) stops polling; it defaults to paused when the tab is hidden. SLOT-00 marquee mirrors this feed.
@@ -119,8 +119,8 @@ Selecting a row opens the visitor dossier. Same slot order as the console dossie
 
 | Component | Props | Renders |
 |---|---|---|
-| `Sparkline` | `values:number[]`, `w`, `h` | polyline, 1.5 px `--amber`, last point dot, `--amber-wash` area fill at 12% |
-| `BarRow` | `label`, `value`, `max`, `meta?` | label 120 px, bar flex (`--amber` 80% height 8 px, `--panel-2` track), value right tabular |
+| `Sparkline` | `values:number[]`, `w`, `h` | polyline, 1.5 px `--signal`, last point dot, `--signal-wash` area fill at 12% |
+| `BarRow` | `label`, `value`, `max`, `meta?` | label 120 px, bar flex (`--signal` 80% height 8 px, `--panel-2` track), value right tabular |
 | `Split` | `parts:{label,value}[]` | stacked single-row bar with a legend list beneath; segments in the §2.5 data palette |
 
 No animation on data marks except a 220 ms width transition on first paint. No tooltips that hide the number — the number is always printed. **Every chart has a table equivalent** (either visible or behind a `TABLE` toggle): a chart that cannot be read as numbers is decoration.
@@ -164,8 +164,8 @@ At a finale nobody will have used the link for long, and an empty analytics pane
 | Situation | Behaviour |
 |---|---|
 | `event` empty | Every view renders its empty state with a real instruction (`SHARE THE LINK · /`), not a blank table |
-| Range contains 100 k+ events | Aggregates still return < 800 ms (indexes); `SLOT-40` shows `query_ms`; a `SLOW QUERY` amber chip appears over 1 s |
-| Ingest down | Panel shows `INGEST OFFLINE · LAST EVENT 09:41` in SLOT-00, amber |
+| Range contains 100 k+ events | Aggregates still return < 800 ms (indexes); `SLOT-40` shows `query_ms`; a `SLOW QUERY` signal chip appears over 1 s |
+| Ingest down | Panel shows `INGEST OFFLINE · LAST EVENT 09:41` in SLOT-00, signal |
 | GeoLite2 missing | `LOCATION` column shows `UNKNOWN` and SLOT-40 shows `GEOIP DB NOT INSTALLED` with the script name |
 | Non-admin hits `/admin` | 403 page: `ADMIN ONLY` + `RETURN TO CONSOLE`. Never a redirect loop, never a blank screen |
 | No admin configured | `NO ADMIN CONFIGURED · RUN scripts/make_admin.py` (S4) |

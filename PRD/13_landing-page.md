@@ -26,12 +26,12 @@ Fixed order. Sections may be cut from the bottom up if time runs out — never r
 ```
 [lockup चक्षु CHAKSHU]······[PLATFORM][HOW IT WORKS][EVIDENCE][OFFLINE]······[SIGN IN ghost][OPEN CONSOLE primary]
 ```
-Left pad 24, link gap 24, right gap 12. Below 900 px the four links collapse into a `MENU` ghost button opening a full-width dropdown. `OPEN CONSOLE` is the page's **only** primary button while the nav is visible (the hero CTA is `bar`-variant amber, so there is still exactly one filled amber control — enforce with the same `primaryOwner` mechanism as the console).
+Left pad 24, link gap 24, right gap 12. Below 900 px the four links collapse into a `MENU` ghost button opening a full-width dropdown. `OPEN CONSOLE` is the page's **only** primary button while the nav is visible (the hero CTA is `bar`-variant signal, so there is still exactly one filled signal control — enforce with the same `primaryOwner` mechanism as the console).
 
 ### W2.1 · HERO — min-height 88 vh, two columns 5/7 above 1024 px
 Left column, top-aligned at 22 vh:
-- Eyebrow, `--t-tag` amber: `SIH 2026 · PS SIH26227 (MoD) + SIH26167 (ISRO/SAC)`
-- H1, 48/52 cond 700: **`THE EYE THAT NEVER BLINKS`**, second line in `--amber`: **`FROM ORBIT TO EVIDENCE.`**
+- Eyebrow, `--t-tag` signal: `SIH 2026 · PS SIH26227 (MoD) + SIH26167 (ISRO/SAC)`
+- H1, 48/52 cond 700: **`THE EYE THAT NEVER BLINKS`**, second line in `--signal`: **`FROM ORBIT TO EVIDENCE.`**
 - Sub, 17/26 `--ink-2`, max 52 ch: `Chakshu turns multi-year satellite imagery into measured, auditable change evidence — and answers questions about it in plain language. Fully on-prem. Runs with the network disabled.`
 - CTAs, gap 12: **`OPEN THE CONSOLE`** (`bar`, 44 px, `→`) · **`SEE HOW IT WORKS`** (`secondary`, 44 px, scrolls to W2.3)
 - Trust row, `--t-tag` `--ink-3`, gap 16: `NO CLOUD` · `NO THIRD-PARTY TRACKERS` · `MODEL LICENCES DECLARED` · `CPU ONLY`
@@ -45,7 +45,7 @@ A single slow marquee (M8) of *facts*, not slogans, each separated by `//`:
 `10 m Sentinel-2 archive // change types: appear · disappear · expand · contract // suppression reasons shown, never hidden // vector search in Postgres, no extra database // GeoTIFF + COG ingestion // runs with network disabled //`
 
 ### W2.3 · HOW IT WORKS — 5 steps, horizontal above 1024 px, vertical below
-Numbered `01`–`05` in `--t-ghost`-style amber-deep numerals, each with an inline SVG icon, a cond title and one `--ink-2` sentence:
+Numbered `01`–`05` in `--t-ghost`-style signal-deep numerals, each with an inline SVG icon, a cond title and one `--ink-2` sentence:
 
 1. **INGEST** — `GeoTIFF and COG scenes enter the archive; each gets a checksum and a provenance record.`
 2. **GATE** — `The Resolution Gate measures actual ground sampling distance and decides what the system is allowed to claim about this image.`
@@ -56,7 +56,7 @@ Numbered `01`–`05` in `--t-ghost`-style amber-deep numerals, each with an inli
 Below the steps, the full pipeline diagram (`brand/chakshu-pipeline-slide.png`, or inline SVG if time permits), 1 px `--line` frame, `--t-tag` caption `ARCHITECTURE · FULL VERSION IN THE SUBMISSION`.
 
 ### W2.4 · FEATURES — 6 cards, 3 × 2 above 1024 px, 2 × 3 at 768, 1 column below
-Card: `--panel` fill, 1 px `--line`, `--r-panel`, padding 20, corner ticks on hover only, hover = border `--amber` at 40% + 2 px lift over 160 ms. Icon 20 px amber, title cond 17, body 14/21 `--ink-2` (max 3 lines), footer link `SEE IT →` in `--t-tag` that deep-links into the console with a preset:
+Card: `--panel` fill, 1 px `--line`, `--r-panel`, padding 20, corner ticks on hover only, hover = border `--signal` at 40% + 2 px lift over 160 ms. Icon 20 px signal, title cond 17, body 14/21 `--ink-2` (max 3 lines), footer link `SEE IT →` in `--t-tag` that deep-links into the console with a preset:
 
 | Card | Title | Deep link |
 |---|---|---|
@@ -72,14 +72,14 @@ Card: `--panel` fill, 1 px `--line`, `--r-panel`, padding 20, corner ticks on ho
 ### W2.5 · THE DEMO — full-bleed, `--well` background, min-height 70 vh
 The interactive swipe: the real before/after component at full width with the draggable handle (SLOT-18 behaviour) and hover lock-on. Left overlay panel, 380 px, `--panel` at 92%:
 - Title `TRY IT` (`--t-h1`)
-- Three instructions in `--t-tag` rows with amber numerals: `01 DRAG THE HANDLE` · `02 HOVER A CHANGE` · `03 READ THE MEASUREMENT`
+- Three instructions in `--t-tag` rows with signal numerals: `01 DRAG THE HANDLE` · `02 HOVER A CHANGE` · `03 READ THE MEASUREMENT`
 - Below: the live readout of whatever the visitor is hovering (area, type, confidence, onset) — the same dossier tag data.
 - Footnote, 12 px `--ink-3`: `Fixture data from the demo AOI. No network calls.`
 
 ### W2.6 · EVIDENCE — a table, not a chart wall
 Two columns: `WHAT WE MEASURED` and `VALUE`, plus `SOURCE`. Rows come **only** from `progress-tracker.md` §I — e.g. detection F1 on the demo AOI, suppression rate, mean analysis time, index build time, incremental ingest time. Every row's `SOURCE` cell names the eval script (`scripts/bench.py`) and the report file. If a metric was not measured, the row is absent — **no estimates, no "≈", no "expected"**.
 
-Beneath the table, one amber-wash panel: `WHAT WE DID NOT BUILD` listing the declared gaps verbatim from `project-overview.md` §3.2 (SAR processing, model training, 3D). Declaring gaps on the landing page is a credibility play with domain judges, not a weakness.
+Beneath the table, one signal-wash panel: `WHAT WE DID NOT BUILD` listing the declared gaps verbatim from `project-overview.md` §3.2 (SAR processing, model training, 3D). Declaring gaps on the landing page is a credibility play with domain judges, not a weakness.
 
 ### W2.7 · OFFLINE / SOVEREIGNTY — two columns
 Left: `RUNS WITH THE NETWORK DISABLED` and a checklist with green ticks: tiles served locally (PMTiles) · weights packaged with licence + origin · no external APIs at eval time · fonts and icons inline · GeoIP database bundled, no lookup service.
@@ -161,6 +161,6 @@ The landing page emits events per `tracking.md` §3. Exactly these, and no more:
 - [ ] `WHAT WE DID NOT BUILD` panel present with the declared gaps
 - [ ] Model BOM table renders from `/api/v1/meta/models`
 - [ ] `og.png` present; WhatsApp/LinkedIn preview verified
-- [ ] Exactly one filled amber primary visible at any scroll position
+- [ ] Exactly one filled signal primary visible at any scroll position
 - [ ] Responsive at 1440 / 1024 / 768 / 390 with screenshots committed
 - [ ] `prefers-reduced-motion` disables the marquee, the scan sweep and the auto-hover
