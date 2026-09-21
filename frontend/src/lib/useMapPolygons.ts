@@ -1,11 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react';
-import L from 'leaflet';
+import * as maplibregl from 'maplibre-gl';
 import type { Evidence } from './types';
 import { getClassColor } from './palette';
 import { checkLabelCollisions, type BBox } from './map-fx';
 
 interface UseMapPolygonsProps {
-  map: L.Map | null;
+  map: maplibregl.Map | null;
   evidenceList: Evidence[];
   selectedEvidenceId: string | null;
   onSelectEvidence: (evidence: Evidence) => void;
@@ -17,55 +17,12 @@ interface UseMapPolygonsProps {
   afterDate?: string;
 }
 
-/**
- * Styling per PRD 9 §5.1 & §2.5:
- * - Stroke at 100% 1.5 px + 1 px dark inner halo
- * - Fill 30%
- * - Track 3 dashed ('4, 4'), Tracks 1/2 solid
- * - Hover: stroke goes --amber-hot (#F5C15C) 2 px, fill 30% -> 45% (M3)
- */
-const getPolyStyle = (
-  isSelected: boolean,
-  color: string,
-  visible: boolean,
-  isBaselinePreExisting: boolean,
-  isTrack3: boolean = false
-): L.PathOptions => {
-  if (!visible) {
-    return { color: 'transparent', weight: 0, opacity: 0, fillColor: color, fillOpacity: 0 };
-  }
-  if (isSelected) {
-    return {
-      color: '#F5C15C', // --amber-hot
-      weight: 2.0,
-      opacity: 1.0,
-      fillColor: color,
-      fillOpacity: 0.45,
-      dashArray: isTrack3 ? '4, 4' : undefined,
-      className: 'poly-halo-dark',
-    };
-  }
-  if (isBaselinePreExisting) {
-    return {
-      color,
-      weight: 1.2,
-      opacity: 0.4,
-      fillColor: color,
-      fillOpacity: 0.08,
-      dashArray: '4, 6',
-      className: 'poly-halo-dark',
-    };
-  }
-  return {
-    color,
-    weight: 1.5,
-    opacity: 1.0,
-    fillColor: color,
-    fillOpacity: 0.30,
-    dashArray: isTrack3 ? '4, 4' : undefined,
-    className: 'poly-halo-dark',
-  };
-};
+const SOURCE_ID = 'evidence-source';
+const LAYER_HALO = 'evidence-halo';
+const LAYER_FILLS = 'evidence-fills';
+const LAYER_LINES_SOLID = 'evidence-lines-solid';
+const LAYER_LINES_DASHED = 'evidence-lines-dashed';
+const LAYER_DOTS = 'evidence-subpixel-dots';
 
 export function useMapPolygons({
   map,
@@ -79,12 +36,99 @@ export function useMapPolygons({
   beforeDate,
   afterDate: _afterDate,
 }: UseMapPolygonsProps) {
-  const geojsonLayerRef = useRef<L.GeoJSON | null>(null);
-  const haloLayerRef = useRef<L.GeoJSON | null>(null);
-  const subpixelMarkersRef = useRef<L.LayerGroup | null>(null);
-  const polygonLayersRef = useRef<Map<string, { layer: L.Path; color: string; evId: string; isTrack3: boolean }>>(new Map());
+  const hoveredIdRef = useRef<string | null>(null);
   const beforeDateRef = useRef(beforeDate);
   beforeDateRef.current = beforeDate;
+
+  // Build GeoJSON FeatureCollection from evidence list
+  const buildGeoJson = useCallback(() => {
+    const features: GeoJSON.Feature[] = [];
+
+    const sorted = [...evidenceList].sort(
+      (a, b) => (b.measurement.area_m2 || 0) - (a.measurement.area_m2 || 0)
+    );
+
+    sorted.forEach((ev) => {
+      if (ev.measurement.geom_4326) {
+        const facilityLabel =
+          ev.measurement.measured_by?.replace(/^Semantic vectorisation, UTM 43N:\s*/, '') ||
+          ev.measurement.area_label ||
+          ev.change_type;
+        const color = getClassColor(facilityLabel);
+        const onset = ev.temporal?.first_supported;
+        const isPreExisting = Boolean(beforeDateRef.current && onset && onset < beforeDateRef.current);
+        const isTrack3 = (ev.measurement.kind as string) === 'INFERRED' || ('track' in ev && ev.track === 'object_model');
+        const isSelected = ev.change_object_id === selectedEvidenceId;
+        const isHovered = ev.change_object_id === hoveredIdRef.current;
+
+        features.push({
+          type: 'Feature',
+          id: ev.change_object_id,
+          properties: {
+            change_object_id: ev.change_object_id,
+            change_type: ev.change_type,
+            facility_label: facilityLabel,
+            area_label: ev.measurement.area_label,
+            first_supported: ev.temporal?.first_supported,
+            color,
+            is_pre_existing: isPreExisting,
+            is_track3: isTrack3,
+            is_selected: isSelected,
+            is_hovered: isHovered,
+            area_m2: ev.measurement.area_m2 || 0,
+          },
+          geometry: ev.measurement.geom_4326 as GeoJSON.Geometry,
+        });
+      }
+    });
+
+    return {
+      type: 'FeatureCollection' as const,
+      features,
+    };
+  }, [evidenceList, selectedEvidenceId]);
+
+  // Compute container BBox from coordinates for M3 lock-on brackets
+  const computeContainerBBox = useCallback((ev: Evidence): BBox | null => {
+    if (!map) return null;
+    const geom = ev.measurement.geom_4326;
+    if (!geom) {
+      if (!ev.measurement.centroid) return null;
+      const pt = map.project([ev.measurement.centroid[0], ev.measurement.centroid[1]]);
+      return { minX: pt.x - 20, minY: pt.y - 20, maxX: pt.x + 20, maxY: pt.y + 20 };
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    const processCoord = (coord: number[]) => {
+      const c0 = coord[0];
+      const c1 = coord[1];
+      if (c0 !== undefined && c1 !== undefined) {
+        const pt = map.project([c0, c1]);
+        minX = Math.min(minX, pt.x);
+        minY = Math.min(minY, pt.y);
+        maxX = Math.max(maxX, pt.x);
+        maxY = Math.max(maxY, pt.y);
+      }
+    };
+
+    type NestedCoords = number[] | NestedCoords[];
+    const traverseCoords = (coords: NestedCoords) => {
+      if (typeof coords[0] === 'number') {
+        processCoord(coords as number[]);
+      } else {
+        (coords as NestedCoords[]).forEach((c) => traverseCoords(c));
+      }
+    };
+
+    traverseCoords(geom.coordinates);
+
+    if (!isFinite(minX)) return null;
+    return { minX, minY, maxX, maxY };
+  }, [map]);
 
   // Re-calculate screen-space label collision suppression (PRD 9 §5.1)
   const evaluateLabelCollisions = useCallback(() => {
@@ -98,13 +142,12 @@ export function useMapPolygons({
     evidenceList.forEach((ev) => {
       const centroid = ev.measurement.centroid;
       if (!centroid) return;
-      // centroid is [lng, lat]
-      const pt = map.latLngToContainerPoint([centroid[1], centroid[0]]);
+      const pt = map.project([centroid[0], centroid[1]]);
       labelItems.push({
         id: ev.change_object_id,
         x: pt.x,
         y: pt.y,
-        width: 140, // standard label footprint
+        width: 140,
         height: 36,
         priority: ev.measurement.area_m2 || 0,
       });
@@ -114,214 +157,207 @@ export function useMapPolygons({
     onLabelsCollisionChange?.(hiddenCount);
   }, [map, evidenceList, onLabelsCollisionChange]);
 
-  // Compute container BBox from a Leaflet layer for M3 lock-on brackets
-  const computeContainerBBox = useCallback((layer: L.Path): BBox | null => {
-    if (!map) return null;
-    const bounds = 'getBounds' in layer && typeof (layer as L.Polygon).getBounds === 'function'
-      ? (layer as L.Polygon).getBounds()
-      : null;
-    if (!bounds) return null;
-
-    const nw = map.latLngToContainerPoint(bounds.getNorthWest());
-    const se = map.latLngToContainerPoint(bounds.getSouthEast());
-
-    return {
-      minX: Math.min(nw.x, se.x),
-      minY: Math.min(nw.y, se.y),
-      maxX: Math.max(nw.x, se.x),
-      maxY: Math.max(nw.y, se.y),
-    };
-  }, [map]);
-
+  // Sync layers & data into MapLibre GL
   useEffect(() => {
     if (!map) return;
 
-    if (geojsonLayerRef.current) {
-      map.removeLayer(geojsonLayerRef.current);
-      geojsonLayerRef.current = null;
-    }
-    if (haloLayerRef.current) {
-      map.removeLayer(haloLayerRef.current);
-      haloLayerRef.current = null;
-    }
-    if (subpixelMarkersRef.current) {
-      map.removeLayer(subpixelMarkersRef.current);
-      subpixelMarkersRef.current = null;
-    }
-    polygonLayersRef.current.clear();
+    const setupLayers = () => {
+      const geojson = buildGeoJson();
 
-    const sorted = [...evidenceList].sort(
-      (a, b) => (b.measurement.area_m2 || 0) - (a.measurement.area_m2 || 0)
-    );
-
-    // Dark halo underlay layer (1px dark halo extends 1px on each side of 1.5px stroke: weight 3.5)
-    const haloGroup = L.geoJSON(undefined, {
-      pane: 'polygonsPane',
-      style: () => ({
-        color: '#0B0D10',
-        weight: 3.5,
-        opacity: 0.95,
-        fill: false,
-        interactive: false,
-      }),
-    });
-
-    const layerGroup = L.geoJSON(undefined, {
-      pane: 'polygonsPane',
-      style: (feature) => {
-        const id = feature?.properties?.change_object_id;
-        const color = feature?.properties?.color || '#F0B45F';
-        const isPreExisting = feature?.properties?.is_pre_existing || false;
-        const isTrack3 = feature?.properties?.is_track3 || false;
-        return getPolyStyle(id === selectedEvidenceId, color, showAllPolygons, isPreExisting, isTrack3);
-      },
-      onEachFeature: (feature, layer) => {
-        const props = feature.properties;
-        const matched = evidenceList.find((e) => e.change_object_id === props.change_object_id);
-        const color = props.color;
-        const isTrack3 = Boolean(props.is_track3);
-
-        polygonLayersRef.current.set(props.change_object_id, {
-          layer: layer as L.Path,
-          color,
-          evId: props.change_object_id,
-          isTrack3,
+      if (!map.getSource(SOURCE_ID)) {
+        map.addSource(SOURCE_ID, {
+          type: 'geojson',
+          data: geojson,
         });
 
-        // M3 Target Lock-on on Hover
-        layer.on('mouseover', () => {
-          if (matched) {
-            setHoveredEvidence(matched);
-            const bbox = computeContainerBBox(layer as L.Path);
-            onHoverWithBbox?.(matched, bbox);
-          }
-          // (a) stroke goes --amber-hot 2 px, fill 30% -> 45%
-          (layer as L.Path).setStyle({
-            weight: 2.0,
-            color: '#F5C15C',
-            fillColor: color,
-            fillOpacity: 0.45,
-            dashArray: isTrack3 ? '4, 4' : undefined,
-          });
-        });
-
-        layer.on('mouseout', () => {
-          setHoveredEvidence(null);
-          onHoverWithBbox?.(null, null);
-          const onset = props.first_supported;
-          const curBefore = beforeDateRef.current;
-          const isPre = Boolean(curBefore && onset && onset < curBefore);
-          (layer as L.Path).setStyle(
-            getPolyStyle(props.change_object_id === selectedEvidenceId, color, showAllPolygons, isPre, isTrack3)
-          );
-        });
-
-        layer.on('click', () => {
-          if (matched) onSelectEvidence(matched);
-        });
-      },
-    });
-
-    // Sub-pixel crosshair dots marker group (PRD 9 §5.1)
-    const subpixelGroup = L.layerGroup([], { pane: 'polygonsPane' });
-
-    sorted.forEach((ev) => {
-      if (ev.measurement.geom_4326) {
-        const facilityLabel =
-          ev.measurement.measured_by?.replace(/^Semantic vectorisation, UTM 43N:\s*/, '') ||
-          ev.measurement.area_label ||
-          ev.change_type;
-        const color = getClassColor(facilityLabel);
-        const onset = ev.temporal?.first_supported;
-        const isPreExisting = Boolean(beforeDateRef.current && onset && onset < beforeDateRef.current);
-        const isTrack3 = (ev.measurement.kind as string) === 'INFERRED' || ('track' in ev && ev.track === 'object_model');
-
-        const feature = {
-          type: 'Feature' as const,
-          properties: {
-            change_object_id: ev.change_object_id,
-            change_type: ev.change_type,
-            facility_label: facilityLabel,
-            area_label: ev.measurement.area_label,
-            first_supported: ev.temporal?.first_supported,
-            color,
-            is_pre_existing: isPreExisting,
-            is_track3: isTrack3,
+        // 1. Dark halo underlay (1px dark halo around polygons)
+        map.addLayer({
+          id: LAYER_HALO,
+          type: 'line',
+          source: SOURCE_ID,
+          paint: {
+            'line-color': '#0B0D10',
+            'line-width': 3.5,
+            'line-opacity': 0.95,
           },
-          geometry: ev.measurement.geom_4326,
-        };
+        });
 
-        haloGroup.addData(feature as unknown as GeoJSON.GeoJsonObject);
-        layerGroup.addData(feature as unknown as GeoJSON.GeoJsonObject);
+        // 2. Translucent Polygon fills (30% default, 45% on hover/selected, 8% baseline pre-existing)
+        map.addLayer({
+          id: LAYER_FILLS,
+          type: 'fill',
+          source: SOURCE_ID,
+          paint: {
+            'fill-color': ['get', 'color'],
+            'fill-opacity': [
+              'case',
+              ['boolean', ['get', 'is_selected'], false],
+              0.45,
+              ['boolean', ['get', 'is_hovered'], false],
+              0.45,
+              ['boolean', ['get', 'is_pre_existing'], false],
+              0.08,
+              0.30,
+            ],
+          },
+        });
 
-        // If area is very small (sub-pixel box when zoomed out), also add crosshair dot
-        if (ev.measurement.centroid && ev.measurement.area_m2 && ev.measurement.area_m2 < 120) {
-          const latLng: [number, number] = [ev.measurement.centroid[1], ev.measurement.centroid[0]];
-          const dot = L.circleMarker(latLng, {
-            radius: 2,
-            color: '#0B0D10',
-            weight: 3,
-            fillColor: color,
-            fillOpacity: 1,
-            pane: 'polygonsPane',
-          });
-          subpixelGroup.addLayer(dot);
+        // 3. Solid lines (Tracks 1 & 2)
+        map.addLayer({
+          id: LAYER_LINES_SOLID,
+          type: 'line',
+          source: SOURCE_ID,
+          filter: ['!=', ['get', 'is_track3'], true],
+          paint: {
+            'line-color': [
+              'case',
+              ['boolean', ['get', 'is_selected'], false],
+              '#F5C15C',
+              ['boolean', ['get', 'is_hovered'], false],
+              '#F5C15C',
+              ['get', 'color'],
+            ],
+            'line-width': [
+              'case',
+              ['boolean', ['get', 'is_selected'], false],
+              2.5,
+              ['boolean', ['get', 'is_hovered'], false],
+              2.0,
+              ['boolean', ['get', 'is_pre_existing'], false],
+              1.2,
+              1.5,
+            ],
+          },
+        });
+
+        // 4. Dashed lines (Track 3 Inferred)
+        map.addLayer({
+          id: LAYER_LINES_DASHED,
+          type: 'line',
+          source: SOURCE_ID,
+          filter: ['==', ['get', 'is_track3'], true],
+          paint: {
+            'line-color': [
+              'case',
+              ['boolean', ['get', 'is_selected'], false],
+              '#F5C15C',
+              ['boolean', ['get', 'is_hovered'], false],
+              '#F5C15C',
+              ['get', 'color'],
+            ],
+            'line-width': [
+              'case',
+              ['boolean', ['get', 'is_selected'], false],
+              2.5,
+              ['boolean', ['get', 'is_hovered'], false],
+              2.0,
+              ['boolean', ['get', 'is_pre_existing'], false],
+              1.2,
+              1.5,
+            ],
+            'line-dasharray': [4, 4],
+          },
+        });
+
+        // 5. Sub-pixel crosshair marker dots for micro areas (< 120 m²)
+        map.addLayer({
+          id: LAYER_DOTS,
+          type: 'circle',
+          source: SOURCE_ID,
+          filter: ['<', ['coalesce', ['get', 'area_m2'], 9999], 120],
+          paint: {
+            'circle-radius': 3,
+            'circle-color': ['get', 'color'],
+            'circle-stroke-color': '#0B0D10',
+            'circle-stroke-width': 2,
+          },
+        });
+      } else {
+        const src = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
+        src.setData(geojson);
+      }
+
+      // Update visibility according to showAllPolygons
+      const vis = showAllPolygons ? 'visible' : 'none';
+      [LAYER_HALO, LAYER_FILLS, LAYER_LINES_SOLID, LAYER_LINES_DASHED, LAYER_DOTS].forEach((lid) => {
+        if (map.getLayer(lid)) {
+          map.setLayoutProperty(lid, 'visibility', vis);
+        }
+      });
+
+      evaluateLabelCollisions();
+    };
+
+    if (map.isStyleLoaded()) {
+      setupLayers();
+    } else {
+      map.once('load', setupLayers);
+    }
+  }, [map, buildGeoJson, showAllPolygons, evaluateLabelCollisions]);
+
+  // Wire up event listeners for hover, click, and camera movement
+  useEffect(() => {
+    if (!map) return;
+
+    const onMouseMove = (e: maplibregl.MapLayerMouseEvent) => {
+      const feat = e.features?.[0];
+      if (!feat) return;
+      map.getCanvas().style.cursor = 'pointer';
+      const evId = feat.properties?.change_object_id;
+      if (evId && evId !== hoveredIdRef.current) {
+        hoveredIdRef.current = evId;
+        const matched = evidenceList.find((item) => item.change_object_id === evId);
+        if (matched) {
+          setHoveredEvidence(matched);
+          const bbox = computeContainerBBox(matched);
+          onHoverWithBbox?.(matched, bbox);
         }
       }
-    });
-
-    haloGroup.addTo(map);
-    layerGroup.addTo(map);
-    subpixelGroup.addTo(map);
-
-    haloLayerRef.current = haloGroup;
-    geojsonLayerRef.current = layerGroup;
-    subpixelMarkersRef.current = subpixelGroup;
-
-    evaluateLabelCollisions();
-    map.on('moveend zoomend', evaluateLabelCollisions);
-
-    return () => {
-      map.off('moveend zoomend', evaluateLabelCollisions);
     };
-  }, [map, evidenceList, onSelectEvidence, showAllPolygons, setHoveredEvidence, onHoverWithBbox, evaluateLabelCollisions, computeContainerBBox]);
 
-  const prevSelectedIdRef = useRef<string | null>(null);
-
-  // In-place lightweight style update on selection / date changes without layer recreation
-  useEffect(() => {
-    if (!evidenceList.length || !polygonLayersRef.current.size) return;
-
-    const prevId = prevSelectedIdRef.current;
-    prevSelectedIdRef.current = selectedEvidenceId;
-
-    // Fast-path: if only selection changed, update only previous and new layers
-    if (prevId !== selectedEvidenceId) {
-      if (prevId && polygonLayersRef.current.has(prevId)) {
-        const prevEntry = polygonLayersRef.current.get(prevId)!;
-        const ev = evidenceList.find((e) => e.change_object_id === prevId);
-        const onset = ev?.temporal?.first_supported;
-        const isPre = Boolean(beforeDate && onset && onset < beforeDate);
-        prevEntry.layer.setStyle(getPolyStyle(false, prevEntry.color, showAllPolygons, isPre, prevEntry.isTrack3));
+    const onMouseLeave = () => {
+      map.getCanvas().style.cursor = '';
+      if (hoveredIdRef.current) {
+        hoveredIdRef.current = null;
+        setHoveredEvidence(null);
+        onHoverWithBbox?.(null, null);
       }
-      if (selectedEvidenceId && polygonLayersRef.current.has(selectedEvidenceId)) {
-        const nextEntry = polygonLayersRef.current.get(selectedEvidenceId)!;
-        const ev = evidenceList.find((e) => e.change_object_id === selectedEvidenceId);
-        const onset = ev?.temporal?.first_supported;
-        const isPre = Boolean(beforeDate && onset && onset < beforeDate);
-        nextEntry.layer.setStyle(getPolyStyle(true, nextEntry.color, showAllPolygons, isPre, nextEntry.isTrack3));
+    };
+
+    const onClick = (e: maplibregl.MapLayerMouseEvent) => {
+      const feat = e.features?.[0];
+      if (!feat) return;
+      const evId = feat.properties?.change_object_id;
+      const matched = evidenceList.find((item) => item.change_object_id === evId);
+      if (matched) {
+        onSelectEvidence(matched);
       }
-      return;
+    };
+
+    const onMove = () => {
+      evaluateLabelCollisions();
+    };
+
+    const setupEvents = () => {
+      if (map.getLayer(LAYER_FILLS)) {
+        map.on('mousemove', LAYER_FILLS, onMouseMove);
+        map.on('mouseleave', LAYER_FILLS, onMouseLeave);
+        map.on('click', LAYER_FILLS, onClick);
+      }
+      map.on('move', onMove);
+    };
+
+    if (map.isStyleLoaded()) {
+      setupEvents();
+    } else {
+      map.once('load', setupEvents);
     }
 
-    // Full style refresh if dates or visibility changed
-    polygonLayersRef.current.forEach(({ layer, color, evId, isTrack3 }) => {
-      const ev = evidenceList.find((e) => e.change_object_id === evId);
-      if (!ev) return;
-      const onset = ev.temporal?.first_supported;
-      const isPreExisting = Boolean(beforeDate && onset && onset < beforeDate);
-      const isSelected = evId === selectedEvidenceId;
-      layer.setStyle(getPolyStyle(isSelected, color, showAllPolygons, isPreExisting, isTrack3));
-    });
-  }, [selectedEvidenceId, showAllPolygons, beforeDate, evidenceList]);
+    return () => {
+      map.off('mousemove', LAYER_FILLS, onMouseMove);
+      map.off('mouseleave', LAYER_FILLS, onMouseLeave);
+      map.off('click', LAYER_FILLS, onClick);
+      map.off('move', onMove);
+    };
+  }, [map, evidenceList, onSelectEvidence, setHoveredEvidence, onHoverWithBbox, computeContainerBBox, evaluateLabelCollisions]);
 }
