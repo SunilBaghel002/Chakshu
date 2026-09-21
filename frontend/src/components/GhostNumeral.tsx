@@ -10,7 +10,7 @@ interface GhostNumeralProps {
  * Giant 96px numeral rendered at ink-ghost opacity over the map.
  * Scales 0.96→1 on mount via animate-ghost-in.
  */
-export const GhostNumeral: React.FC<GhostNumeralProps> = ({ sector = '03' }) => {
+export const GhostNumeral: React.FC<GhostNumeralProps> = React.memo(({ sector = '03' }) => {
   return (
     <Slot
       id="SLOT-17"
@@ -25,5 +25,5 @@ export const GhostNumeral: React.FC<GhostNumeralProps> = ({ sector = '03' }) => 
       </span>
     </Slot>
   );
-};
+});
 

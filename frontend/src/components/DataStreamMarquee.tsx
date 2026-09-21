@@ -6,7 +6,7 @@ import { COPY } from '../lib/copy';
  * Slow-scrolling amber text ticker. Pauses on hover.
  * Animation: 60s linear infinite via CSS class animate-marquee.
  */
-export const DataStreamMarquee: React.FC = () => {
+export const DataStreamMarquee: React.FC = React.memo(() => {
   const text = COPY.marquee;
 
   return (
@@ -32,4 +32,4 @@ export const DataStreamMarquee: React.FC = () => {
       </div>
     </div>
   );
-};
+});

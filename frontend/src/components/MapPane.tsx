@@ -115,6 +115,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
     const beforePane = map.createPane('beforePane');
     beforePane.style.zIndex = '200';
+    beforePane.style.transform = 'translate3d(0,0,0)';
     beforePane.style.filter = 'saturate(1.08) contrast(1.04) brightness(1.02)';
     const beforeCfg = getSatelliteTileConfig(beforeDate, imageryMode, false);
     const beforeSatellite = L.tileLayer(beforeCfg.url, {
@@ -128,8 +129,10 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
     const afterPane = map.createPane('afterPane');
     afterPane.style.zIndex = '450';
+    afterPane.style.transform = 'translate3d(0,0,0)';
+    afterPane.style.willChange = 'clip-path';
     afterPane.style.filter = dehazeActive
-      ? 'contrast(1.22) saturate(1.28) brightness(0.96) hue-rotate(-2deg)'
+      ? 'contrast(1.22) saturate(1.28) brightness(0.96)'
       : 'saturate(1.08) contrast(1.06) brightness(1.02)';
     const afterCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
     const afterSatellite = L.tileLayer(afterCfg.url, {
@@ -150,12 +153,37 @@ export const MapPane: React.FC<MapPaneProps> = ({
       { maxZoom: 18, opacity: 0.5 }
     ).addTo(map);
 
-    map.on('mousemove', (e: L.LeafletMouseEvent) => {
-      setCursorLat(e.latlng.lat);
-      setCursorLng(e.latlng.lng);
-      setCurrentZoom(map.getZoom());
-    });
-    map.on('mouseout', () => { setCursorLat(null); setCursorLng(null); });
+    let moveRaf: number | null = null;
+    let lastLat: number | null = null;
+    let lastLng: number | null = null;
+
+    const onLeafletMouseMove = (e: L.LeafletMouseEvent) => {
+      lastLat = e.latlng.lat;
+      lastLng = e.latlng.lng;
+      if (moveRaf === null) {
+        moveRaf = requestAnimationFrame(() => {
+          moveRaf = null;
+          if (lastLat !== null && lastLng !== null) {
+            const rLat = Number(lastLat.toFixed(4));
+            const rLng = Number(lastLng.toFixed(4));
+            setCursorLat((prev) => (prev === rLat ? prev : rLat));
+            setCursorLng((prev) => (prev === rLng ? prev : rLng));
+          }
+        });
+      }
+    };
+
+    const onLeafletMouseOut = () => {
+      if (moveRaf !== null) {
+        cancelAnimationFrame(moveRaf);
+        moveRaf = null;
+      }
+      setCursorLat(null);
+      setCursorLng(null);
+    };
+
+    map.on('mousemove', onLeafletMouseMove);
+    map.on('mouseout', onLeafletMouseOut);
     map.on('zoomend', () => setCurrentZoom(map.getZoom()));
 
     mapInstanceRef.current = map;
@@ -166,6 +194,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (moveRaf !== null) cancelAnimationFrame(moveRaf);
       map.remove();
       mapInstanceRef.current = null;
     };
@@ -260,6 +289,32 @@ export const MapPane: React.FC<MapPaneProps> = ({
     afterDate,
   });
 
+  const handleZoomIn = useCallback(() => mapInstanceRef.current?.zoomIn(), []);
+  const handleZoomOut = useCallback(() => mapInstanceRef.current?.zoomOut(), []);
+  const handleHome = useCallback(() => {
+    if (aoiBounds && mapInstanceRef.current) {
+      mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
+    } else {
+      mapInstanceRef.current?.flyTo(aoiCoords, 14);
+    }
+  }, [aoiBounds, aoiCoords]);
+  const handleFitAoi = useCallback(() => {
+    if (aoiBounds && mapInstanceRef.current) {
+      mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
+    } else {
+      mapInstanceRef.current?.flyTo(aoiCoords, 14);
+    }
+  }, [aoiBounds, aoiCoords]);
+  const handleToggleMeasure = useCallback(() => setIsMeasureActive((prev) => !prev), []);
+  const handleSectorChange = useCallback((sec: string) => setCurrentSector(sec), []);
+  const handleTagMouseEnter = useCallback(() => { isTagHoveredRef.current = true; }, []);
+  const handleTagMouseLeave = useCallback(() => {
+    isTagHoveredRef.current = false;
+    setLockedEvidence(null);
+    setLockedBBox(null);
+  }, []);
+  const handleCloseIntelModal = useCallback(() => setShowIntelModal(false), []);
+
   return (
     <div
       className="relative w-full h-full overflow-hidden corner-ticks"
@@ -286,7 +341,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
       {/* SLOT-15: Reticle, crosshair, enter sweep, and cursor glow */}
       <MapReticleOverlay
         containerRef={mapContainerRef}
-        onSectorChange={setCurrentSector}
+        onSectorChange={handleSectorChange}
       />
 
       {/* SLOT-17: Ghost sector numeral */}
@@ -297,23 +352,11 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
       {/* SLOT-12: Zoom Stack (TR) */}
       <ZoomStack
-        onZoomIn={() => mapInstanceRef.current?.zoomIn()}
-        onZoomOut={() => mapInstanceRef.current?.zoomOut()}
-        onHome={() => {
-          if (aoiBounds && mapInstanceRef.current) {
-            mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
-          } else {
-            mapInstanceRef.current?.flyTo(aoiCoords, 14);
-          }
-        }}
-        onFitAoi={() => {
-          if (aoiBounds && mapInstanceRef.current) {
-            mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
-          } else {
-            mapInstanceRef.current?.flyTo(aoiCoords, 14);
-          }
-        }}
-        onToggleMeasure={() => setIsMeasureActive((prev) => !prev)}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onHome={handleHome}
+        onFitAoi={handleFitAoi}
+        onToggleMeasure={handleToggleMeasure}
         isMeasureActive={isMeasureActive}
       />
 
@@ -332,13 +375,9 @@ export const MapPane: React.FC<MapPaneProps> = ({
       <LockonTag
         evidence={lockedEvidence}
         bbox={lockedBBox}
-        onTagMouseEnter={() => { isTagHoveredRef.current = true; }}
-        onTagMouseLeave={() => {
-          isTagHoveredRef.current = false;
-          setLockedEvidence(null);
-          setLockedBBox(null);
-        }}
-        onClick={(ev) => onSelectEvidence(ev)}
+        onTagMouseEnter={handleTagMouseEnter}
+        onTagMouseLeave={handleTagMouseLeave}
+        onClick={onSelectEvidence}
       />
 
       {/* SLOT-18: Swipe Controller */}
@@ -358,7 +397,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
       <SatelliteIntelModal
         isOpen={showIntelModal}
-        onClose={() => setShowIntelModal(false)}
+        onClose={handleCloseIntelModal}
         beforeDate={beforeDate}
         afterDate={afterDate}
         imageryMode={imageryMode}

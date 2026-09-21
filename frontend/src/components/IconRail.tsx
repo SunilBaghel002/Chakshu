@@ -31,7 +31,7 @@ interface RailItem {
  * 05.8 HELP / KEYS (?)
  * 05.9 SETTINGS (bottom-anchored)
  */
-export const IconRail: React.FC<IconRailProps> = ({
+export const IconRail: React.FC<IconRailProps> = React.memo(({
   activeView,
   onSelectView,
   onOpenShortcuts,
@@ -147,4 +147,4 @@ export const IconRail: React.FC<IconRailProps> = ({
       </div>
     </nav>
   );
-};
+});

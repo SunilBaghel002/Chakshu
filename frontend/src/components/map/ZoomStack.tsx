@@ -18,7 +18,7 @@ interface ZoomStackProps {
  * Vertical stack: + / − / HOME / FIT AOI / MEASURE
  * Max size: 36 x 176 px, gap --s-1 (4px).
  */
-export const ZoomStack: React.FC<ZoomStackProps> = ({
+export const ZoomStack: React.FC<ZoomStackProps> = React.memo(({
   onZoomIn,
   onZoomOut,
   onHome,
@@ -178,4 +178,4 @@ export const ZoomStack: React.FC<ZoomStackProps> = ({
       </div>
     </Slot>
   );
-};
+});

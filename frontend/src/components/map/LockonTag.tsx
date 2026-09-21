@@ -33,7 +33,7 @@ interface LockonTagProps {
  * (e) On leave: brackets retract and tag slides out over 120ms.
  * (f) Hovering the tag keeps lock-on active (no flicker at boundary).
  */
-export const LockonTag: React.FC<LockonTagProps> = ({
+export const LockonTag: React.FC<LockonTagProps> = React.memo(({
   evidence,
   bbox,
   onTagMouseEnter,
@@ -262,4 +262,4 @@ export const LockonTag: React.FC<LockonTagProps> = ({
       </div>
     </Slot>
   );
-};
+});

@@ -21,7 +21,7 @@ interface MapLegendProps {
  * 3. Label collision suppression indicator: "+n LABELS HIDDEN".
  * 4. Compact attribution text (10px --ink-3).
  */
-export const MapLegend: React.FC<MapLegendProps> = ({
+export const MapLegend: React.FC<MapLegendProps> = React.memo(({
   hiddenLabelCount = 0,
   initialCollapsed = false,
   onToggleCollapse,
@@ -197,4 +197,4 @@ export const MapLegend: React.FC<MapLegendProps> = ({
       </div>
     </Slot>
   );
-};
+});
