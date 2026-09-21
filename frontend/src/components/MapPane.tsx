@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import * as maplibregl from 'maplibre-gl';
+import L from 'leaflet';
 import type { Evidence, DetectionSet } from '../lib/types';
 import type { BBox } from '../lib/map-fx';
 import { useMapPolygons } from '../lib/useMapPolygons';
@@ -38,22 +38,8 @@ interface MapPaneProps {
   onPresetConsumed?: () => void;
 }
 
-const CARTO_LABELS_URL = 'https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png';
-
-/**
- * Convert [lat, lng] bounds to MapLibre [[minLng, minLat], [maxLng, maxLat]]
- */
-function toMaplibreBounds(bounds: [[number, number], [number, number]]): [[number, number], [number, number]] {
-  const minLng = Math.min(bounds[0][1], bounds[1][1]);
-  const maxLng = Math.max(bounds[0][1], bounds[1][1]);
-  const minLat = Math.min(bounds[0][0], bounds[1][0]);
-  const maxLat = Math.max(bounds[0][0], bounds[1][0]);
-  return [[minLng, minLat], [maxLng, maxLat]];
-}
-
 /**
  * SLOT-10 — Map Stage (The Imagery Well)
- * Engine: MapLibre GL JS 5 (WebGL GPU Accelerated)
  * Specs: PRD 9 §6 (M1–M4), §5.1; PRD 10 §4 (SLOT-11..18).
  */
 export const MapPane: React.FC<MapPaneProps> = ({
@@ -77,27 +63,22 @@ export const MapPane: React.FC<MapPaneProps> = ({
   onPresetConsumed,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<maplibregl.Map | null>(null);
-
-  const mapAfterContainerRef = useRef<HTMLDivElement>(null);
-  const mapAfterInstanceRef = useRef<maplibregl.Map | null>(null);
-
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const beforeTileLayerRef = useRef<L.TileLayer | null>(null);
+  const afterTileLayerRef = useRef<L.TileLayer | null>(null);
   const prevAoiIdRef = useRef<string | null>(null);
 
   const [imageryMode] = useState<ImageryMode>('hybrid_optimum');
   const [dehazeActive] = useState<boolean>(true);
   const [showIntelModal, setShowIntelModal] = useState<boolean>(false);
 
-  // M1 / M4 Live Coordinate, Zoom, Pitch, and Sector State
+  // M1 / M4 Live Coordinate and Sector State
   const [cursorLat, setCursorLat] = useState<number | null>(null);
   const [cursorLng, setCursorLng] = useState<number | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(14);
-  const [pitch, setPitch] = useState<number>(0);
-  const [bearing, setBearing] = useState<number>(0);
   const [currentSector, setCurrentSector] = useState<string>('SEC 04·B');
   const [hiddenLabelCount, setHiddenLabelCount] = useState<number>(0);
   const [isMeasureActive, setIsMeasureActive] = useState<boolean>(false);
-  const [isLabelsActive, setIsLabelsActive] = useState<boolean>(true);
 
   // M3 Target Lock-On State
   const [lockedEvidence, setLockedEvidence] = useState<Evidence | null>(null);
@@ -120,72 +101,65 @@ export const MapPane: React.FC<MapPaneProps> = ({
     }
   }, [evidenceList]);
 
-  // Primary MapLibre GL initialization
+
+  // Initialize Leaflet Map once on mount
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
-
-    const initialTileConfig = isSwipeActive
-      ? getSatelliteTileConfig(beforeDate, imageryMode, false)
-      : getSatelliteTileConfig(afterDate, imageryMode, true);
-
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          'satellite-tiles': {
-            type: 'raster',
-            tiles: [initialTileConfig.url],
-            tileSize: 256,
-            maxzoom: initialTileConfig.maxZoom,
-          },
-          'carto-labels': {
-            type: 'raster',
-            tiles: [CARTO_LABELS_URL],
-            tileSize: 256,
-            maxzoom: 18,
-          },
-        },
-        layers: [
-          {
-            id: 'satellite-layer',
-            type: 'raster',
-            source: 'satellite-tiles',
-            paint: {
-              'raster-opacity': 1,
-              'raster-contrast': dehazeActive ? 0.2 : 0.05,
-              'raster-saturation': 0.15,
-            },
-          },
-          {
-            id: 'carto-labels-layer',
-            type: 'raster',
-            source: 'carto-labels',
-            paint: {
-              'raster-opacity': 0.65,
-            },
-          },
-        ],
-      },
-      center: [aoiCoords[1], aoiCoords[0]],
+    const map = L.map(mapContainerRef.current, {
+      center: aoiCoords,
       zoom: 14,
-      pitch: 0,
-      bearing: 0,
-      maxPitch: 85,
+      zoomControl: false,
       attributionControl: false,
     });
+    if (aoiBounds) map.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15 });
 
-    if (aoiBounds) {
-      map.fitBounds(toMaplibreBounds(aoiBounds), { padding: 36, maxZoom: 15 });
-    }
+    const beforePane = map.createPane('beforePane');
+    beforePane.style.zIndex = '200';
+    beforePane.style.transform = 'translate3d(0,0,0)';
+    beforePane.style.filter = 'saturate(1.08) contrast(1.04) brightness(1.02)';
+    const beforeCfg = getSatelliteTileConfig(beforeDate, imageryMode, false);
+    const beforeSatellite = L.tileLayer(beforeCfg.url, {
+      maxZoom: beforeCfg.maxZoom,
+      maxNativeZoom: beforeCfg.maxNativeZoom,
+      pane: 'beforePane',
+      opacity: 1,
+    });
+    beforeSatellite.addTo(map);
+    beforeTileLayerRef.current = beforeSatellite;
+
+    const afterPane = map.createPane('afterPane');
+    afterPane.style.zIndex = '450';
+    afterPane.style.transform = 'translate3d(0,0,0)';
+    afterPane.style.willChange = 'clip-path';
+    afterPane.style.filter = dehazeActive
+      ? 'contrast(1.22) saturate(1.28) brightness(0.96)'
+      : 'saturate(1.08) contrast(1.06) brightness(1.02)';
+    const afterCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
+    const afterSatellite = L.tileLayer(afterCfg.url, {
+      maxZoom: afterCfg.maxZoom,
+      maxNativeZoom: afterCfg.maxNativeZoom,
+      pane: 'afterPane',
+      opacity: 1,
+    });
+    afterSatellite.addTo(map);
+    afterTileLayerRef.current = afterSatellite;
+
+    const polygonsPane = map.createPane('polygonsPane');
+    polygonsPane.style.zIndex = '500';
+    polygonsPane.style.pointerEvents = 'auto';
+
+    L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+      { maxZoom: 18, opacity: 0.5 }
+    ).addTo(map);
 
     let moveRaf: number | null = null;
     let lastLat: number | null = null;
     let lastLng: number | null = null;
 
-    map.on('mousemove', (e: maplibregl.MapLayerMouseEvent) => {
-      lastLat = e.lngLat.lat;
-      lastLng = e.lngLat.lng;
+    const onLeafletMouseMove = (e: L.LeafletMouseEvent) => {
+      lastLat = e.latlng.lat;
+      lastLng = e.latlng.lng;
       if (moveRaf === null) {
         moveRaf = requestAnimationFrame(() => {
           moveRaf = null;
@@ -197,27 +171,27 @@ export const MapPane: React.FC<MapPaneProps> = ({
           }
         });
       }
-    });
+    };
 
-    map.on('mouseout', () => {
+    const onLeafletMouseOut = () => {
       if (moveRaf !== null) {
         cancelAnimationFrame(moveRaf);
         moveRaf = null;
       }
       setCursorLat(null);
       setCursorLng(null);
-    });
+    };
 
-    map.on('zoom', () => setCurrentZoom(Number(map.getZoom().toFixed(1))));
-    map.on('rotate', () => setBearing(Math.round(map.getBearing())));
-    map.on('pitch', () => setPitch(Math.round(map.getPitch())));
+    map.on('mousemove', onLeafletMouseMove);
+    map.on('mouseout', onLeafletMouseOut);
+    map.on('zoomend', () => setCurrentZoom(map.getZoom()));
 
     mapInstanceRef.current = map;
     prevAoiIdRef.current = selectedAoiId ?? null;
+    setTimeout(() => map.invalidateSize(), 150);
 
-    const handleResize = () => map.resize();
+    const handleResize = () => map.invalidateSize();
     window.addEventListener('resize', handleResize);
-
     return () => {
       window.removeEventListener('resize', handleResize);
       if (moveRaf !== null) cancelAnimationFrame(moveRaf);
@@ -226,152 +200,70 @@ export const MapPane: React.FC<MapPaneProps> = ({
     };
   }, []);
 
-  // Update satellite tile layers on date / swipe changes
+  // Update satellite tile layers on date changes
   useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const bCfg = getSatelliteTileConfig(beforeDate, imageryMode, false);
+    if (beforeTileLayerRef.current) beforeTileLayerRef.current.setUrl(bCfg.url);
+    const aCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
+    if (afterTileLayerRef.current) afterTileLayerRef.current.setUrl(aCfg.url);
+  }, [beforeDate, afterDate, imageryMode]);
+
+  // Swipe clip path application
+  const applyClip = useCallback((pct: number) => {
     const map = mapInstanceRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-
-    const tileCfg = isSwipeActive
-      ? getSatelliteTileConfig(beforeDate, imageryMode, false)
-      : getSatelliteTileConfig(afterDate, imageryMode, true);
-
-    const src = map.getSource('satellite-tiles') as (maplibregl.RasterTileSource & { setTiles?: (tiles: string[]) => void });
-    if (src && typeof src.setTiles === 'function') {
-      src.setTiles([tileCfg.url]);
-    }
-  }, [beforeDate, afterDate, imageryMode, isSwipeActive]);
-
-  // Secondary Map for Swipe Compare
-  useEffect(() => {
+    if (!map) return;
+    const afterPane = map.getPane('afterPane');
+    const polyPane = map.getPane('polygonsPane');
+    if (!afterPane) return;
     if (!isSwipeActive) {
-      if (mapAfterInstanceRef.current) {
-        mapAfterInstanceRef.current.remove();
-        mapAfterInstanceRef.current = null;
-      }
+      afterPane.style.display = 'none';
+      if (polyPane) { polyPane.style.display = 'block'; polyPane.style.clipPath = 'none'; }
       return;
     }
-
-    if (!mapAfterContainerRef.current || mapAfterInstanceRef.current) return;
-    const mainMap = mapInstanceRef.current;
-    if (!mainMap) return;
-
-    const afterTileConfig = getSatelliteTileConfig(afterDate, imageryMode, true);
-
-    const mapAfter = new maplibregl.Map({
-      container: mapAfterContainerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          'satellite-tiles-after': {
-            type: 'raster',
-            tiles: [afterTileConfig.url],
-            tileSize: 256,
-            maxzoom: afterTileConfig.maxZoom,
-          },
-          'carto-labels-after': {
-            type: 'raster',
-            tiles: [CARTO_LABELS_URL],
-            tileSize: 256,
-            maxzoom: 18,
-          },
-        },
-        layers: [
-          {
-            id: 'satellite-after-layer',
-            type: 'raster',
-            source: 'satellite-tiles-after',
-            paint: {
-              'raster-opacity': 1,
-              'raster-contrast': dehazeActive ? 0.22 : 0.06,
-              'raster-saturation': 0.18,
-            },
-          },
-          {
-            id: 'carto-labels-after-layer',
-            type: 'raster',
-            source: 'carto-labels-after',
-            paint: {
-              'raster-opacity': 0.65,
-            },
-          },
-        ],
-      },
-      center: mainMap.getCenter(),
-      zoom: mainMap.getZoom(),
-      pitch: mainMap.getPitch(),
-      bearing: mainMap.getBearing(),
-      maxPitch: 85,
-      interactive: false,
-      attributionControl: false,
-    });
-
-    const syncCamera = () => {
-      if (!mainMap || !mapAfterInstanceRef.current) return;
-      mapAfter.jumpTo({
-        center: mainMap.getCenter(),
-        zoom: mainMap.getZoom(),
-        bearing: mainMap.getBearing(),
-        pitch: mainMap.getPitch(),
-      });
-    };
-
-    mainMap.on('move', syncCamera);
-    mapAfterInstanceRef.current = mapAfter;
-
-    return () => {
-      mainMap.off('move', syncCamera);
-      mapAfter.remove();
-      mapAfterInstanceRef.current = null;
-    };
-  }, [isSwipeActive, afterDate, imageryMode, dehazeActive]);
-
-  // Apply swipe clip path
-  const applyClip = useCallback((pct: number) => {
-    if (mapAfterContainerRef.current) {
-      mapAfterContainerRef.current.style.clipPath = `polygon(${pct}% 0, 100% 0, 100% 100%, ${pct}% 100%)`;
-    }
-  }, []);
+    afterPane.style.display = 'block';
+    if (polyPane) polyPane.style.display = 'block';
+    const w = mapContainerRef.current?.offsetWidth || map.getSize().x;
+    const h = mapContainerRef.current?.offsetHeight || map.getSize().y;
+    const nw = map.containerPointToLayerPoint([0, 0]);
+    const se = map.containerPointToLayerPoint([w, h]);
+    const clipX = map.containerPointToLayerPoint([(pct / 100) * w, 0]).x;
+    const isNormal = beforeDate <= afterDate;
+    const top = nw.y - 3000, bot = se.y + 3000, l = nw.x - 3000, r = se.x + 3000;
+    const clip = isNormal
+      ? `polygon(${clipX}px ${top}px, ${r}px ${top}px, ${r}px ${bot}px, ${clipX}px ${bot}px)`
+      : `polygon(${l}px ${top}px, ${clipX}px ${top}px, ${clipX}px ${bot}px, ${l}px ${bot}px)`;
+    afterPane.style.clipPath = clip;
+    if (polyPane) polyPane.style.clipPath = clip;
+  }, [isSwipeActive, beforeDate, afterDate]);
 
   useEffect(() => {
     applyClip(sliderPos);
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const onSync = () => applyClip(sliderPos);
+    map.on('move zoom resize', onSync);
+    return () => { map.off('move zoom resize', onSync); };
   }, [applyClip, sliderPos]);
 
   // AOI fly-to & camera presets
   useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !selectedAoiId) return;
-
+    if (!mapInstanceRef.current || !selectedAoiId) return;
     if (prevAoiIdRef.current && prevAoiIdRef.current !== selectedAoiId) {
       prevAoiIdRef.current = selectedAoiId;
-      if (aoiBounds) {
-        map.fitBounds(toMaplibreBounds(aoiBounds), { padding: 36, maxZoom: 15, duration: 1200 });
-      } else {
-        map.flyTo({ center: [aoiCoords[1], aoiCoords[0]], zoom: 14, pitch: 0, bearing: 0, duration: 1200 });
-      }
-    } else if (!prevAoiIdRef.current) {
-      prevAoiIdRef.current = selectedAoiId;
-    }
+      if (aoiBounds) mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
+      else mapInstanceRef.current.flyTo(aoiCoords, 14, { duration: 1.2 });
+    } else if (!prevAoiIdRef.current) prevAoiIdRef.current = selectedAoiId;
   }, [selectedAoiId, aoiCoords, aoiBounds]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !presetTarget) return;
-
-    if (presetTarget.bounds) {
-      map.fitBounds(toMaplibreBounds(presetTarget.bounds), {
-        padding: 36,
-        maxZoom: presetTarget.zoom || 17,
-        duration: 1000,
-      });
-    } else if (presetTarget.center && presetTarget.zoom) {
-      map.flyTo({
-        center: [presetTarget.center[1], presetTarget.center[0]],
-        zoom: presetTarget.zoom,
-        duration: 1000,
-      });
-    }
+    if (presetTarget.bounds) map.fitBounds(presetTarget.bounds, { padding: [36, 36], maxZoom: presetTarget.zoom || 17, animate: true });
+    else if (presetTarget.center && presetTarget.zoom) map.flyTo(presetTarget.center, presetTarget.zoom, { duration: 1.0 });
     onPresetConsumed?.();
   }, [presetTarget, onPresetConsumed]);
+
 
   // M3 Hover Lock-On
   const handleHoverWithBbox = useCallback((ev: Evidence | null, bbox: BBox | null) => {
@@ -397,57 +289,22 @@ export const MapPane: React.FC<MapPaneProps> = ({
     afterDate,
   });
 
-  // Google Earth Tactical Camera HUD Handlers
-  const handleZoomIn = useCallback(() => {
-    mapInstanceRef.current?.zoomIn({ duration: 300 });
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    mapInstanceRef.current?.zoomOut({ duration: 300 });
-  }, []);
-
+  const handleZoomIn = useCallback(() => mapInstanceRef.current?.zoomIn(), []);
+  const handleZoomOut = useCallback(() => mapInstanceRef.current?.zoomOut(), []);
   const handleHome = useCallback(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    if (aoiBounds) {
-      map.fitBounds(toMaplibreBounds(aoiBounds), { padding: 36, maxZoom: 15, duration: 1200 });
+    if (aoiBounds && mapInstanceRef.current) {
+      mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
     } else {
-      map.flyTo({ center: [aoiCoords[1], aoiCoords[0]], zoom: 14, pitch: 0, bearing: 0, duration: 1200 });
+      mapInstanceRef.current?.flyTo(aoiCoords, 14);
     }
   }, [aoiBounds, aoiCoords]);
-
   const handleFitAoi = useCallback(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    if (aoiBounds) {
-      map.fitBounds(toMaplibreBounds(aoiBounds), { padding: 36, maxZoom: 15, duration: 1200 });
+    if (aoiBounds && mapInstanceRef.current) {
+      mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
     } else {
-      map.flyTo({ center: [aoiCoords[1], aoiCoords[0]], zoom: 14, pitch: 0, bearing: 0, duration: 1200 });
+      mapInstanceRef.current?.flyTo(aoiCoords, 14);
     }
   }, [aoiBounds, aoiCoords]);
-
-  const handleResetBearing = useCallback(() => {
-    mapInstanceRef.current?.easeTo({ bearing: 0, pitch: 0, duration: 800 });
-  }, []);
-
-  const handleTogglePitch = useCallback(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    const targetPitch = map.getPitch() > 10 ? 0 : 55;
-    map.easeTo({ pitch: targetPitch, duration: 800 });
-  }, []);
-
-  const handleToggleLabels = useCallback(() => {
-    setIsLabelsActive((prev) => {
-      const next = !prev;
-      const map = mapInstanceRef.current;
-      if (map && map.getLayer('carto-labels-layer')) {
-        map.setLayoutProperty('carto-labels-layer', 'visibility', next ? 'visible' : 'none');
-      }
-      return next;
-    });
-  }, []);
-
   const handleToggleMeasure = useCallback(() => setIsMeasureActive((prev) => !prev), []);
   const handleSectorChange = useCallback((sec: string) => setCurrentSector(sec), []);
   const handleTagMouseEnter = useCallback(() => { isTagHoveredRef.current = true; }, []);
@@ -466,20 +323,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
         border: '1px solid var(--line-strong)',
       }}
     >
-      {/* Primary Map Stage */}
       <div ref={mapContainerRef} className="w-full h-full" />
-
-      {/* Secondary Map Stage for Swipe Compare (After Side) */}
-      {isSwipeActive && (
-        <div
-          ref={mapAfterContainerRef}
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            clipPath: `polygon(${sliderPos}% 0, 100% 0, 100% 100%, ${sliderPos}% 100%)`,
-            zIndex: 'var(--z-map-sub)',
-          }}
-        />
-      )}
 
       {/* Inner vignette & dot grid (PRD 9 §9) */}
       <div
@@ -506,7 +350,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
       {/* SLOT-11: Sector Tag (TL) */}
       <SectorTag sector={currentSector} />
 
-      {/* SLOT-12: Zoom Stack / Google Earth 3D Tactical HUD (TR) */}
+      {/* SLOT-12: Zoom Stack (TR) */}
       <ZoomStack
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -514,12 +358,6 @@ export const MapPane: React.FC<MapPaneProps> = ({
         onFitAoi={handleFitAoi}
         onToggleMeasure={handleToggleMeasure}
         isMeasureActive={isMeasureActive}
-        bearing={bearing}
-        pitch={pitch}
-        onResetBearing={handleResetBearing}
-        onTogglePitch={handleTogglePitch}
-        onToggleLabels={handleToggleLabels}
-        isLabelsActive={isLabelsActive}
       />
 
       {/* SLOT-13: Collapsible Legend (BL) */}
