@@ -16,7 +16,7 @@ interface SwipeCompareProps {
   onDragMove?: (newPos: number) => void;
 }
 
-export const SwipeCompare: React.FC<SwipeCompareProps> = ({
+export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
   sliderPos,
   onSliderChange,
   isSwipeActive,
@@ -34,6 +34,7 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
   const percentTagRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const lastPctRef = useRef(sliderPos);
+  const lastEmitTimeRef = useRef(0);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -78,11 +79,11 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
       }
       onDragMove?.(pct);
 
-      if (!rafRef.current) {
-        rafRef.current = requestAnimationFrame(() => {
-          onSliderChange(pct);
-          rafRef.current = null;
-        });
+      // Throttle root state changes to ~100ms to avoid re-rendering entire ConsoleApp during drag
+      const now = performance.now();
+      if (now - lastEmitTimeRef.current > 100) {
+        lastEmitTimeRef.current = now;
+        onSliderChange(pct);
       }
     },
     [onSliderChange, onDragMove]
@@ -338,4 +339,4 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = ({
       </div>
     </div>
   );
-};
+});

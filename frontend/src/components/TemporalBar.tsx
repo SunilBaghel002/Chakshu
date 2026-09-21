@@ -26,7 +26,7 @@ const PRESETS = [
  * SLOT-02 — Temporal Bar
  * Date-A / Date-B selectors, year chips, DETECT CHANGES, SWAP, presets, and 2-Year Minimum Gap enforcement.
  */
-export const TemporalBar: React.FC<TemporalBarProps> = ({
+export const TemporalBar: React.FC<TemporalBarProps> = React.memo(({
   beforeDate,
   afterDate,
   onBeforeDateChange,
@@ -211,4 +211,4 @@ export const TemporalBar: React.FC<TemporalBarProps> = ({
       </div>
     </div>
   );
-};
+});

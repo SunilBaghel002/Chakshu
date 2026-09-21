@@ -10,7 +10,7 @@ interface StatusLineProps {
  * SLOT-40 — Status Line (24px)
  * Job state, last action, current trace_id (monospace, copyable).
  */
-export const StatusLine: React.FC<StatusLineProps> = ({
+export const StatusLine: React.FC<StatusLineProps> = React.memo(({
   jobState = 'READY',
   lastAction = 'AOI loaded',
   traceId = 'tr_8f3a2b1c',
@@ -59,4 +59,4 @@ export const StatusLine: React.FC<StatusLineProps> = ({
       </button>
     </footer>
   );
-};
+});

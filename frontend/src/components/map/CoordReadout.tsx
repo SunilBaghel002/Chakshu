@@ -16,7 +16,7 @@ interface CoordReadoutProps {
  * Reserved space: The bottom-right 300 x 40 px is strictly ours.
  * Renders live LAT / LON / ZOOM readout in --t-mono.
  */
-export const CoordReadout: React.FC<CoordReadoutProps> = ({
+export const CoordReadout: React.FC<CoordReadoutProps> = React.memo(({
   lat,
   lng,
   zoom,
@@ -77,18 +77,18 @@ export const CoordReadout: React.FC<CoordReadoutProps> = ({
         }}
       >
         <span style={{ color: 'var(--ink-3)' }}>{MAP_OVERLAY_COPY.latPrefix}</span>
-        <span style={{ color: 'var(--amber)', fontWeight: 600 }}>{latStr}</span>
+        <span style={{ color: 'var(--signal)', fontWeight: 600 }}>{latStr}</span>
         <span style={{ color: 'var(--ink-3)', margin: '0 2px' }}>·</span>
         <span style={{ color: 'var(--ink-3)' }}>{MAP_OVERLAY_COPY.lonPrefix}</span>
-        <span style={{ color: 'var(--amber)', fontWeight: 600 }}>{lngStr}</span>
+        <span style={{ color: 'var(--signal)', fontWeight: 600 }}>{lngStr}</span>
         {zoomStr && (
           <>
             <span style={{ color: 'var(--ink-3)', margin: '0 2px' }}>·</span>
-            <span style={{ color: 'var(--teal)', fontWeight: 600 }}>{zoomStr.replace(' · ', '')}</span>
+            <span style={{ color: 'var(--ion)', fontWeight: 600 }}>{zoomStr.replace(' · ', '')}</span>
           </>
         )}
       </div>
     </Slot>
   );
-};
+});
 

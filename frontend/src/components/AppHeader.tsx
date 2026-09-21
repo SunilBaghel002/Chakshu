@@ -24,7 +24,7 @@ interface AppHeaderProps {
  * SLOT-01 — Command Bar (56px)
  * Iris lockup + brand + AOI selector + stats + nav tabs + LIVE indicator
  */
-export const AppHeader: React.FC<AppHeaderProps> = ({
+export const AppHeader: React.FC<AppHeaderProps> = React.memo(({
   aois,
   selectedAoiId,
   onSelectAoi,
@@ -200,4 +200,4 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       </div>
     </header>
   );
-};
+});

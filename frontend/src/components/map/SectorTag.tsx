@@ -11,7 +11,7 @@ interface SectorTagProps {
  * Max size: 220 x 24 px.
  * Displays computed sector grid coordinate (e.g. SEC 04·B).
  */
-export const SectorTag: React.FC<SectorTagProps> = ({ sector }) => {
+export const SectorTag: React.FC<SectorTagProps> = React.memo(({ sector }) => {
   return (
     <Slot
       id="SLOT-11"
@@ -35,12 +35,12 @@ export const SectorTag: React.FC<SectorTagProps> = ({ sector }) => {
       >
         <span
           className="inline-block w-1.5 h-1.5 rounded-full"
-          style={{ background: 'var(--amber)' }}
+          style={{ background: 'var(--signal)' }}
         />
-        <span className="tracking-wider" style={{ color: 'var(--amber)' }}>
+        <span className="tracking-wider" style={{ color: 'var(--signal)' }}>
           {sector}
         </span>
       </div>
     </Slot>
   );
-};
+});

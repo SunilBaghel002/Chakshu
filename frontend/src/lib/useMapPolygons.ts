@@ -77,7 +77,7 @@ export function useMapPolygons({
   onHoverWithBbox,
   onLabelsCollisionChange,
   beforeDate,
-  afterDate,
+  afterDate: _afterDate,
 }: UseMapPolygonsProps) {
   const geojsonLayerRef = useRef<L.GeoJSON | null>(null);
   const haloLayerRef = useRef<L.GeoJSON | null>(null);
@@ -284,26 +284,41 @@ export function useMapPolygons({
     return () => {
       map.off('moveend zoomend', evaluateLabelCollisions);
     };
-  }, [map, evidenceList, onSelectEvidence, showAllPolygons, selectedEvidenceId, setHoveredEvidence, onHoverWithBbox, evaluateLabelCollisions, computeContainerBBox]);
+  }, [map, evidenceList, onSelectEvidence, showAllPolygons, setHoveredEvidence, onHoverWithBbox, evaluateLabelCollisions, computeContainerBBox]);
 
-  // Lightweight style update on date change
+  const prevSelectedIdRef = useRef<string | null>(null);
+
+  // In-place lightweight style update on selection / date changes without layer recreation
   useEffect(() => {
-    if (!evidenceList.length) return;
+    if (!evidenceList.length || !polygonLayersRef.current.size) return;
+
+    const prevId = prevSelectedIdRef.current;
+    prevSelectedIdRef.current = selectedEvidenceId;
+
+    // Fast-path: if only selection changed, update only previous and new layers
+    if (prevId !== selectedEvidenceId) {
+      if (prevId && polygonLayersRef.current.has(prevId)) {
+        const prevEntry = polygonLayersRef.current.get(prevId)!;
+        const ev = evidenceList.find((e) => e.change_object_id === prevId);
+        const onset = ev?.temporal?.first_supported;
+        const isPre = Boolean(beforeDate && onset && onset < beforeDate);
+        prevEntry.layer.setStyle(getPolyStyle(false, prevEntry.color, showAllPolygons, isPre, prevEntry.isTrack3));
+      }
+      if (selectedEvidenceId && polygonLayersRef.current.has(selectedEvidenceId)) {
+        const nextEntry = polygonLayersRef.current.get(selectedEvidenceId)!;
+        const ev = evidenceList.find((e) => e.change_object_id === selectedEvidenceId);
+        const onset = ev?.temporal?.first_supported;
+        const isPre = Boolean(beforeDate && onset && onset < beforeDate);
+        nextEntry.layer.setStyle(getPolyStyle(true, nextEntry.color, showAllPolygons, isPre, nextEntry.isTrack3));
+      }
+      return;
+    }
+
+    // Full style refresh if dates or visibility changed
     polygonLayersRef.current.forEach(({ layer, color, evId, isTrack3 }) => {
       const ev = evidenceList.find((e) => e.change_object_id === evId);
       if (!ev) return;
       const onset = ev.temporal?.first_supported;
-      const isPreExisting = Boolean(beforeDate && onset && onset < beforeDate);
-      const isSelected = evId === selectedEvidenceId;
-      layer.setStyle(getPolyStyle(isSelected, color, showAllPolygons, isPreExisting, isTrack3));
-    });
-  }, [beforeDate, afterDate, evidenceList, selectedEvidenceId, showAllPolygons]);
-
-  // Lightweight style update on selection / visibility change
-  useEffect(() => {
-    polygonLayersRef.current.forEach(({ layer, color, evId, isTrack3 }) => {
-      const ev = evidenceList.find((e) => e.change_object_id === evId);
-      const onset = ev?.temporal?.first_supported;
       const isPreExisting = Boolean(beforeDate && onset && onset < beforeDate);
       const isSelected = evId === selectedEvidenceId;
       layer.setStyle(getPolyStyle(isSelected, color, showAllPolygons, isPreExisting, isTrack3));
