@@ -88,9 +88,9 @@ def check_frontend_fetch_isolation() -> list[str]:
 
     for ext in ["*.ts", "*.tsx", "*.js", "*.jsx"]:
         for file in src_dir.rglob(ext):
-            # Whitelist lib/api.ts
+            # Whitelist lib/api.ts and lib/track.ts (PRD 15 §6 beacon fallback)
             norm_path = str(file).replace("\\", "/")
-            if norm_path.endswith("src/lib/api.ts"):
+            if norm_path.endswith("src/lib/api.ts") or norm_path.endswith("src/lib/track.ts"):
                 continue
 
             lines = file.read_text(encoding="utf-8").splitlines()

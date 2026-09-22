@@ -125,7 +125,9 @@ class QueryRouter:
                     ex = s[2:].strip().strip("\"'")
                     if curr is not None:
                         curr["examples"].append(ex)
-                elif in_ex and (s.startswith("template:") or s.startswith("handler:") or s.startswith("slots:")):
+                elif in_ex and (
+                    s.startswith("template:") or s.startswith("handler:") or s.startswith("slots:")
+                ):
                     in_ex = False
             return intents
         except Exception:
@@ -271,7 +273,17 @@ class QueryRouter:
             best_intent, best_score = "locate_class", max(best_score, 0.89)
         elif "caption" in norm_q:
             best_intent, best_score = "caption_image", max(best_score, 0.89)
-        elif any(w in norm_q for w in ["what is in", "what is visible", "describe", "overview", "what does this", "what features"]):
+        elif any(
+            w in norm_q
+            for w in [
+                "what is in",
+                "what is visible",
+                "describe",
+                "overview",
+                "what does this",
+                "what features",
+            ]
+        ):
             best_intent, best_score = "describe_image", max(best_score, 0.88)
         elif "suppress" in norm_q or "filter" in norm_q and "out" in norm_q:
             best_intent, best_score = "explain_suppression", max(best_score, 0.85)
@@ -328,7 +340,10 @@ class QueryRouter:
         norm_q = self.normalise(query)
         target_cls = res.slots.get("target_class")
         if not target_cls:
-            if any(w in norm_q for w in ["what is in", "what is visible", "describe", "overview", "what features"]):
+            if any(
+                w in norm_q
+                for w in ["what is in", "what is visible", "describe", "overview", "what features"]
+            ):
                 return RouterOutput(task=AnalysisTask.SCENE_UNDERSTANDING, target=None)
             return RouterOutput(
                 task=AnalysisTask.UNSUPPORTED,

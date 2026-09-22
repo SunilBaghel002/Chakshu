@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import type { Evidence, DetectionSet } from '../lib/types';
-import type { BBox } from '../lib/map-fx';
+import { type BBox, trackMapHover, trackMapViewport } from '../lib/map-fx';
 import { useMapPolygons } from '../lib/useMapPolygons';
 import { SwipeCompare } from './SwipeCompare';
 import { GhostNumeral } from './GhostNumeral';
@@ -16,24 +16,12 @@ import { SatelliteIntelModal } from './SatelliteIntelModal';
 import evidenceListFixture from '../fixtures/evidence_list.json';
 
 interface MapPaneProps {
-  selectedAoiId?: string;
-  aoiCoords: [number, number];
-  aoiBounds?: [[number, number], [number, number]];
-  aoiName: string;
-  evidenceList: Evidence[];
-  selectedEvidenceId: string | null;
-  onSelectEvidence: (evidence: Evidence) => void;
-  detectionSet?: DetectionSet | null;
-  sliderPos: number;
-  onSliderChange: (pos: number) => void;
-  isSwipeActive: boolean;
-  onToggleSwipe: () => void;
-  beforeDate: string;
-  afterDate: string;
-  availableDates?: string[];
-  onSelectBeforeDate?: (date: string) => void;
-  onSelectAfterDate?: (date: string) => void;
-  onSwapDates?: () => void;
+  selectedAoiId?: string; aoiCoords: [number, number]; aoiBounds?: [[number, number], [number, number]];
+  aoiName: string; evidenceList: Evidence[]; selectedEvidenceId: string | null;
+  onSelectEvidence: (evidence: Evidence) => void; detectionSet?: DetectionSet | null;
+  sliderPos: number; onSliderChange: (pos: number) => void; isSwipeActive: boolean; onToggleSwipe: () => void;
+  beforeDate: string; afterDate: string; availableDates?: string[];
+  onSelectBeforeDate?: (date: string) => void; onSelectAfterDate?: (date: string) => void; onSwapDates?: () => void;
   presetTarget?: { center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]] } | null;
   onPresetConsumed?: () => void;
 }
@@ -185,6 +173,10 @@ export const MapPane: React.FC<MapPaneProps> = ({
     map.on('mousemove', onLeafletMouseMove);
     map.on('mouseout', onLeafletMouseOut);
     map.on('zoomend', () => setCurrentZoom(map.getZoom()));
+    map.on('moveend', () => {
+      const c = map.getCenter();
+      trackMapViewport(map.getZoom(), [c.lat, c.lng]);
+    });
 
     mapInstanceRef.current = map;
     prevAoiIdRef.current = selectedAoiId ?? null;
@@ -245,7 +237,6 @@ export const MapPane: React.FC<MapPaneProps> = ({
     map.on('move zoom resize', onSync);
     return () => { map.off('move zoom resize', onSync); };
   }, [applyClip, sliderPos]);
-
   // AOI fly-to & camera presets
   useEffect(() => {
     if (!mapInstanceRef.current || !selectedAoiId) return;
@@ -264,12 +255,12 @@ export const MapPane: React.FC<MapPaneProps> = ({
     onPresetConsumed?.();
   }, [presetTarget, onPresetConsumed]);
 
-
   // M3 Hover Lock-On
   const handleHoverWithBbox = useCallback((ev: Evidence | null, bbox: BBox | null) => {
     if (ev && bbox) {
       setLockedEvidence(ev);
       setLockedBBox(bbox);
+      trackMapHover(ev.change_object_id);
     } else if (!isTagHoveredRef.current) {
       setLockedEvidence(null);
       setLockedBBox(null);

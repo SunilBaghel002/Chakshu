@@ -32,6 +32,7 @@ try:
     from app.api.jobs import router as jobs_router
     from app.api.scenes import router as scenes_router
     from app.api.search import router as search_router
+    from app.api.session import router as session_router
     from app.api.tiles import router as tiles_router
     from app.api.uploads import router as uploads_router
     from app.exceptions import ChakshuError
@@ -45,6 +46,7 @@ except ImportError:
     from .api.jobs import router as jobs_router
     from .api.scenes import router as scenes_router
     from .api.search import router as search_router
+    from .api.session import router as session_router
     from .api.tiles import router as tiles_router
     from .api.uploads import router as uploads_router
     from .exceptions import ChakshuError
@@ -75,7 +77,7 @@ def create_app() -> FastAPI:
     )
 
     # Guest session middleware (PRD 14 S1, Task 8.10)
-    app.add_middleware(GuestSessionMiddleware, env=getattr(settings, 'ENV', 'dev'))
+    app.add_middleware(GuestSessionMiddleware, env=getattr(settings, "ENV", "dev"))
 
     # Exception Handling Middleware
     @app.exception_handler(ChakshuError)
@@ -140,6 +142,7 @@ def create_app() -> FastAPI:
     app.include_router(uploads_router, prefix="/api/v1")
     app.include_router(ask_router, prefix="/api/v1")
     app.include_router(events_router, prefix="/api/v1")
+    app.include_router(session_router, prefix="/api/v1")
 
     # Health Check Endpoint
     @app.get("/health", tags=["System"])

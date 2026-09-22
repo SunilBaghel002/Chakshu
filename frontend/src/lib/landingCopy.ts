@@ -30,9 +30,9 @@ export const PRIVACY_COPY = {
   sharingText: 'none. We do not sell, rent, or transmit this data to anyone.',
   controlLabel: 'Your control:',
   controlText:
-    'clearing the cookie starts a fresh anonymous session; asking us deletes everything we hold for that session.',
+    'clearing the cookie starts a fresh anonymous session; asking us at <team email> deletes everything we hold for that session.',
   attributionText: 'This product includes GeoLite2 data created by MaxMind, available from',
-  footerTag: 'NO THIRD-PARTY TRACKERS · FIRST-PARTY SOVEREIGN SYSTEM',
+  footerTag: 'NO THIRD-PARTY TRACKERS · WHAT WE RECORD',
   sihRef: 'SIH26227 · SIH26167',
 } as const;
 

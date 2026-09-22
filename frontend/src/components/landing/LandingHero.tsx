@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { LANDING_COPY } from '../../lib/landingCopy';
+import { track } from '../../lib/track';
 
 /**
  * W2.1 · Hero (min-height 88vh, two columns 5/7 above 1024px)
@@ -79,7 +80,10 @@ export const LandingHero: React.FC = () => {
               <Button
                 variant="bar"
                 size="lg"
-                onClick={() => navigate('/console')}
+                onClick={() => {
+                  track('landing.cta.click', { cta: 'hero_console' });
+                  navigate('/console');
+                }}
                 className="font-bold tracking-wider"
                 iconRight={<span>→</span>}
               >
@@ -89,6 +93,7 @@ export const LandingHero: React.FC = () => {
                 variant="secondary"
                 size="lg"
                 onClick={() => {
+                  track('landing.cta.click', { cta: 'hero_how' });
                   const el = document.getElementById('how-it-works');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}

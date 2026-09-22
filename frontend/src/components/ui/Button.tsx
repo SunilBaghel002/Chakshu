@@ -1,6 +1,7 @@
 import React, { forwardRef, useId } from 'react';
 import { DISABLED_REASONS, type DisabledReasonCode } from '../../lib/copy';
 import { usePrimaryOwner } from './PrimaryOwnerContext';
+import { track } from '../../lib/track';
 
 export type ButtonVariant =
   | 'primary'
@@ -208,10 +209,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       stateModifierClasses = `${hoverClasses} ${activeClasses} ${focusClasses}`;
     }
 
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (isStateDisabled || isStateLoading) return;
+      const labelText = typeof children === 'string' ? children : undefined;
+      const trackId = (rest as Record<string, unknown>)['data-track-id'] as string || buttonId;
+      const slotVal = (rest as Record<string, unknown>)['data-slot'] as string || (rest as Record<string, unknown>).slot as string;
+      track('ui.control.click', {
+        id: trackId,
+        variant: effectiveVariant,
+        slot: slotVal,
+        label: labelText,
+      });
+      onClick?.(e);
+    };
+
     return (
       <Component
         ref={ref}
         id={buttonId}
+        data-track-id={(rest as Record<string, unknown>)['data-track-id'] as string || buttonId}
         data-variant={effectiveVariant}
         type={Component === 'button' ? rest.type || 'button' : undefined}
         disabled={isStateDisabled}
@@ -219,7 +235,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         aria-disabled={isStateDisabled ? 'true' : undefined}
         aria-describedby={disabledTooltip ? reasonId : undefined}
         title={disabledTooltip || rest.title}
-        onClick={isStateDisabled || isStateLoading ? undefined : onClick}
+        onClick={isStateDisabled || isStateLoading ? undefined : handleClick}
         className={`group relative inline-flex items-center justify-center select-none overflow-hidden transition-all duration-fast rounded-ctl ${
           effectiveVariant === 'icon-ghost' ? '' : sizeClasses
         } ${iconSizeClasses} ${variantClasses} ${stateModifierClasses} ${className}`}

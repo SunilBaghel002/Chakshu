@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import { Columns, Eye, ArrowLeftRight, ChevronDown } from 'lucide-react';
-import { getYearDifference, MIN_TEMPORAL_GAP_YEARS } from '../lib/satelliteProviders';
+import { Columns, Eye } from 'lucide-react';
+import { track } from '../lib/track';
 
 interface SwipeCompareProps {
   sliderPos: number; // 0 to 100
@@ -21,12 +21,12 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
   onSliderChange,
   isSwipeActive,
   onToggleSwipe,
-  beforeDate,
-  afterDate,
-  availableDates = [],
-  onSelectBeforeDate,
-  onSelectAfterDate,
-  onSwapDates,
+  beforeDate: _beforeDate,
+  afterDate: _afterDate,
+  availableDates: _availableDates = [],
+  onSelectBeforeDate: _onSelectBeforeDate,
+  onSelectAfterDate: _onSelectAfterDate,
+  onSwapDates: _onSwapDates,
   onDragMove,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,6 +34,7 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
   const percentTagRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const lastPctRef = useRef(sliderPos);
+  const dragStartPctRef = useRef(sliderPos);
   const lastEmitTimeRef = useRef(0);
   const rafRef = useRef<number | null>(null);
 
@@ -45,21 +46,9 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
     }
   }, [sliderPos]);
 
-  // Ensure active dates are always present in dropdown options
-  const beforeOptions = React.useMemo(() => {
-    const dates = new Set(availableDates);
-    if (beforeDate) dates.add(beforeDate);
-    return Array.from(dates).sort();
-  }, [availableDates, beforeDate]);
-
-  const afterOptions = React.useMemo(() => {
-    const dates = new Set(availableDates);
-    if (afterDate) dates.add(afterDate);
-    return Array.from(dates).sort();
-  }, [availableDates, afterDate]);
-
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     isDraggingRef.current = true;
+    dragStartPctRef.current = lastPctRef.current;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
@@ -97,6 +86,10 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      track('map.swipe', {
+        from_pct: dragStartPctRef.current,
+        to_pct: lastPctRef.current,
+      });
       onSliderChange(lastPctRef.current);
       try {
         (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
@@ -150,144 +143,43 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
       onPointerUp={handlePointerUp}
       className="absolute inset-0 pointer-events-none z-[400] select-none"
     >
-      {/* Top Floating Controls */}
+      {/* Top Center Floating HUD Mode Pill */}
       <div
-        className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-auto gap-2"
+        className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-auto px-2 py-1 rounded-full shadow-lg transition-all"
+        style={{
+          background: 'rgba(14, 22, 38, 0.88)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid var(--line-strong)',
+        }}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        {/* Before Date Chip */}
-        <div
-          className="flex items-center gap-2 px-2.5 py-1.5"
-          style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <span className="t-tag" style={{ color: 'var(--amber)', fontSize: 9 }}>DATE A:</span>
-          {onSelectBeforeDate && beforeOptions.length > 0 ? (
-            <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
-              <select
-                value={beforeDate}
-                onChange={(e) => onSelectBeforeDate(e.target.value)}
-                className="appearance-none t-mono tabular-nums pl-2 pr-6 py-0.5 cursor-pointer focus:outline-none"
-                style={{
-                  background: 'var(--panel-2)',
-                  border: '1px solid var(--line-strong)',
-                  color: 'var(--amber)',
-                  borderRadius: 'var(--radius)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                {beforeOptions.map((d) => (
-                  <option key={d} value={d} style={{ background: 'var(--panel)' }}>
-                    {d} ({d.slice(0, 4)})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--ink-3)' }} />
-            </div>
-          ) : (
-            <span className="t-mono tabular-nums" style={{ color: 'var(--amber)', fontSize: 11, fontWeight: 700 }}>
-              {beforeDate}
-            </span>
-          )}
+        <div className="flex items-center gap-1.5 px-2 py-0.5 t-tag" style={{ color: 'var(--ink-2)', fontSize: 9 }}>
+          <span className="w-2 h-2 rounded-full" style={{ background: 'var(--amber)' }} />
+          <span className="t-mono font-bold" style={{ color: 'var(--amber)' }}>T₀</span>
+          <span style={{ color: 'var(--line-strong)' }}>vs</span>
+          <span className="w-2 h-2 rounded-full" style={{ background: 'var(--ion)' }} />
+          <span className="t-mono font-bold" style={{ color: 'var(--ion)' }}>T₁</span>
+          <span className="t-mono tabular-nums px-1.5 py-0.2 rounded" style={{ background: 'var(--panel)', color: 'var(--ink)' }}>
+            {Math.round(sliderPos)}%
+          </span>
         </div>
 
-        {/* Center: Swap + Gap Indicator + Single View */}
-        <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()}>
-          {onSwapDates && (
-            <button
-              onClick={onSwapDates}
-              className="btn-secondary"
-              style={{ padding: '4px 10px', fontSize: 10, minHeight: 28 }}
-              title="Swap Before and After"
-            >
-              <ArrowLeftRight className="w-3.5 h-3.5" style={{ color: 'var(--amber)' }} />
-              <span>SWAP</span>
-            </button>
-          )}
-          {(() => {
-            const gapYears = getYearDifference(beforeDate, afterDate);
-            const isGapValid = gapYears >= MIN_TEMPORAL_GAP_YEARS;
-            return (
-              <div
-                className="hidden sm:flex items-center gap-1 px-2 py-1"
-                style={{
-                  background: isGapValid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.15)',
-                  border: isGapValid ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(239, 68, 68, 0.5)',
-                  borderRadius: 'var(--radius)',
-                  fontSize: 9,
-                }}
-                title={`Temporal baseline gap: ${gapYears.toFixed(2)} years (Minimum 2.0y required)`}
-              >
-                <span className="t-mono font-bold" style={{ color: isGapValid ? '#4ade80' : '#f87171' }}>
-                  Δ {gapYears.toFixed(1)}Y
-                </span>
-                <span className="t-tag text-[8px]" style={{ color: isGapValid ? '#86efac' : '#fca5a5' }}>
-                  {isGapValid ? 'OK' : '<2Y'}
-                </span>
-              </div>
-            );
-          })()}
-          <button
-            onClick={onToggleSwipe}
-            className="flex items-center gap-1.5 px-2.5 py-1 t-tag cursor-pointer transition-colors"
-            style={{
-              background: 'var(--panel)',
-              border: '1px solid var(--line-strong)',
-              color: 'var(--teal)',
-              borderRadius: 'var(--radius)',
-              fontSize: 9,
-            }}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>SINGLE VIEW</span>
-          </button>
-        </div>
-
-        {/* After Date Chip */}
-        <div
-          className="flex items-center gap-2 px-2.5 py-1.5"
+        <button
+          type="button"
+          onClick={onToggleSwipe}
+          className="flex items-center gap-1.5 px-2.5 py-1 t-tag cursor-pointer transition-colors rounded-full"
           style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
+            background: 'var(--panel-2)',
+            border: '1px solid var(--line-strong)',
+            color: 'var(--teal)',
+            fontSize: 9,
+            fontWeight: 700,
           }}
-          onPointerDown={(e) => e.stopPropagation()}
+          title="Switch to single layer view"
         >
-          <span className="t-tag" style={{ color: 'var(--teal)', fontSize: 9 }}>DATE B:</span>
-          {onSelectAfterDate && afterOptions.length > 0 ? (
-            <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
-              <select
-                value={afterDate}
-                onChange={(e) => onSelectAfterDate(e.target.value)}
-                className="appearance-none t-mono tabular-nums pl-2 pr-6 py-0.5 cursor-pointer focus:outline-none"
-                style={{
-                  background: 'var(--panel-2)',
-                  border: '1px solid var(--line-strong)',
-                  color: 'var(--teal)',
-                  borderRadius: 'var(--radius)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                {afterOptions.map((d) => (
-                  <option key={d} value={d} style={{ background: 'var(--panel)' }}>
-                    {d} ({d.slice(0, 4)})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--ink-3)' }} />
-            </div>
-          ) : (
-            <span className="t-mono tabular-nums" style={{ color: 'var(--teal)', fontSize: 11, fontWeight: 700 }}>
-              {afterDate}
-            </span>
-          )}
-        </div>
+          <Eye className="w-3 h-3" />
+          <span>SINGLE VIEW</span>
+        </button>
       </div>
 
       {/* Vertical Hairline Divider — amber */}

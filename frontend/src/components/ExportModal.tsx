@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Download, ShieldCheck } from 'lucide-react';
 import { Button } from './ui/Button';
 import { EXPORT_COPY } from '../lib/copy';
+import { track } from '../lib/track';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -50,6 +51,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   if (!isOpen) return null;
 
   const handleExportClick = () => {
+    track('export.complete', {
+      format,
+      entities: targetId ? 1 : 0,
+      with_provenance: includeProvenance,
+    });
     onExport({
       format,
       includeGeometry,

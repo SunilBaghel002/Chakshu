@@ -83,6 +83,7 @@ async function safeFetch<T>(
   try {
     const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
     const res = await fetch(url, {
+      credentials: 'same-origin',
       ...options,
       headers: {
         Accept: 'application/json',

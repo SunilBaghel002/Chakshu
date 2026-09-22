@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import { ConsoleApp } from './components/layout/ConsoleApp';
 import { ContactSheet } from './components/ContactSheet';
@@ -7,8 +7,8 @@ import { StatesContactSheet } from './components/StatesContactSheet';
 import { LandingScreen } from './components/LandingScreen';
 import { PrivacyScreen } from './components/PrivacyScreen';
 import { AdminScreen } from './components/AdminScreen';
-
 import { ChakshuLogo } from './components/ui/ChakshuLogo';
+import { track } from './lib/track';
 
 export const NotFoundScreen: React.FC = () => (
   <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)] flex flex-col font-mono select-none">
@@ -38,26 +38,58 @@ export const NotFoundScreen: React.FC = () => (
   </div>
 );
 
+/**
+ * Route change listener emitting page.view per PRD 15 §3.
+ */
+const PageTracker: React.FC = () => {
+  const location = useLocation();
+  const isFirst = useRef(true);
+
+  useEffect(() => {
+    let referrerHost: string | undefined;
+    try {
+      if (document.referrer) {
+        referrerHost = new URL(document.referrer, window.location.href).host;
+      }
+    } catch {
+      referrerHost = undefined;
+    }
+
+    track('page.view', {
+      path: location.pathname,
+      title: document.title,
+      referrer_host: referrerHost,
+      entry: isFirst.current,
+    });
+    isFirst.current = false;
+  }, [location.pathname]);
+
+  return null;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
-    <Routes>
-      <Route path="/" element={<LandingScreen />} />
-      <Route
-        path="/console"
-        element={
-          <ToastProvider>
-            <ConsoleApp />
-          </ToastProvider>
-        }
-      />
-      <Route path="/admin" element={<AdminScreen />} />
-      <Route path="/privacy" element={<PrivacyScreen />} />
-      <Route path="/controls" element={<ContactSheet />} />
-      <Route path="/dev/controls" element={<ContactSheet />} />
-      <Route path="/states" element={<StatesContactSheet />} />
-      <Route path="/dev/states" element={<StatesContactSheet />} />
-      <Route path="*" element={<NotFoundScreen />} />
-    </Routes>
+    <>
+      <PageTracker />
+      <Routes>
+        <Route path="/" element={<LandingScreen />} />
+        <Route
+          path="/console"
+          element={
+            <ToastProvider>
+              <ConsoleApp />
+            </ToastProvider>
+          }
+        />
+        <Route path="/admin" element={<AdminScreen />} />
+        <Route path="/privacy" element={<PrivacyScreen />} />
+        <Route path="/controls" element={<ContactSheet />} />
+        <Route path="/dev/controls" element={<ContactSheet />} />
+        <Route path="/states" element={<StatesContactSheet />} />
+        <Route path="/dev/states" element={<StatesContactSheet />} />
+        <Route path="*" element={<NotFoundScreen />} />
+      </Routes>
+    </>
   );
 };
 
@@ -72,4 +104,3 @@ export const App: React.FC = () => {
     </BrowserRouter>
   );
 };
-

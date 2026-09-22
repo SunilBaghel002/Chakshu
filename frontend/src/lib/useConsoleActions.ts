@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import type { Evidence } from './types';
+import { track } from './track';
 
 export interface UseConsoleActionsParams {
   activeView: string;
@@ -30,21 +31,26 @@ export function useConsoleActions({
     (actionId: string) => {
       switch (actionId) {
         case 'nav-map':
+          track('ui.nav.click', { to: 'map', via: 'rail' });
           setActiveView('map');
           break;
         case 'nav-search':
+          track('ui.nav.click', { to: 'search', via: 'rail' });
           setActiveView('search');
           break;
         case 'nav-upload':
+          track('ui.nav.click', { to: 'upload', via: 'rail' });
           setActiveView('upload');
           break;
         case 'nav-review':
+          track('ui.nav.click', { to: 'review', via: 'rail' });
           setActiveView('review');
           break;
         case 'dates-swap':
           handleSwapDates();
           break;
         case 'detect-changes':
+          track('op.start', { op: 'change_detect' });
           handleRunAnalysis();
           break;
         case 'peek-stage':
@@ -59,11 +65,23 @@ export function useConsoleActions({
           break;
         case 'confirm-target':
           if (selectedEvidence) {
+            track('decision.set', {
+              entity_type: 'change_object',
+              entity_id: selectedEvidence.change_object_id,
+              action: 'confirm',
+              had_note: false,
+            });
             handleConfirmEvidence(selectedEvidence.change_object_id);
           }
           break;
         case 'reject-target':
           if (selectedEvidence) {
+            track('decision.set', {
+              entity_type: 'change_object',
+              entity_id: selectedEvidence.change_object_id,
+              action: 'reject',
+              had_note: false,
+            });
             handleRejectEvidence(selectedEvidence.change_object_id);
           }
           break;
