@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { Answer } from '../lib/types';
 import { askQuestion, getAskTrace, getAskReportUrl } from '../lib/api';
+import { track } from '../lib/track';
 
 interface AskPanelProps {
   aoiId: string;
@@ -42,12 +43,34 @@ export const AskPanel: React.FC<AskPanelProps> = ({ aoiId, onClose, onHighlightC
     setLoading(true);
     setShowTrace(false);
     setTraceData(null);
+    track('op.start', { op: 'ask' });
+    const startTime = performance.now();
     const res = await askQuestion(qText, aoiId);
+    const duration = Math.round(performance.now() - startTime);
+
     if (res.kind === 'ok') {
       setAnswer(res.data);
+      track('ask.question', {
+        question_len: qText.trim().length,
+        tier: res.data.tier || 'tier1',
+        intents: res.data.intent ? [res.data.intent.id] : [],
+        grounded: (res.data.sources?.length ?? 0) > 0,
+      });
+      track('op.result', {
+        op: 'ask',
+        ok: true,
+        duration_ms: duration,
+        tier: res.data.tier,
+      });
       if (onHighlightChange && res.data.highlights) {
         onHighlightChange(res.data.highlights);
       }
+    } else {
+      track('op.error', {
+        op: 'ask',
+        code: res.kind,
+        duration_ms: duration,
+      });
     }
     setLoading(false);
   };

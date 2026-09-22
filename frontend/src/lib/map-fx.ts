@@ -325,3 +325,41 @@ class HoverLatencyTracker {
 }
 
 export const hoverLatencyTracker = new HoverLatencyTracker();
+
+import { track, trackAgg } from './track';
+
+/**
+ * Record aggregated map polygon hover per PRD 15 §3 (<= 1 per 5s).
+ * A pointermove handler emits nothing; only aggregated hover emits.
+ */
+export function trackMapHover(targetId?: string): void {
+  trackAgg('map.hover', { target_id: targetId }, 5000);
+}
+
+let viewportTimer: ReturnType<typeof setTimeout> | null = null;
+let lastViewportEmitTime = 0;
+
+/**
+ * Debounced map viewport tracking per PRD 15 §3.
+ * Debounced 2s after interaction ends, max 1 per 10s.
+ */
+export function trackMapViewport(zoom: number, center: [number, number]): void {
+  if (viewportTimer) {
+    clearTimeout(viewportTimer);
+    viewportTimer = null;
+  }
+
+  viewportTimer = setTimeout(() => {
+    const now = Date.now();
+    if (now - lastViewportEmitTime >= 10000) {
+      lastViewportEmitTime = now;
+      track('map.viewport', {
+        z: Math.round(zoom * 10) / 10,
+        center: [
+          Math.round(center[0] * 10000) / 10000,
+          Math.round(center[1] * 10000) / 10000,
+        ],
+      });
+    }
+  }, 2000);
+}

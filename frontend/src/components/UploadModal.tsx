@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { DetectionSet } from '../lib/types';
 import { uploadImageFile, getDetections } from '../lib/api';
+import { track } from '../lib/track';
 import { UploadTelemetryTab } from './UploadTelemetryTab';
 import { UploadRejectionsTab } from './UploadRejectionsTab';
 import { UploadCanvasTab } from './UploadCanvasTab';
@@ -64,6 +65,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         setIsUploading(false);
         return;
       }
+
+      track('upload.complete', {
+        mb: Math.round((selectedFile.size / (1024 * 1024)) * 10) / 10,
+        crs: uploadRes.data.crs_epsg ?? 'unknown',
+        gsd_m: uploadRes.data.gsd_m ?? (gsdVal ?? null),
+        gate: uploadRes.data.status === 'GEOREFERENCED' ? 'pass' : uploadRes.data.status === 'VISUAL_ONLY' ? 'warn' : 'fail',
+        bands: uploadRes.data.band_count || uploadRes.data.bands?.length || 3,
+      });
 
       // Fetch dynamically computed detections
       const detRes = await getDetections(uploadRes.data.id, false);

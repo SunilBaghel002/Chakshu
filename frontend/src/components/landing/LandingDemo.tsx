@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { LANDING_COPY } from '../../lib/landingCopy';
+import { trackOnce } from '../../lib/track';
 
 /**
  * W2.5 · THE DEMO — full-bleed, --well background, min-height 70vh
@@ -29,6 +30,9 @@ export const LandingDemo: React.FC = () => {
   }, []);
 
   const handlePointerUp = useCallback(() => {
+    if (dragging.current) {
+      trackOnce('landing.demo.interact', { kind: 'swipe' });
+    }
     dragging.current = false;
   }, []);
 
@@ -110,7 +114,10 @@ export const LandingDemo: React.FC = () => {
                 borderRadius: 2,
                 boxShadow: hoveredTarget ? '0 0 20px rgba(255,148,38,0.4)' : 'none',
               }}
-              onMouseEnter={() => setHoveredTarget('chg_jewar_runway_01')}
+              onMouseEnter={() => {
+                setHoveredTarget('chg_jewar_runway_01');
+                trackOnce('landing.demo.interact', { kind: 'hover' });
+              }}
               onMouseLeave={() => setHoveredTarget(null)}
             >
               {/* Corner targeting reticles */}

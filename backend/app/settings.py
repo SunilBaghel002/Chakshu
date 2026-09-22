@@ -24,6 +24,8 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    ROOT_DIR: Path = ROOT_DIR
+
     # Database
     DATABASE_URL: str = Field(
         default="postgresql+psycopg://chakshu:chakshu@localhost:5432/chakshu",
@@ -114,6 +116,28 @@ class Settings(BaseSettings):
     TILES_DIR: Path = Field(
         default=Path("data/tiles"),
         description="Storage directory for rendered raster PNG tiles.",
+    )
+
+    # Identity & Telemetry (PRD 14 §2, PRD 15 §7)
+    ENV: str = Field(
+        default="dev",
+        description="Environment: 'dev' or 'prod'. Secure cookie enabled in prod.",
+    )
+    SERVER_SECRET: str = Field(
+        default="dev-secret-key-chakshu-2026",
+        description="Secret key used for HMAC-SHA256 IP address hashing.",
+    )
+    GEOIP_DB_PATH: Path = Field(
+        default=Path("data/geoip/GeoLite2-City.mmdb"),
+        description="Path to offline MaxMind GeoLite2 City MMDB file.",
+    )
+    TELEMETRY_IGNORE_IPS: list[str] = Field(
+        default_factory=list,
+        description="IP addresses filtered from telemetry collection (self/testing traffic).",
+    )
+    TELEMETRY_RETENTION_DAYS: int = Field(
+        default=90,
+        description="Event retention period in days before pruning.",
     )
 
 

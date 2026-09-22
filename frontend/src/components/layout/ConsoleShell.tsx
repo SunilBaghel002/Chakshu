@@ -255,15 +255,15 @@ export const ConsoleShell: React.FC<ConsoleShellProps> = ({
           {headerNode}
         </Slot>
 
-        {/* Row 3: SLOT-02 Temporal Bar (44px fixed) */}
-        <Slot id="SLOT-02" h={44} className="shrink-0">
+        {/* Row 3: SLOT-02 Temporal Bar (52px fixed) */}
+        <Slot id="SLOT-02" h={52} className="shrink-0">
           {temporalBarNode}
         </Slot>
 
         {/* Row 4: Main Stage (flex) */}
         <div className="flex-1 flex overflow-hidden relative min-h-0">
-          {/* SLOT-05: Icon Rail (56px fixed) */}
-          <Slot id="SLOT-05" w={56} className="shrink-0 h-full">
+          {/* SLOT-05: Icon Rail (58px fixed) */}
+          <Slot id="SLOT-05" w={58} className="shrink-0 h-full">
             {railNode}
           </Slot>
 
@@ -277,8 +277,8 @@ export const ConsoleShell: React.FC<ConsoleShellProps> = ({
               {stageNode}
             </Slot>
 
-            {/* SLOT-30: Timeline Strip (72px fixed) */}
-            <Slot id="SLOT-30" h={72} className="shrink-0">
+            {/* SLOT-30: Timeline Strip (76px fixed) */}
+            <Slot id="SLOT-30" h={76} className="shrink-0">
               {timelineNode}
             </Slot>
           </main>

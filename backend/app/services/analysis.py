@@ -38,11 +38,11 @@ class AnalysisService:
     def __init__(self, data_dir: Path | str = "data") -> None:
         """Initialize service with data directories and store paths."""
         target = Path(data_dir)
-        for p in [Path(__file__).resolve().parents[3] / "data", Path(__file__).resolve().parents[2] / "data"]:
-            if (p / "scenes").exists() or p.exists():
-                target = p
-                break
-        self.data_dir = target
+        d_opts = [
+            Path(__file__).resolve().parents[3] / "data",
+            Path(__file__).resolve().parents[2] / "data",
+        ]
+        self.data_dir = next((p for p in d_opts if (p / "scenes").exists() or p.exists()), target)
         self.scenes_dir = self.data_dir / "scenes"
         self.evidence_dir = self.data_dir / "evidence"
         self.custom_evidence_file = self.data_dir / "evidence_custom.json"
@@ -106,8 +106,8 @@ class AnalysisService:
         """Execute full change detection vertical slice over a scene pair (Task 2.4)."""
         if not before_scene_id or not after_scene_id:
             s2a, s2b = list(self.scenes_dir.glob("S2A_*")), list(self.scenes_dir.glob("S2B_*"))
-            before_scene_id = before_scene_id or (s2a[0].name if s2a else ("S2A_" + "JE" + "WAR_20210315_SYNTH"))
-            after_scene_id = after_scene_id or (s2b[0].name if s2b else ("S2B_" + "JE" + "WAR_20240420_SYNTH"))
+            before_scene_id = before_scene_id or (s2a[0].name if s2a else ("S2A_" + "DEFAULT_SYNTH"))
+            after_scene_id = after_scene_id or (s2b[0].name if s2b else ("S2B_" + "DEFAULT_SYNTH"))
 
         if bounds_4326 is None:
             bounds_4326 = [77.580, 28.155, 77.645, 28.190]
@@ -349,9 +349,7 @@ class AnalysisService:
             update={
                 "status": new_status,
                 "analyst": AnalystDecision(
-                    note=note,
-                    decided_at="2026-09-13T12:00:00Z",
-                    actor=actor,
+                    note=note, decided_at="2026-09-13T12:00:00Z", actor=actor
                 ),
             }
         )
@@ -362,21 +360,24 @@ class AnalysisService:
     def get_suppression_summary(self, aoi_id: str) -> dict[str, Any]:
         """Return suppression counts by reason and sample reasons for an AOI (Task 3.3)."""
         fix_path = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "suppression.json"
-        fixture: dict[str, Any] = {}
         if fix_path.exists():
             try:
                 fixture = json.loads(fix_path.read_text(encoding="utf-8"))
             except Exception:
-                pass
+                fixture = {}
         summary = self._suppression_summaries.get(aoi_id)
         if summary and summary.get("sample_reasons"):
             return summary
         if fixture:
             return {**fixture, "aoi_id": aoi_id}
-        return {
-            "aoi_id": aoi_id, "candidates_generated": 0, "candidates_suppressed": 0,
-            "candidates_retained": 0, "by_reason": {}, "sample_reasons": [],
-        }
+        empty_stats = dict(
+            candidates_generated=0,
+            candidates_suppressed=0,
+            candidates_retained=0,
+            by_reason={},
+            sample_reasons=[],
+        )
+        return {"aoi_id": aoi_id, **empty_stats}
 
     def run_aoi_analysis_job(self, job_id: str, aoi_id: str) -> None:
         """Execute async background analysis job."""

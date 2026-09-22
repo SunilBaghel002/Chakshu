@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { AlertTriangle, FileImage, Sparkles, UploadCloud, X } from 'lucide-react';
 import type { DetectionSet } from '../lib/types';
 import { getDetections, uploadImageFile } from '../lib/api';
+import { track } from '../lib/track';
 
 interface UploadStartProps { onClose: () => void; onComplete: (result: DetectionSet) => void; }
 
@@ -18,6 +19,13 @@ export const UploadStart: React.FC<UploadStartProps> = ({ onClose, onComplete })
     setBusy(true); setError(null);
     const uploaded = await uploadImageFile(file, file.name, gsd ? Number(gsd) : undefined);
     if (uploaded.kind !== 'ok') { setError(uploaded.message); setBusy(false); return; }
+    track('upload.complete', {
+      mb: Math.round((file.size / (1024 * 1024)) * 10) / 10,
+      crs: uploaded.data.crs_epsg ?? 'unknown',
+      gsd_m: uploaded.data.gsd_m ?? (gsd ? Number(gsd) : null),
+      gate: uploaded.data.status === 'GEOREFERENCED' ? 'pass' : uploaded.data.status === 'VISUAL_ONLY' ? 'warn' : 'fail',
+      bands: uploaded.data.band_count || uploaded.data.bands?.length || 3,
+    });
     const detected = await getDetections(uploaded.data.id, false);
     setBusy(false);
     if (detected.kind === 'ok') onComplete(detected.data);

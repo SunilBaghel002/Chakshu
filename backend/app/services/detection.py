@@ -32,15 +32,12 @@ from app.schemas.detection import (
 from app.services.image_validator import ImageValidator
 
 log = logging.getLogger(__name__)
-ALLOWED_OBJECT_CLASSES = {
-    "aircraft", "building", "container", "road", "ship",
-    "storage_tank", "swimming_pool", "tower", "vehicle",
-}
-NOTABLE_BUILDING_TERMS = {
-    "large", "isolated", "distinctive", "industrial", "infrastructure",
-    "operational", "warehouse", "facility", "hangar", "plant", "terminal",
-}
-
+ALLOWED_OBJECT_CLASSES = set(
+    "aircraft building container road ship storage_tank swimming_pool tower vehicle".split()
+)
+NOTABLE_BUILDING_TERMS = set(
+    "large isolated distinctive industrial infrastructure operational warehouse facility hangar plant terminal".split()
+)
 
 
 class DetectionService:
@@ -310,11 +307,19 @@ class DetectionService:
         buildings = 0
         for box, score, label, raw_label, evidence in survivors:
             if len(detections) == 15:
-                rejections.append(RejectionDetail(label_raw=raw_label, reason="cap_reached", detail="maximum 15 objects"))
+                rejections.append(
+                    RejectionDetail(
+                        label_raw=raw_label, reason="cap_reached", detail="maximum 15 objects"
+                    )
+                )
                 continue
             if label == "building":
                 if buildings == 10:
-                    rejections.append(RejectionDetail(label_raw=raw_label, reason="cap_reached", detail="maximum 10 buildings"))
+                    rejections.append(
+                        RejectionDetail(
+                            label_raw=raw_label, reason="cap_reached", detail="maximum 10 buildings"
+                        )
+                    )
                     continue
                 buildings += 1
             detections.append(
