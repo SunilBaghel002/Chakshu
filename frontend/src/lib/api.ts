@@ -10,6 +10,12 @@
 
 import { z } from 'zod';
 import type {
+  AdminOverviewResponse,
+  AdminSessionDetailResponse,
+  AdminSessionEventsResponse,
+  AdminSessionFilterParams,
+  AdminSessionsResponse,
+  AdminStatusResponse,
   Answer,
   Aoi,
   AoiCreate,
@@ -18,9 +24,13 @@ import type {
   Evidence,
   JobResponse,
   Scene,
+  SemanticSearchResponse,
+  SemanticSearchResultItem,
   Trace,
   Upload,
 } from './types';
+
+export type { SemanticSearchResultItem, SemanticSearchResponse };
 
 // Fixture imports for instant offline mock mode
 import aoiFixture from '../fixtures/aoi.json';
@@ -315,11 +325,7 @@ export async function askQuestion(question: string, aoiId?: string, uploadId?: s
   const fallback = lower.includes('vehicle') || lower.includes('car') || lower.includes('weather')
     ? (answerUnsupportedFixture as unknown as Answer)
     : (answerPolishedFixture as unknown as Answer);
-  return safeFetch('/ask', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, aoi_id: aoiId, upload_id: uploadId }),
-  }, fallback);
+  return safeFetch('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, aoi_id: aoiId, upload_id: uploadId }) }, fallback);
 }
 
 export async function getAskTrace(answerId: string): Promise<ApiResult<Record<string, unknown>>> {
@@ -330,67 +336,57 @@ export function getAskReportUrl(answerId: string): string {
   return `${API_BASE}/ask/${encodeURIComponent(answerId)}/report.json`;
 }
 
-export interface SemanticSearchResultItem {
-  tile_id: string;
-  scene_id: string;
-  x: number;
-  y: number;
-  geom?: Record<string, unknown>;
-  cloud_pct?: number;
-  ndvi_mean?: number;
-  ndwi_mean?: number;
-  ndbi_mean?: number;
-  score: number;
-  png_url?: string;
-  acquired_at?: string;
-}
-
-export interface SemanticSearchResponse {
-  query: string;
-  count: number;
-  results: SemanticSearchResultItem[];
-}
-
 export async function searchSemantic(query: string, aoiId?: string, limit = 12): Promise<ApiResult<SemanticSearchResponse>> {
-  const fallback: SemanticSearchResponse = {
-    query,
-    count: 2,
-    results: [
-      {
-        tile_id: 'S2A_JEWAR_20210315_SYNTH_0_0',
-        scene_id: 'S2A_JEWAR_20210315_SYNTH',
-        x: 0,
-        y: 0,
-        cloud_pct: 0.0,
-        ndvi_mean: 0.816,
-        ndwi_mean: -0.754,
-        ndbi_mean: -0.623,
-        score: 0.885,
-        png_url: '/api/v1/tiles/imagery/14/11956/6789.png?scene_id=S2A_JEWAR_20210315_SYNTH',
-      },
-      {
-        tile_id: 'S2B_JEWAR_20240420_SYNTH_0_0',
-        scene_id: 'S2B_JEWAR_20240420_SYNTH',
-        x: 0,
-        y: 0,
-        cloud_pct: 0.0,
-        ndvi_mean: 0.210,
-        ndwi_mean: -0.420,
-        ndbi_mean: 0.313,
-        score: 0.842,
-        png_url: '/api/v1/tiles/imagery/14/11956/6789.png?scene_id=S2B_JEWAR_20240420_SYNTH',
-      },
-    ],
-  };
+  return safeFetch('/search/semantic', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, aoi_id: aoiId, limit }) }, { query, count: 0, results: [] });
+}
 
-  return safeFetch(
-    '/search/semantic',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, aoi_id: aoiId, limit }),
-    },
-    fallback
-  );
+export async function fetchAdminStatus(): Promise<ApiResult<AdminStatusResponse>> {
+  return safeFetch('/admin/status', undefined, { admin_configured: true, role: 'guest', session_label: 'GUEST-LOCAL' });
+}
+
+export async function fetchAdminOverview(range = '7d'): Promise<ApiResult<AdminOverviewResponse>> {
+  return safeFetch(`/admin/overview?range=${encodeURIComponent(range)}`);
+}
+
+function toQuery(p?: Record<string, unknown>): string {
+  if (!p) return '';
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(p)) {
+    if (v !== undefined && v !== null && v !== false) q.set(k, String(v));
+  }
+  const s = q.toString();
+  return s ? `?${s}` : '';
+}
+
+export async function fetchAdminSessions(params?: AdminSessionFilterParams): Promise<ApiResult<AdminSessionsResponse>> {
+  return safeFetch(`/admin/sessions${toQuery(params as Record<string, unknown>)}`);
+}
+
+export async function fetchAdminSessionDetail(id: string): Promise<ApiResult<AdminSessionDetailResponse>> {
+  return safeFetch(`/admin/sessions/${encodeURIComponent(id)}`);
+}
+
+export async function fetchAdminSessionEvents(id: string, visitId?: string, family?: string): Promise<ApiResult<AdminSessionEventsResponse>> {
+  return safeFetch(`/admin/sessions/${encodeURIComponent(id)}/events${toQuery({ visit_id: visitId, family })}`);
+}
+
+export async function deleteAdminSession(id: string): Promise<ApiResult<{ ok: boolean; id: string }>> {
+  return safeFetch(`/admin/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function getAdminExportCsvUrl(params?: AdminSessionFilterParams): string {
+  return `${API_BASE}/admin/export.csv${toQuery(params as Record<string, unknown>)}`;
+}
+
+export async function loginAdmin(email: string, password: string): Promise<ApiResult<{ role: string; user?: unknown }>> {
+  return safeFetch('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function logoutAdmin(): Promise<ApiResult<void>> {
+  return safeFetch('/auth/logout', { method: 'POST' });
 }
 

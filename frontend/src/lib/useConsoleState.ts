@@ -16,6 +16,7 @@ import type { Evidence, ChangeSummary, DetectionSet } from './types';
 import { enforceMinGapForBefore, enforceMinGapForAfter } from './satelliteProviders';
 import { useConsoleActions, getPresetMap } from './useConsoleActions';
 import { TOAST_COPY } from './copy';
+import { track } from './track';
 
 interface UseConsoleStateParams {
   showToast: (toast: { message: string; onUndo?: () => void }) => void;
@@ -146,8 +147,11 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
 
   const handleDetectChanges = async () => {
     if (!selectedAoiId || isAnalyzing) return;
+    const t0 = performance.now();
+    track('op.start', { op: 'change_detect', aoi_id: selectedAoiId });
     setIsAnalyzing(true);
     const res = await triggerAoiAnalyse(selectedAoiId);
+    const duration = Math.round(performance.now() - t0);
     if (res.kind === 'ok') {
       const updated = await getEvidenceList(selectedAoiId);
       if (updated.kind === 'ok') {
@@ -156,6 +160,9 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
           setSelectedEvidence(updated.data[0]);
         }
       }
+      track('op.result', { op: 'change_detect', aoi_id: selectedAoiId }, { duration_ms: duration, ok: true });
+    } else {
+      track('op.error', { op: 'change_detect', aoi_id: selectedAoiId, error: res.kind }, { duration_ms: duration, ok: false });
     }
     setIsAnalyzing(false);
   };

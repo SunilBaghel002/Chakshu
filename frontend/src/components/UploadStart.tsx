@@ -16,9 +16,17 @@ export const UploadStart: React.FC<UploadStartProps> = ({ onClose, onComplete })
 
   const submit = async () => {
     if (!file) return;
+    const t0 = performance.now();
+    track('op.start', { op: 'upload', filename: file.name });
     setBusy(true); setError(null);
     const uploaded = await uploadImageFile(file, file.name, gsd ? Number(gsd) : undefined);
-    if (uploaded.kind !== 'ok') { setError(uploaded.message); setBusy(false); return; }
+    if (uploaded.kind !== 'ok') {
+      const dur = Math.round(performance.now() - t0);
+      track('op.error', { op: 'upload', error: uploaded.message }, { duration_ms: dur, ok: false });
+      setError(uploaded.message);
+      setBusy(false);
+      return;
+    }
     track('upload.complete', {
       mb: Math.round((file.size / (1024 * 1024)) * 10) / 10,
       crs: uploaded.data.crs_epsg ?? 'unknown',
@@ -27,9 +35,15 @@ export const UploadStart: React.FC<UploadStartProps> = ({ onClose, onComplete })
       bands: uploaded.data.band_count || uploaded.data.bands?.length || 3,
     });
     const detected = await getDetections(uploaded.data.id, false);
+    const dur = Math.round(performance.now() - t0);
     setBusy(false);
-    if (detected.kind === 'ok') onComplete(detected.data);
-    else setError(detected.message);
+    if (detected.kind === 'ok') {
+      track('op.result', { op: 'upload', id: uploaded.data.id }, { duration_ms: dur, ok: true });
+      onComplete(detected.data);
+    } else {
+      track('op.error', { op: 'upload', error: detected.message }, { duration_ms: dur, ok: false });
+      setError(detected.message);
+    }
   };
 
   return (

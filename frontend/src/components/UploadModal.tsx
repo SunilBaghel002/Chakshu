@@ -52,6 +52,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const handleRunAiAnalysis = async () => {
     if (!selectedFile) return;
+    const t0 = performance.now();
+    track('op.start', { op: 'upload', filename: selectedFile.name });
     setIsUploading(true);
     setUploadError(null);
 
@@ -60,7 +62,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       const uploadRes = await uploadImageFile(selectedFile, selectedFile.name, gsdVal);
 
       if (uploadRes.kind !== 'ok') {
+        const dur = Math.round(performance.now() - t0);
         const errMsg = 'message' in uploadRes ? uploadRes.message : 'Upload failed';
+        track('op.error', { op: 'upload', error: errMsg }, { duration_ms: dur, ok: false });
         setUploadError(errMsg);
         setIsUploading(false);
         return;
@@ -76,15 +80,20 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       // Fetch dynamically computed detections
       const detRes = await getDetections(uploadRes.data.id, false);
+      const dur = Math.round(performance.now() - t0);
       if (detRes.kind === 'ok') {
+        track('op.result', { op: 'upload', id: uploadRes.data.id }, { duration_ms: dur, ok: true });
         if (onDetectionSetUpdate) {
           onDetectionSetUpdate(detRes.data);
         }
       } else if (detRes.kind === 'error') {
+        track('op.error', { op: 'upload', error: detRes.message }, { duration_ms: dur, ok: false });
         setUploadError(`${detRes.code}: ${detRes.message}`);
       }
     } catch (err: unknown) {
+      const dur = Math.round(performance.now() - t0);
       const msg = err instanceof Error ? err.message : 'Upload failed';
+      track('op.error', { op: 'upload', error: msg }, { duration_ms: dur, ok: false });
       setUploadError(msg);
     } finally {
       setIsUploading(false);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, X, Database, Sparkles } from 'lucide-react';
 import { searchSemantic, type SemanticSearchResultItem } from '../lib/api';
+import { track } from '../lib/track';
 
 interface SearchModalProps {
   aoiId?: string;
@@ -27,11 +28,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({ aoiId, onClose, onSele
     setLoading(true);
     setSearchedQuery(textToSearch);
 
+    const t0 = performance.now();
+    track('op.start', { op: 'search', query: textToSearch.trim() });
     const res = await searchSemantic(textToSearch, aoiId, 12);
+    const duration = Math.round(performance.now() - t0);
+
     if (res.kind === 'ok') {
       setResults(res.data.results || []);
+      track('op.result', { op: 'search', count: res.data.count }, { duration_ms: duration, ok: true });
     } else {
       setResults([]);
+      track('op.error', { op: 'search', error: res.kind }, { duration_ms: duration, ok: false });
     }
     setLoading(false);
   };

@@ -19,6 +19,11 @@ from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from app.services.telemetry_storage import (
+    is_db_available,
+    load_telemetry_state,
+    save_telemetry_state,
+)
 from app.services.ua_service import BOT_PATTERN
 from app.settings import settings
 
@@ -63,10 +68,13 @@ VISIT_GAP_MINUTES = 30
 _request_timestamps: dict[str, list[float]] = defaultdict(list)
 _event_timestamps: dict[str, list[float]] = defaultdict(list)
 
-# In-memory storage & metrics fallback
-_in_memory_events: list[dict[str, Any]] = []
-_in_memory_visits: dict[str, dict[str, Any]] = {}  # visit_id -> visit_data
-_active_session_visits: dict[str, str] = {}  # session_id -> current_visit_id
+# In-memory storage & metrics fallback (seeded/restored from local state)
+_loaded_evts, _loaded_vsts = load_telemetry_state()
+_in_memory_events: list[dict[str, Any]] = _loaded_evts
+_in_memory_visits: dict[str, dict[str, Any]] = _loaded_vsts
+_active_session_visits: dict[str, str] = {
+    v["session_id"]: vid for vid, v in _in_memory_visits.items() if "session_id" in v
+}
 _filtered_events_count: int = 0
 _unknown_events_count: int = 0
 
@@ -166,14 +174,15 @@ def get_or_create_visit(
     }
     _in_memory_visits[new_visit_id] = visit_record
     _active_session_visits[session_id] = new_visit_id
+    save_telemetry_state(_in_memory_events, _in_memory_visits)
 
-    # Persist visit to DB if available
-    db_url = getattr(settings, "DATABASE_URL", None)
-    if db_url and not settings.OFFLINE:
+    # Persist visit to DB if reachable
+    if is_db_available():
         try:
             import psycopg
 
-            with psycopg.connect(db_url, connect_timeout=2) as conn, conn.cursor() as cur:
+            db_url = getattr(settings, "DATABASE_URL", "").replace("postgresql+psycopg://", "postgresql://")
+            with psycopg.connect(db_url, connect_timeout=1) as conn, conn.cursor() as cur:
                 cur.execute(
                     """
                     INSERT INTO visit (
@@ -196,7 +205,7 @@ def get_or_create_visit(
                 )
                 conn.commit()
         except Exception as e:
-            log.debug("Visit DB insert failed (memory retained): %s", e)
+            log.debug("Visit DB insert failed: %s", e)
 
     return new_visit_id
 
@@ -263,10 +272,9 @@ def ingest_batch(
             except Exception:
                 client_ts = None
 
-        duration_ms = item.get("duration_ms")
-        ok_val = item.get("ok")
-        if ok_val is not None:
-            ok_val = bool(ok_val)
+        dur_raw = item.get("duration_ms") if item.get("duration_ms") is not None else (item.get("p", {}).get("duration_ms") if isinstance(item.get("p"), dict) else None)
+        ok_raw = item.get("ok") if item.get("ok") is not None else (item.get("p", {}).get("ok") if isinstance(item.get("p"), dict) else None)
+        ok_val = bool(ok_raw) if ok_raw is not None else None
 
         valid_records.append(
             {
@@ -274,8 +282,8 @@ def ingest_batch(
                 "path": clean_path,
                 "p": clean_p,
                 "client_ts": client_ts,
-                "duration_ms": duration_ms
-                if isinstance(duration_ms, int) and duration_ms >= 0
+                "duration_ms": dur_raw
+                if isinstance(dur_raw, int) and dur_raw >= 0
                 else None,
                 "ok": ok_val,
             }
@@ -302,7 +310,7 @@ def ingest_batch(
                     clean_op = op_name[:32]
                     visit["ops"][clean_op] = visit["ops"].get(clean_op, 0) + 1
 
-    # Store events in memory
+    # Store events in memory and persist
     for rec in valid_records:
         _in_memory_events.append(
             {
@@ -318,14 +326,15 @@ def ingest_batch(
                 "ok": rec["ok"],
             }
         )
+    save_telemetry_state(_in_memory_events, _in_memory_visits)
 
-    # Persist to DB if available
-    db_url = getattr(settings, "DATABASE_URL", None)
-    if db_url and not settings.OFFLINE:
+    # Persist to DB if reachable
+    if is_db_available():
         try:
             import psycopg
 
-            with psycopg.connect(db_url, connect_timeout=2) as conn, conn.cursor() as cur:
+            db_url = getattr(settings, "DATABASE_URL", "").replace("postgresql+psycopg://", "postgresql://")
+            with psycopg.connect(db_url, connect_timeout=1) as conn, conn.cursor() as cur:
                 # Update visit
                 cur.execute(
                     """
@@ -369,7 +378,7 @@ def ingest_batch(
                 )
                 conn.commit()
         except Exception as e:
-            log.debug("Telemetry DB batch insert failed (retained in memory): %s", e)
+            log.debug("Telemetry DB batch insert failed: %s", e)
 
     return True
 

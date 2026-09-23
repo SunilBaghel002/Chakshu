@@ -72,10 +72,13 @@ if (typeof window !== 'undefined') {
 /** Check if live network beaconing is enabled */
 function isTelemetryEnabled(): boolean {
   if (typeof import.meta === 'undefined' || !import.meta.env) return false;
+  if (import.meta.env.VITEST) return false;
+  if (import.meta.env.NEXT_PUBLIC_TELEMETRY === 'off' || import.meta.env.VITE_TELEMETRY === 'off') return false;
   return (
     import.meta.env.NEXT_PUBLIC_TELEMETRY === 'on' ||
     import.meta.env.VITE_TELEMETRY === 'on' ||
-    import.meta.env.VITE_TELEMETRY === '1'
+    import.meta.env.VITE_TELEMETRY === '1' ||
+    Boolean(import.meta.env.DEV)
   );
 }
 
@@ -206,8 +209,8 @@ export function track(
       path: currentPath.split('?')[0] || '/',
       p: p || {},
       client_ts: new Date().toISOString(),
-      duration_ms: options?.duration_ms,
-      ok: options?.ok,
+      duration_ms: options?.duration_ms ?? (typeof p?.duration_ms === 'number' ? p.duration_ms : undefined),
+      ok: options?.ok ?? (typeof p?.ok === 'boolean' ? p.ok : undefined),
     };
 
     // Always record to window.__track for test assertions
