@@ -164,3 +164,35 @@ class RateLimitedError(ChakshuError):
     code = "RATE_LIMITED"
     http_status = 429
     user_message = "Upstream model rate limit reached."
+
+
+class AuthRequiredError(ChakshuError):
+    """Authentication required to access this resource (PRD 14 §6)."""
+
+    code = "AUTH_REQUIRED"
+    http_status = 401
+    user_message = "Authentication required."
+
+
+class RoleRequiredError(ChakshuError):
+    """Caller lacks the required authorization role (PRD 14 §6)."""
+
+    code = "ROLE_REQUIRED"
+    http_status = 403
+    user_message = "Admin role required."
+
+
+class SessionExpiredError(ChakshuError):
+    """Admin session has expired or timed out (PRD 14 §4)."""
+
+    code = "SESSION_EXPIRED"
+    http_status = 401
+    user_message = "Admin session expired. Please re-authenticate."
+
+
+class NoAdminConfiguredError(ChakshuError):
+    """No admin user exists in the system (PRD 14 §4, PRD 16 §8)."""
+
+    code = "NO_ADMIN_CONFIGURED"
+    http_status = 503
+    user_message = "NO ADMIN CONFIGURED · RUN scripts/make_admin.py"

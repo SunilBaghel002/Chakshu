@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import logging
+from pathlib import Path
 import secrets
 import uuid
 from base64 import urlsafe_b64encode
@@ -22,6 +24,11 @@ from typing import Any
 from urllib.parse import urlparse
 
 from app.services.geo_service import resolve_ip_location
+from app.services.telemetry_storage import (
+    is_db_available,
+    load_sessions_cache,
+    save_sessions_cache,
+)
 from app.services.ua_service import parse_user_agent
 from app.settings import settings
 
@@ -31,8 +38,9 @@ SID_COOKIE_NAME = "sid"
 GUEST_MAX_AGE_DAYS = 30
 TOKEN_BYTES = 32
 
-# In-memory session store (fast lookup & offline/no-DB fallback)
-_in_memory_sessions: dict[str, dict[str, Any]] = {}
+# In-memory session store (fast lookup & restored from local sessions_cache.json)
+_cached_sessions = load_sessions_cache()
+_in_memory_sessions: dict[str, dict[str, Any]] = {s["id"]: s for s in _cached_sessions.values()}
 
 
 def generate_token() -> str:
@@ -120,16 +128,18 @@ def create_guest_session(
         "geo_country": geo["geo_country"],
     }
 
-    # Store in memory cache
+    # Store in memory cache and persist to sessions_cache.json
     _in_memory_sessions[token] = session_record
+    _in_memory_sessions[session_record["id"]] = session_record
+    save_sessions_cache({s["id"]: s for s in _in_memory_sessions.values()})
 
-    # Persist to database if available
-    db_url = getattr(settings, "DATABASE_URL", None)
-    if db_url and not settings.OFFLINE:
+    # Persist to database if reachable
+    if is_db_available():
         try:
             import psycopg
 
-            with psycopg.connect(db_url, connect_timeout=2) as conn, conn.cursor() as cur:
+            db_url = getattr(settings, "DATABASE_URL", "").replace("postgresql+psycopg://", "postgresql://")
+            with psycopg.connect(db_url, connect_timeout=1) as conn, conn.cursor() as cur:
                 cur.execute(
                     """
                     INSERT INTO session (
@@ -183,17 +193,26 @@ def resolve_session_by_token(token: str | None) -> dict[str, Any] | None:
     # Fast memory cache hit
     if cleaned_token in _in_memory_sessions:
         session = _in_memory_sessions[cleaned_token]
+        session["idle_at"] = session.get("last_seen_at")
         session["last_seen_at"] = datetime.now(UTC)
         return session
 
-    # Query database by token_hash
-    db_url = getattr(settings, "DATABASE_URL", None)
-    if db_url and not settings.OFFLINE:
+    # Check by token hash in restored session cache
+    token_h = hash_token(cleaned_token)
+    for s in list(_in_memory_sessions.values()):
+        if s.get("token_hash") == token_h and not s.get("revoked_at"):
+            _in_memory_sessions[cleaned_token] = s
+            s["idle_at"] = s.get("last_seen_at")
+            s["last_seen_at"] = datetime.now(UTC)
+            return s
+
+    # Query database by token_hash if reachable
+    if is_db_available():
         try:
             import psycopg
 
-            token_h = hash_token(cleaned_token)
-            with psycopg.connect(db_url, connect_timeout=2) as conn, conn.cursor() as cur:
+            db_url = getattr(settings, "DATABASE_URL", "").replace("postgresql+psycopg://", "postgresql://")
+            with psycopg.connect(db_url, connect_timeout=1) as conn, conn.cursor() as cur:
                 cur.execute(
                     """
                     SELECT id, token_hash, user_id, role, label, created_at,
@@ -243,6 +262,21 @@ def resolve_session_by_token(token: str | None) -> dict[str, Any] | None:
             log.debug("Session DB lookup failed (falling back): %s", e)
 
     return None
+
+
+def touch_session_ua(session: dict[str, Any], user_agent: str | None) -> None:
+    """Enrich session with User-Agent device info if missing or unknown."""
+    if not user_agent or user_agent == "testclient":
+        return
+    raw = session.get("ua_raw")
+    dev = session.get("ua_device")
+    if not raw or dev in (None, "", "unknown"):
+        ua = parse_user_agent(user_agent)
+        session["ua_raw"] = ua["ua_raw"]
+        session["ua_device"] = ua["ua_device"]
+        session["ua_browser"] = ua["ua_browser"]
+        session["ua_os"] = ua["ua_os"]
+        save_sessions_cache({s["id"]: s for s in _in_memory_sessions.values()})
 
 
 def get_public_session_envelope(

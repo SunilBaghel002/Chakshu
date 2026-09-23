@@ -65,14 +65,33 @@ export interface ImageMetadata {
 }
 
 export interface AnalysisResponse {
-  query: string;
   task: AnalysisTask;
-  target?: string | null;
-  answer: string;
-  evidence: EvidenceObject[];
+  execution_mode: 'deterministic' | 'hybrid' | 'pure_model';
+  image_metadata: ImageMetadata;
+  evidence_objects: EvidenceObject[];
   overlays: OverlayCollection;
-  metadata: ImageMetadata;
-  warnings: string[];
-  status: 'completed' | 'insufficient_evidence' | 'refused' | 'error';
-  execution_time_ms?: number | null;
+  verifier_result?: Record<string, unknown>;
+  report_url?: string;
+  trace_id: string;
+}
+
+export interface SemanticSearchResultItem {
+  tile_id: string;
+  scene_id: string;
+  x: number;
+  y: number;
+  geom?: Record<string, unknown>;
+  cloud_pct?: number;
+  ndvi_mean?: number;
+  ndwi_mean?: number;
+  ndbi_mean?: number;
+  score: number;
+  png_url?: string;
+  acquired_at?: string;
+}
+
+export interface SemanticSearchResponse {
+  query: string;
+  count: number;
+  results: SemanticSearchResultItem[];
 }

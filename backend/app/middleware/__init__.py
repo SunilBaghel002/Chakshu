@@ -22,6 +22,7 @@ from app.services.session_service import (
     SID_COOKIE_NAME,
     create_guest_session,
     resolve_session_by_token,
+    touch_session_ua,
 )
 from app.settings import settings
 
@@ -71,6 +72,7 @@ class GuestSessionMiddleware(BaseHTTPMiddleware):
                 first_path=path,
             )
         else:
+            touch_session_ua(session, request.headers.get("user-agent"))
             # Check sliding window: re-issue if last_seen is older than 1 hour
             created_or_last = session.get("last_seen_at")
             if isinstance(created_or_last, datetime):
@@ -83,11 +85,16 @@ class GuestSessionMiddleware(BaseHTTPMiddleware):
         request.state.session_label = session.get("label", "GUEST")
         request.state.session = session
         request.state.client_ip = client_ip
+        request.state.sid_token = sid_token
 
         response = await call_next(request)
 
-        # Set cookie if new session or refreshed
-        if (new_session or reissue_cookie) and sid_token:
+        # Set cookie if new session or refreshed (skip if endpoint already set or cleared sid)
+        has_sid_cookie = any(
+            k.lower() == b"set-cookie" and v.startswith(f"{SID_COOKIE_NAME}=".encode("ascii"))
+            for k, v in response.raw_headers
+        )
+        if not has_sid_cookie and (new_session or reissue_cookie) and sid_token:
             is_prod = getattr(settings, "ENV", "dev") == "prod"
             response.set_cookie(
                 key=SID_COOKIE_NAME,

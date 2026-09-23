@@ -51,6 +51,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   if (!isOpen) return null;
 
   const handleExportClick = () => {
+    const t0 = performance.now();
+    track('op.start', { op: 'export', format });
     track('export.complete', {
       format,
       entities: targetId ? 1 : 0,
@@ -63,6 +65,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       includeProvenance,
       includeTrace,
     });
+    const dur = Math.round(performance.now() - t0);
+    track('op.result', { op: 'export', format }, { ok: true, duration_ms: dur });
     onClose();
   };
 

@@ -139,6 +139,14 @@ class Settings(BaseSettings):
         default=90,
         description="Event retention period in days before pruning.",
     )
+    ADMIN_EMAIL: str = Field(
+        default="admin@chakshu.internal",
+        description="Default administrator email address.",
+    )
+    ADMIN_PASSWORD: str = Field(
+        default="Admin@12345",
+        description="Default administrator password for login.",
+    )
 
 
 settings = Settings()

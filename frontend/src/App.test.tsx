@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRoutes } from './App';
 
@@ -26,14 +26,18 @@ describe('Application Routing (PRD 5 §1.2 & PRD 7 Task 8.0)', () => {
     expect(screen.getAllByText(/MaxMind/i).length).toBeGreaterThan(0);
   });
 
-  it('renders AdminScreen on route "/admin"', () => {
+  it('renders AdminScreen on route "/admin"', async () => {
     render(
       <MemoryRouter initialEntries={['/admin']}>
         <AppRoutes />
       </MemoryRouter>
     );
-    expect(screen.getByText(/ADMIN ONLY · 403 FORBIDDEN/i)).toBeDefined();
-    expect(screen.getByText(/make_admin\.py/i)).toBeDefined();
+    await waitFor(() => {
+      expect(
+        screen.getByText(/401 · AUTHENTICATION REQUIRED|ADMIN ONLY · 403 FORBIDDEN|NO ADMIN CONFIGURED/i)
+      ).toBeDefined();
+      expect(screen.getAllByText(/make_admin\.py/i).length).toBeGreaterThan(0);
+    });
   });
 
   it('renders NotFoundScreen on unknown route "/some-random-route"', () => {

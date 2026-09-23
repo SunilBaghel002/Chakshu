@@ -25,8 +25,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 try:
+    from app.api.admin import router as admin_router
     from app.api.aoi import router as aoi_router
     from app.api.ask import router as ask_router
+    from app.api.auth import router as auth_router
     from app.api.changes import router as changes_router
     from app.api.events import router as events_router
     from app.api.jobs import router as jobs_router
@@ -39,8 +41,10 @@ try:
     from app.middleware import GuestSessionMiddleware
     from app.settings import settings
 except ImportError:
+    from .api.admin import router as admin_router
     from .api.aoi import router as aoi_router
     from .api.ask import router as ask_router
+    from .api.auth import router as auth_router
     from .api.changes import router as changes_router
     from .api.events import router as events_router
     from .api.jobs import router as jobs_router
@@ -133,6 +137,8 @@ def create_app() -> FastAPI:
         )
 
     # Register API Routers
+    app.include_router(admin_router, prefix="/api/v1")
+    app.include_router(auth_router, prefix="/api/v1")
     app.include_router(jobs_router, prefix="/api/v1")
     app.include_router(aoi_router, prefix="/api/v1")
     app.include_router(scenes_router, prefix="/api/v1")
