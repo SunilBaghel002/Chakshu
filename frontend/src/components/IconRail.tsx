@@ -1,112 +1,194 @@
 import React, { useState } from 'react';
-
-export type NavView = 'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit';
+import {
+  Map,
+  CheckSquare,
+  Upload,
+  Search,
+  Bot,
+  ShieldCheck,
+  HelpCircle,
+  Settings,
+} from 'lucide-react';
 
 interface IconRailProps {
-  activeView: NavView;
-  onSelectView: (view: NavView) => void;
-  onOpenShortcuts?: () => void;
+  activeView: 'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit';
+  onSelectView: (view: 'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit') => void;
+  onOpenShortcuts: () => void;
   onOpenSettings?: () => void;
+  unreviewedCount?: number;
 }
 
 interface NavItem {
-  view?: NavView;
-  iconName: string;
+  view: 'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit';
+  icon: React.ReactNode;
   label: string;
+  shortcut: string;
   badge?: number;
-  action?: () => void;
 }
 
 /**
- * SLOT-05 — Stitch Deterministic Geo-Intelligence Navigation Rail
- * W-16 (64px) Left Navigation Dock
+ * SLOT-05 — Tactical Icon Rail (Stitch Geo-Intelligence Design System)
+ * Fixed width, neon active glow, floating tooltips, keys & config modals
  */
 export const IconRail: React.FC<IconRailProps> = React.memo(({
   activeView,
   onSelectView,
   onOpenShortcuts,
   onOpenSettings,
+  unreviewedCount = 24,
 }) => {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [hoveredLabel, setHoveredLabel] = useState<string | null>(null);
 
-  const navItems: NavItem[] = [
-    { view: 'map', iconName: 'map', label: 'Satellite Viewport' },
-    { view: 'search', iconName: 'search', label: 'Search Catalog' },
-    { view: 'upload', iconName: 'upload_file', label: 'Ingest Imagery' },
-    { view: 'review', iconName: 'fact_check', label: 'Pending Reviews (24)', badge: 24 },
-    { view: 'ask', iconName: 'smart_toy', label: 'Ask Copilot' },
-    { view: 'audit', iconName: 'history', label: 'Audit Log' },
-    { iconName: 'settings', label: 'Settings', action: onOpenSettings },
+  const topItems: NavItem[] = [
+    { view: 'map', icon: <Map className="w-5 h-5" />, label: 'MAP', shortcut: 'M' },
+    { view: 'review', icon: <CheckSquare className="w-5 h-5" />, label: 'REVIEW', shortcut: 'R', badge: unreviewedCount },
+    { view: 'upload', icon: <Upload className="w-5 h-5" />, label: 'UPLOAD', shortcut: 'U' },
+    { view: 'search', icon: <Search className="w-5 h-5" />, label: 'SEARCH', shortcut: 'S' },
+    { view: 'ask', icon: <Bot className="w-5 h-5" />, label: 'ASK', shortcut: 'A' },
+    { view: 'audit', icon: <ShieldCheck className="w-5 h-5" />, label: 'AUDIT', shortcut: 'D' },
   ];
 
   return (
-    <aside
+    <nav
       id="slot-05-rail"
       aria-label="Console navigation rail"
-      className="w-16 h-full bg-surface-container-lowest z-30 flex flex-col justify-between items-center py-space-md border-r border-outline-variant/30 select-none relative"
+      className="flex flex-col items-center py-2 select-none h-full relative bg-surface-container-lowest border-r border-outline-variant/30"
+      style={{
+        zIndex: 25,
+      }}
     >
-      {/* Navigation Icons Stack */}
-      <nav className="w-full flex flex-col items-center gap-space-xs">
-        {navItems.map((item, idx) => {
-          const isActive = item.view === activeView;
-          const isHovered = hoveredIdx === idx;
+      {/* Top navigation items */}
+      <div className="flex flex-col items-center gap-1.5 w-full px-1.5">
+        {topItems.map(({ view, icon, label, shortcut, badge }) => {
+          const isActive = activeView === view;
+          const isHovered = hoveredLabel === label;
 
           return (
-            <div key={item.label} className="relative w-full flex justify-center">
+            <div key={label} className="relative w-full flex justify-center">
               <button
                 type="button"
-                onClick={() => {
-                  if (item.view) onSelectView(item.view);
-                  if (item.action) item.action();
-                }}
-                onMouseEnter={() => setHoveredIdx(idx)}
-                onMouseLeave={() => setHoveredIdx(null)}
-                aria-label={item.label}
-                aria-current={isActive ? 'page' : undefined}
-                className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors relative cursor-pointer ${
+                onClick={() => onSelectView(view)}
+                onMouseEnter={() => setHoveredLabel(label)}
+                onMouseLeave={() => setHoveredLabel(null)}
+                aria-label={`${label} (${shortcut})`}
+                className={`group relative w-11 h-11 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all duration-150 ${
                   isActive
-                    ? 'bg-surface-container-high text-primary border-l-2 border-primary'
-                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                    ? 'bg-surface-container-high text-primary border border-primary/40 shadow-sm'
+                    : isHovered
+                    ? 'bg-surface-container text-on-surface'
+                    : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
-                <span className="material-symbols-outlined text-[20px]">{item.iconName}</span>
+                {/* Active Neon Accent Left Bar */}
+                {isActive && (
+                  <span className="absolute left-0 top-2 bottom-2 w-1 bg-primary rounded-r shadow-[0_0_8px_rgba(77,163,255,0.8)]" />
+                )}
+
+                <div className="transition-transform group-hover:scale-105">
+                  {icon}
+                </div>
+
+                <span
+                  className={`font-label-sm text-[8px] uppercase tracking-wider mt-0.5 leading-none ${
+                    isActive ? 'font-bold text-primary' : 'font-medium'
+                  }`}
+                >
+                  {label}
+                </span>
 
                 {/* Badge if present (e.g. 24 for Review) */}
-                {item.badge !== undefined && (
-                  <span className="absolute top-2 right-2 bg-error text-on-error font-code-num text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                    {item.badge}
+                {badge !== undefined && badge > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-on-primary font-code-num text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-md">
+                    {badge > 99 ? '99+' : badge}
                   </span>
                 )}
               </button>
 
-              {/* Floating Tooltip */}
+              {/* Hover Tooltip */}
               {isHovered && (
-                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-surface-container-highest text-on-surface px-space-sm py-1 rounded text-label-sm font-label-sm whitespace-nowrap z-50 shadow-md border border-outline-variant/30 pointer-events-none">
-                  {item.label}
-                </span>
+                <div className="absolute left-14 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-surface-container-highest border border-outline-variant/40 shadow-xl whitespace-nowrap z-50 pointer-events-none flex items-center gap-1.5 animate-in fade-in duration-100">
+                  <span className="font-label-sm text-[11px] font-semibold text-on-surface">
+                    {label}
+                  </span>
+                  <span className="font-code-num text-[9px] px-1 py-0.2 rounded bg-surface-container border border-outline-variant/30 text-primary">
+                    {shortcut}
+                  </span>
+                </div>
               )}
             </div>
           );
         })}
-      </nav>
+      </div>
 
-      {/* Rail Bottom: Keyboard Shortcuts + Version */}
-      <div className="w-full flex flex-col items-center gap-space-xs border-t border-outline-variant/30 pt-space-sm">
+      {/* Center Divider: Tactical Bezel Line */}
+      <div className="my-2 flex items-center justify-center w-full px-3">
+        <div className="w-full h-px bg-outline-variant/20" />
+      </div>
+
+      {/* Help / Keys (?) */}
+      <div className="relative w-full flex justify-center px-1.5">
         <button
           type="button"
           onClick={onOpenShortcuts}
-          aria-label="Keyboard Shortcuts"
-          title="Keyboard Shortcuts"
-          className="w-10 h-10 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+          onMouseEnter={() => setHoveredLabel('KEYS')}
+          onMouseLeave={() => setHoveredLabel(null)}
+          title="Keyboard Shortcuts (?)"
+          className={`group relative w-11 h-11 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all duration-150 ${
+            hoveredLabel === 'KEYS'
+              ? 'bg-surface-container text-primary'
+              : 'text-outline hover:text-on-surface'
+          }`}
         >
-          <span className="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span>
-        </button>
-        <div className="flex flex-col items-center">
-          <span className="font-label-sm text-[9px] text-outline uppercase font-code-num">
-            v2.8.4
+          <HelpCircle className="w-4.5 h-4.5 transition-transform group-hover:scale-105" strokeWidth={1.8} />
+          <span className="font-label-sm text-[8px] uppercase tracking-wider mt-0.5 leading-none">
+            KEYS
           </span>
-        </div>
+        </button>
+
+        {hoveredLabel === 'KEYS' && (
+          <div className="absolute left-14 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-surface-container-highest border border-outline-variant/40 shadow-xl whitespace-nowrap z-50 pointer-events-none flex items-center gap-1.5">
+            <span className="font-label-sm text-[11px] font-semibold text-on-surface">
+              SHORTCUTS
+            </span>
+            <span className="font-code-num text-[9px] px-1 py-0.2 rounded bg-surface-container border border-outline-variant/30 text-primary">
+              ?
+            </span>
+          </div>
+        )}
       </div>
-    </aside>
+
+      {/* Settings (CONFIG) - Bottom Anchored */}
+      <div className="mt-auto pb-2 relative w-full flex flex-col items-center gap-1 px-1.5">
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          onMouseEnter={() => setHoveredLabel('CONFIG')}
+          onMouseLeave={() => setHoveredLabel(null)}
+          title="Console Settings"
+          className={`group relative w-11 h-11 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all duration-150 ${
+            hoveredLabel === 'CONFIG'
+              ? 'bg-surface-container text-primary'
+              : 'text-outline hover:text-on-surface'
+          }`}
+        >
+          <Settings className="w-4.5 h-4.5 transition-transform group-hover:rotate-45" strokeWidth={1.8} />
+          <span className="font-label-sm text-[8px] uppercase tracking-wider mt-0.5 leading-none">
+            CONFIG
+          </span>
+        </button>
+
+        {hoveredLabel === 'CONFIG' && (
+          <div className="absolute left-14 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-surface-container-highest border border-outline-variant/40 shadow-xl whitespace-nowrap z-50 pointer-events-none">
+            <span className="font-label-sm text-[11px] font-semibold text-on-surface">
+              SETTINGS
+            </span>
+          </div>
+        )}
+
+        <span className="font-code-num text-[8px] text-outline/60 mt-1 uppercase">
+          v2.8.4
+        </span>
+      </div>
+    </nav>
   );
 });

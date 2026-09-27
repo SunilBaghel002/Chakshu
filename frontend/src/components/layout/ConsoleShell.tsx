@@ -277,8 +277,8 @@ export const ConsoleShell: React.FC<ConsoleShellProps> = ({
               {stageNode}
             </Slot>
 
-            {/* SLOT-30: Timeline Strip (156px fixed) */}
-            <Slot id="SLOT-30" h={156} className="shrink-0">
+            {/* SLOT-30: Timeline Strip (92px fixed) */}
+            <Slot id="SLOT-30" h={92} className="shrink-0">
               {timelineNode}
             </Slot>
           </main>

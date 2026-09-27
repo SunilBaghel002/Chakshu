@@ -79,16 +79,13 @@ export const ConsoleApp: React.FC = () => {
     handleShortcutAction,
   } = state;
 
-  const [isDossierDismissed, setIsDossierDismissed] = React.useState(false);
-  const activeEvidence = selectedEvidence ?? (!isDossierDismissed && evidenceList.length > 0 ? evidenceList[0] : null);
-
   const hasActiveDossier = Boolean(
     activeView === 'upload' ||
       activeView === 'ask' ||
       activeView === 'search' ||
       activeView === 'review' ||
       activeView === 'audit' ||
-      activeEvidence
+      selectedEvidence
   );
 
   return (
@@ -106,6 +103,7 @@ export const ConsoleApp: React.FC = () => {
           areaLabel={totalAreaLabel}
           sceneCount={scenes.length || 36}
           usableScenes={scenes.filter((s) => s.usable).length || 29}
+          onExportClick={() => screens.setIsExportModalOpen(true)}
         />
       }
       temporalBarNode={
@@ -228,13 +226,10 @@ export const ConsoleApp: React.FC = () => {
             onConfirm={handleConfirmEvidence}
             onReject={handleRejectEvidence}
           />
-        ) : activeEvidence ? (
+        ) : selectedEvidence ? (
           <EvidenceDrawer
-            evidence={activeEvidence}
-            onClose={() => {
-              setSelectedEvidence(null);
-              setIsDossierDismissed(true);
-            }}
+            evidence={selectedEvidence}
+            onClose={() => setSelectedEvidence(null)}
             onConfirm={handleConfirmEvidence}
             onReject={handleRejectEvidence}
             onExport={() => screens.setIsExportModalOpen(true)}

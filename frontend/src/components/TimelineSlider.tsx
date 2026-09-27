@@ -1,4 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Layers,
+  Sparkles,
+  Cloud,
+  CheckCircle2,
+} from 'lucide-react';
 import type { SceneItem } from '../lib/api';
 
 interface TimelineSliderProps {
@@ -9,297 +22,380 @@ interface TimelineSliderProps {
   onSelectAfterDate: (date: string) => void;
 }
 
-const MILESTONE_EPOCHS = [
-  { date: '2021-01-15', label: '15 Jan 2021', stage: 'T0 · Baseline', isBaseline: true },
-  { date: '2022-04-10', label: '10 Apr 2022', stage: 'Earthwork' },
-  { date: '2023-11-02', label: '02 Nov 2023', stage: 'Foundation' },
-  { date: '2024-03-19', label: '19 Mar 2024', stage: 'Runway Base' },
-  { date: '2025-12-14', label: '14 Dec 2025', stage: 'Terminal R/C' },
-  { date: '2026-08-03', label: '03 Aug 2026', stage: 'T1 · Active', isActive: true },
+// Key Temporal Intelligence Milestones for Jewar International Airport
+interface MilestoneEpoch {
+  date: string;
+  year: string;
+  title: string;
+  phase: string;
+  cloud: number;
+  usable: boolean;
+  gsd: string;
+}
+
+const MILESTONES: MilestoneEpoch[] = [
+  {
+    date: '2021-01-15',
+    year: '2021',
+    title: 'Baseline Farmland',
+    phase: 'Pre-construction agricultural parcel',
+    cloud: 0.8,
+    usable: true,
+    gsd: '0.5m',
+  },
+  {
+    date: '2022-04-10',
+    year: '2022',
+    title: 'Site Demarcation',
+    phase: 'Perimeter fencing & tree clearance',
+    cloud: 2.1,
+    usable: true,
+    gsd: '0.5m',
+  },
+  {
+    date: '2023-11-02',
+    year: '2023',
+    title: 'Mass Earthworks',
+    phase: 'Runway corridor grading (+280 ha)',
+    cloud: 1.4,
+    usable: true,
+    gsd: '0.5m',
+  },
+  {
+    date: '2024-03-19',
+    year: '2024',
+    title: 'Runway Base Layer',
+    phase: 'Sub-base compaction & drainage network',
+    cloud: 0.4,
+    usable: true,
+    gsd: '0.5m',
+  },
+  {
+    date: '2025-12-14',
+    year: '2025',
+    title: 'Tarmac Paving',
+    phase: 'Terminal superstructure & bituminous asphalt',
+    cloud: 3.2,
+    usable: true,
+    gsd: '0.5m',
+  },
+  {
+    date: '2026-08-03',
+    year: '2026',
+    title: 'Operational Airport',
+    phase: 'Completed 3,900m runway & terminal roof',
+    cloud: 1.2,
+    usable: true,
+    gsd: '0.3m',
+  },
 ];
 
 /**
- * SLOT-30 — Stitch Temporal Scrubber Rail
- * Height: 156px
- * Design System: Deterministic Geo-Intelligence
+ * SLOT-30 — High-Utility Geospatial Temporal Scrubber
+ * Replaces unreadable dots with interactive milestone epoch cards, continuous range scrubber,
+ * and tactile time-lapse controls that actually drive the map.
  */
-export const TimelineSlider: React.FC<TimelineSliderProps> = ({
-  scenes,
+export const TimelineSlider: React.FC<TimelineSliderProps> = React.memo(({
+  scenes: _scenes,
   beforeDate,
   afterDate,
   onSelectBeforeDate,
   onSelectAfterDate,
 }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const [filterMode, setFilterMode] = useState<'all' | 'usable' | 'cloudy' | 'changes'>('all');
-  const playIntervalRef = useRef<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [speed, setSpeed] = useState<number>(1);
+  const [targetSlot, setTargetSlot] = useState<'A' | 'B'>('B');
 
-  const sortedScenes = React.useMemo(() => {
-    return [...scenes].sort(
-      (a, b) => new Date(a.acquired_at).getTime() - new Date(b.acquired_at).getTime()
-    );
-  }, [scenes]);
+  // Find index of currently active milestone
+  const currentMilestoneIdx = useMemo(() => {
+    const idx = MILESTONES.findIndex((m) => m.date === afterDate);
+    return idx >= 0 ? idx : MILESTONES.length - 1;
+  }, [afterDate]);
 
-  const currentAfterIndex = Math.max(
-    0,
-    sortedScenes.findIndex((s) => s.acquired_at === afterDate)
-  );
+  // Playback timer
+  const playTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (isPlaying && sortedScenes.length > 0) {
-      const intervalMs = Math.round(800 / playbackSpeed);
-      playIntervalRef.current = window.setInterval(() => {
-        const nextIndex = (currentAfterIndex + 1) % sortedScenes.length;
-        const nextScene = sortedScenes[nextIndex];
-        if (nextScene) {
-          onSelectAfterDate(nextScene.acquired_at);
-        }
-      }, intervalMs);
-    } else if (playIntervalRef.current) {
-      clearInterval(playIntervalRef.current);
+    if (!isPlaying) {
+      if (playTimerRef.current) clearInterval(playTimerRef.current);
+      return;
     }
+
+    const interval = Math.round(1400 / speed);
+    playTimerRef.current = setInterval(() => {
+      const nextIdx = (currentMilestoneIdx + 1) % MILESTONES.length;
+      const ep = MILESTONES[nextIdx];
+      if (ep) onSelectAfterDate(ep.date);
+    }, interval);
+
     return () => {
-      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+      if (playTimerRef.current) clearInterval(playTimerRef.current);
     };
-  }, [isPlaying, playbackSpeed, currentAfterIndex, sortedScenes, onSelectAfterDate]);
+  }, [isPlaying, speed, currentMilestoneIdx, onSelectAfterDate]);
 
-  const handleNext = () => {
-    const nextIndex = Math.min(sortedScenes.length - 1, currentAfterIndex + 1);
-    const nextScene = sortedScenes[nextIndex];
-    if (nextScene) onSelectAfterDate(nextScene.acquired_at);
+  const togglePlay = useCallback(() => setIsPlaying((p) => !p), []);
+
+  const handlePrev = useCallback(() => {
+    const prev = Math.max(0, currentMilestoneIdx - 1);
+    const ep = MILESTONES[prev];
+    if (ep) onSelectAfterDate(ep.date);
+  }, [currentMilestoneIdx, onSelectAfterDate]);
+
+  const handleNext = useCallback(() => {
+    const next = Math.min(MILESTONES.length - 1, currentMilestoneIdx + 1);
+    const ep = MILESTONES[next];
+    if (ep) onSelectAfterDate(ep.date);
+  }, [currentMilestoneIdx, onSelectAfterDate]);
+
+  const handleFirst = useCallback(() => {
+    const ep = MILESTONES[0];
+    if (ep) onSelectAfterDate(ep.date);
+  }, [onSelectAfterDate]);
+
+  const handleLatest = useCallback(() => {
+    const ep = MILESTONES[MILESTONES.length - 1];
+    if (ep) onSelectAfterDate(ep.date);
+  }, [onSelectAfterDate]);
+
+  const handleEpochClick = (epochDate: string) => {
+    if (targetSlot === 'A') {
+      onSelectBeforeDate(epochDate);
+      setTargetSlot('B');
+    } else {
+      onSelectAfterDate(epochDate);
+    }
   };
 
-  const handlePrev = () => {
-    const prevIndex = Math.max(0, currentAfterIndex - 1);
-    const prevScene = sortedScenes[prevIndex];
-    if (prevScene) onSelectAfterDate(prevScene.acquired_at);
-  };
+  // Keyboard shortcut listener (Space to play, Left/Right to step)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrev();
+      } else if (e.key === 'ArrowRight') {
+        handleNext();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [togglePlay, handlePrev, handleNext]);
 
   return (
     <div
       id="slot-30-timeline"
-      className="h-[156px] w-full bg-surface-container-lowest border-t border-outline-variant/30 flex flex-col justify-between px-space-lg py-2.5 z-30 select-none shadow-md"
+      className="w-full h-full bg-[#0D1219] border-t border-outline-variant/30 px-space-md py-1.5 flex flex-col justify-between select-none relative overflow-hidden"
+      style={{
+        zIndex: 25,
+      }}
     >
-      {/* Top Controls Row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-primary text-[16px]">timelapse</span>
-            <span className="font-label-sm text-[11px] tracking-wider uppercase font-semibold text-on-surface">
-              TEMPORAL SCRUBBER
-            </span>
+      {/* Top Header: Timeline Command Bar & Playback */}
+      <div className="flex items-center justify-between h-6">
+        {/* Left: Mode Title & Target Selector */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-primary font-label-sm text-[10px] font-semibold uppercase tracking-wider">
+            <span className="material-symbols-outlined text-[14px]">timeline</span>
+            <span>TEMPORAL TIME-SERIES</span>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center bg-surface-container rounded p-0.5 text-[10px] font-code-num">
-            <span className="text-outline px-1.5 uppercase font-medium">SHOW:</span>
+          <div className="flex items-center bg-surface-container p-0.5 rounded border border-outline-variant/30 text-[9.5px] font-code-num">
+            <span className="text-outline text-[9px] px-1">ASSIGN TO:</span>
             <button
               type="button"
-              onClick={() => setFilterMode('all')}
-              className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                filterMode === 'all'
-                  ? 'bg-surface-container-high text-on-surface font-medium'
-                  : 'text-on-surface-variant hover:text-on-surface'
+              onClick={() => setTargetSlot('A')}
+              className={`px-1.5 py-0.2 rounded transition-colors ${
+                targetSlot === 'A'
+                  ? 'bg-amber-400/20 text-amber-300 font-bold border border-amber-400/50'
+                  : 'text-outline hover:text-on-surface'
               }`}
+              title="Clicking an epoch sets T₀ Baseline Date"
             >
-              All (184)
+              T₀ BASELINE ({beforeDate.slice(0, 4)})
             </button>
             <button
               type="button"
-              onClick={() => setFilterMode('usable')}
-              className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                filterMode === 'usable'
-                  ? 'bg-surface-container-high text-on-surface font-medium'
-                  : 'text-on-surface-variant hover:text-on-surface'
+              onClick={() => setTargetSlot('B')}
+              className={`px-1.5 py-0.2 rounded transition-colors ${
+                targetSlot === 'B'
+                  ? 'bg-primary/20 text-primary font-bold border border-primary/50'
+                  : 'text-outline hover:text-on-surface'
               }`}
+              title="Clicking an epoch sets T₁ Observation Date"
             >
-              Usable (163)
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterMode('cloudy')}
-              className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                filterMode === 'cloudy'
-                  ? 'bg-surface-container-high text-on-surface font-medium'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              Cloudy (21)
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterMode('changes')}
-              className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                filterMode === 'changes'
-                  ? 'bg-surface-container-high text-primary font-medium'
-                  : 'text-primary hover:text-on-surface'
-              }`}
-            >
-              Changes (24)
+              T₁ CURRENT ({afterDate.slice(0, 4)})
             </button>
           </div>
         </div>
 
-        {/* Playback Controls & Frame Status */}
-        <div className="flex items-center gap-space-md">
-          <span className="font-code-num text-[11px] text-on-surface-variant">
-            Frame{' '}
-            <strong className="text-primary font-semibold">
-              {currentAfterIndex + 1}
-            </strong>{' '}
-            / {sortedScenes.length || 184}
-          </span>
-
-          <div className="flex items-center bg-surface-container rounded p-0.5 border border-outline-variant/20">
+        {/* Right: Tactile Time-Lapse Media Controls */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center bg-surface-container p-0.5 rounded border border-outline-variant/30">
             <button
               type="button"
-              onClick={handlePrev}
-              className="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
-              title="Previous Pass"
+              onClick={handleFirst}
+              className="w-5 h-5 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              title="Jump to 2021 Baseline"
             >
-              <span className="material-symbols-outlined text-[14px]">skip_previous</span>
+              <SkipBack className="w-3 h-3" />
             </button>
             <button
               type="button"
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="h-6 px-2 rounded bg-primary text-on-primary font-label-sm text-[11px] flex items-center gap-1 font-semibold hover:bg-secondary transition-colors cursor-pointer"
-              title={isPlaying ? 'Pause' : 'Play Sequence'}
+              onClick={handlePrev}
+              className="w-5 h-5 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              title="Previous Milestone (Left Arrow)"
             >
-              <span className="material-symbols-outlined text-[13px]">
-                {isPlaying ? 'pause' : 'play_arrow'}
-              </span>
-              {isPlaying ? 'Pause' : 'Play'}
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={togglePlay}
+              className={`px-2 h-5 rounded flex items-center gap-1 font-label-sm text-[10px] font-semibold transition-colors cursor-pointer ${
+                isPlaying
+                  ? 'bg-primary text-on-primary shadow-sm'
+                  : 'bg-primary/15 text-primary hover:bg-primary/25'
+              }`}
+              title="Play/Pause Time-Lapse (Space)"
+            >
+              {isPlaying ? (
+                <>
+                  <Pause className="w-3 h-3" />
+                  <span>PAUSE</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3 h-3 ml-0.5" />
+                  <span>PLAY LAPSE</span>
+                </>
+              )}
             </button>
             <button
               type="button"
               onClick={handleNext}
-              className="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
-              title="Next Pass"
+              className="w-5 h-5 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              title="Next Milestone (Right Arrow)"
             >
-              <span className="material-symbols-outlined text-[14px]">skip_next</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleLatest}
+              className="w-5 h-5 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              title="Jump to 2026 Operational Airport"
+            >
+              <SkipForward className="w-3 h-3" />
             </button>
           </div>
 
-          {/* Speed Presets */}
-          <div className="flex items-center bg-surface-container rounded p-0.5 text-[10px] font-code-num text-on-surface-variant">
-            {[0.5, 1, 2].map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setPlaybackSpeed(s)}
-                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                  playbackSpeed === s
-                    ? 'bg-surface-container-high text-primary font-semibold'
-                    : 'hover:text-on-surface'
-                }`}
-              >
-                {s}×
-              </button>
-            ))}
-          </div>
+          {/* Speed Toggle */}
+          <button
+            type="button"
+            onClick={() => setSpeed((s) => (s === 1 ? 2 : s === 2 ? 0.5 : 1))}
+            className="px-1.5 h-5 rounded bg-surface-container text-outline hover:text-on-surface font-code-num text-[10px] border border-outline-variant/30 font-semibold"
+            title="Toggle playback speed"
+          >
+            {speed}x
+          </button>
         </div>
       </div>
 
-      {/* Center Timeline Visual Scrub Track */}
-      <div className="relative w-full py-1 flex flex-col justify-center">
-        {/* Track Line */}
-        <div className="relative w-full h-1.5 bg-surface-container-high rounded-full overflow-visible">
-          <div className="absolute left-0 top-0 bottom-0 bg-primary/30 w-full rounded-full" />
-          {/* Monsoon Gap Indicator */}
-          <div
-            className="absolute left-[11%] w-[9%] top-0 bottom-0 bg-error/30 border-l border-r border-error/50"
-            title="Monsoon Observation Gap (Cloud Cover)"
-          />
-          <div className="absolute -top-4 left-[11%] text-[8px] font-code-num text-error tracking-tight uppercase whitespace-nowrap">
-            Monsoon Gap (Jul-Oct 2021)
-          </div>
-        </div>
+      {/* Center: Interactive Milestone Epoch Stepper Cards (Replaces empty dots) */}
+      <div className="grid grid-cols-6 gap-1.5 my-0.5">
+        {MILESTONES.map((ep, idx) => {
+          const isT0 = beforeDate.startsWith(ep.year);
+          const isT1 = afterDate.startsWith(ep.year);
+          const isPast = idx < currentMilestoneIdx;
+          const isCurrent = idx === currentMilestoneIdx;
 
-        {/* Milestone Epoch Pips */}
-        <div className="relative w-full flex justify-between items-center -mt-2.5">
-          {MILESTONE_EPOCHS.map((ep) => {
-            const isT0 = ep.isBaseline;
-            const isT1 = ep.isActive;
-
-            return (
-              <div
-                key={ep.date}
-                onClick={() => {
-                  if (isT0) {
-                    onSelectBeforeDate(ep.date);
-                  } else {
-                    onSelectAfterDate(ep.date);
-                  }
-                }}
-                className={`flex flex-col items-center group cursor-pointer relative ${
-                  isT1 ? 'relative' : ''
-                }`}
-              >
-                {/* Active Floating Tooltip on T1 */}
-                {isT1 && (
-                  <div className="absolute -top-7 -translate-x-1/2 left-1/2 bg-surface-container-highest px-2 py-0.5 rounded text-[9px] font-code-num text-primary border border-primary/40 shadow-md whitespace-nowrap pointer-events-none">
-                    03 AUG 2026 · S2-L2A · 1.2% Cloud · OPTIMAL
-                  </div>
-                )}
-
-                {/* Node Pip */}
-                {isT0 ? (
-                  <div className="w-3.5 h-3.5 rounded-full bg-amber-400 border-2 border-surface-container-lowest flex items-center justify-center shadow-md">
-                    <div className="w-1 h-1 rounded-full bg-surface-container-lowest" />
-                  </div>
-                ) : isT1 ? (
-                  <div className="w-4 h-4 rounded-full bg-primary-container flex items-center justify-center shadow-[0_0_8px_rgba(77,163,255,0.7)] border-2 border-surface-container-lowest">
-                    <div className="w-1.5 h-1.5 rounded-full bg-on-primary-container" />
-                  </div>
-                ) : (
-                  <div className="w-2.5 h-2.5 rounded-full bg-outline-variant group-hover:bg-primary transition-colors" />
-                )}
-
-                {/* Date Label */}
-                <span
-                  className={`font-code-num text-[10px] mt-1.5 ${
-                    isT0
-                      ? 'text-amber-300 font-semibold'
-                      : isT1
-                      ? 'text-primary font-bold'
-                      : 'text-on-surface-variant group-hover:text-on-surface'
-                  }`}
-                >
-                  {ep.label}
+          return (
+            <button
+              type="button"
+              key={ep.date}
+              onClick={() => handleEpochClick(ep.date)}
+              className={`flex flex-col text-left p-1.5 rounded-md border transition-all cursor-pointer relative group ${
+                isT1
+                  ? 'bg-primary/10 border-primary shadow-[0_0_8px_rgba(77,163,255,0.3)]'
+                  : isT0
+                  ? 'bg-amber-400/10 border-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.25)]'
+                  : isCurrent
+                  ? 'bg-surface-container-high border-outline-variant'
+                  : 'bg-surface-container-lowest/80 border-outline-variant/20 hover:border-outline-variant/60 hover:bg-surface-container'
+              }`}
+            >
+              {/* Badge indicator on top right */}
+              {isT0 && (
+                <span className="absolute -top-1.5 -left-1 bg-amber-400 text-[#0B0F14] font-code-num text-[8px] font-bold px-1 rounded-full shadow-sm">
+                  T₀ BASE
                 </span>
+              )}
+              {isT1 && (
+                <span className="absolute -top-1.5 -right-1 bg-primary text-on-primary font-code-num text-[8px] font-bold px-1 rounded-full shadow-sm">
+                  T₁ VIEW
+                </span>
+              )}
 
-                {/* Stage Tag */}
+              {/* Year & GSD Header */}
+              <div className="flex items-center justify-between leading-none">
                 <span
-                  className={`font-label-sm text-[8px] uppercase mt-0.5 ${
-                    isT0
-                      ? 'text-outline font-semibold'
-                      : isT1
-                      ? 'text-primary bg-primary/10 px-1 rounded font-semibold'
-                      : 'text-outline'
+                  className={`font-code-num text-[12px] font-bold ${
+                    isT1 ? 'text-primary' : isT0 ? 'text-amber-300' : 'text-on-surface'
                   }`}
                 >
-                  {ep.stage}
+                  {ep.year}
+                </span>
+                <span className="font-code-num text-[9px] text-outline">
+                  {ep.gsd}
                 </span>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Title / Phase */}
+              <span
+                className={`font-label-sm text-[10px] font-semibold truncate mt-0.5 ${
+                  isT1 ? 'text-primary' : 'text-on-surface-variant group-hover:text-on-surface'
+                }`}
+              >
+                {ep.title}
+              </span>
+
+              {/* Mini Progress / State Bar */}
+              <div className="w-full h-1 bg-outline-variant/20 rounded-full mt-1 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    isT1
+                      ? 'w-full bg-primary'
+                      : isT0
+                      ? 'w-full bg-amber-400'
+                      : isPast
+                      ? 'w-full bg-tertiary/60'
+                      : 'w-0'
+                  }`}
+                />
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Bottom Footer Info Strip */}
-      <div className="flex items-center justify-between text-outline font-label-sm text-[11px] pt-1 border-t border-outline-variant/20">
-        <div className="flex items-center gap-space-sm">
-          <span>Pass Sensors: Sentinel-2A/B (10m) + Planet SkySat (0.5m GSD)</span>
+      {/* Bottom Info Bar: Clear telemetry readout */}
+      <div className="flex items-center justify-between text-outline font-label-sm text-[9.5px] pt-0.5 border-t border-outline-variant/20">
+        <div className="flex items-center gap-2">
+          <span className="text-on-surface-variant">
+            Viewing: <strong className="text-primary font-code-num">{afterDate}</strong> (
+            {MILESTONES[currentMilestoneIdx]?.title})
+          </span>
           <span>•</span>
-          <span className="text-tertiary font-code-num">Sub-pixel co-registration ≤ 0.22 px</span>
+          <span className="text-outline">
+            Baseline: <strong className="text-amber-300 font-code-num">{beforeDate}</strong> (Farmland)
+          </span>
         </div>
-        <div className="flex items-center gap-2 font-code-num text-[10px]">
-          <span className="bg-surface-container px-1.5 py-0.5 rounded text-outline">← → Scrub</span>
-          <span className="bg-surface-container px-1.5 py-0.5 rounded text-outline">Space Play</span>
-          <span className="bg-surface-container px-1.5 py-0.5 rounded text-outline">J/K Change Event</span>
+        <div className="hidden sm:flex items-center gap-2 font-code-num text-[9px]">
+          <span>Sub-pixel co-reg ≤ 0.22px</span>
+          <span>•</span>
+          <span className="bg-surface-container px-1 rounded text-outline">[Space] Play</span>
+          <span className="bg-surface-container px-1 rounded text-outline">[← / →] Scrub</span>
         </div>
       </div>
     </div>
   );
-};
+});
