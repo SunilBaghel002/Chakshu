@@ -79,13 +79,16 @@ export const ConsoleApp: React.FC = () => {
     handleShortcutAction,
   } = state;
 
+  const [isDossierDismissed, setIsDossierDismissed] = React.useState(false);
+  const activeEvidence = selectedEvidence ?? (!isDossierDismissed && evidenceList.length > 0 ? evidenceList[0] : null);
+
   const hasActiveDossier = Boolean(
     activeView === 'upload' ||
       activeView === 'ask' ||
       activeView === 'search' ||
       activeView === 'review' ||
       activeView === 'audit' ||
-      selectedEvidence
+      activeEvidence
   );
 
   return (
@@ -225,10 +228,13 @@ export const ConsoleApp: React.FC = () => {
             onConfirm={handleConfirmEvidence}
             onReject={handleRejectEvidence}
           />
-        ) : selectedEvidence ? (
+        ) : activeEvidence ? (
           <EvidenceDrawer
-            evidence={selectedEvidence}
-            onClose={() => setSelectedEvidence(null)}
+            evidence={activeEvidence}
+            onClose={() => {
+              setSelectedEvidence(null);
+              setIsDossierDismissed(true);
+            }}
             onConfirm={handleConfirmEvidence}
             onReject={handleRejectEvidence}
             onExport={() => screens.setIsExportModalOpen(true)}

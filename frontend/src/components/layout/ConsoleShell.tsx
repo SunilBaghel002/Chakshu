@@ -255,15 +255,15 @@ export const ConsoleShell: React.FC<ConsoleShellProps> = ({
           {headerNode}
         </Slot>
 
-        {/* Row 3: SLOT-02 Temporal Bar (52px fixed) */}
-        <Slot id="SLOT-02" h={52} className="shrink-0">
+        {/* Row 3: SLOT-02 Temporal Bar (48px fixed) */}
+        <Slot id="SLOT-02" h={48} className="shrink-0">
           {temporalBarNode}
         </Slot>
 
         {/* Row 4: Main Stage (flex) */}
         <div className="flex-1 flex overflow-hidden relative min-h-0">
-          {/* SLOT-05: Icon Rail (58px fixed) */}
-          <Slot id="SLOT-05" w={58} className="shrink-0 h-full">
+          {/* SLOT-05: Icon Rail (64px fixed) */}
+          <Slot id="SLOT-05" w={64} className="shrink-0 h-full">
             {railNode}
           </Slot>
 
@@ -277,17 +277,17 @@ export const ConsoleShell: React.FC<ConsoleShellProps> = ({
               {stageNode}
             </Slot>
 
-            {/* SLOT-30: Timeline Strip (76px fixed) */}
-            <Slot id="SLOT-30" h={76} className="shrink-0">
+            {/* SLOT-30: Timeline Strip (156px fixed) */}
+            <Slot id="SLOT-30" h={156} className="shrink-0">
               {timelineNode}
             </Slot>
           </main>
 
-          {/* SLOT-20: Dossier Panel (380px fixed) */}
+          {/* SLOT-20: Dossier Panel (390px fixed) */}
           {hasActiveDossier && dossierNode && (
             <Slot
               id="SLOT-20"
-              w={windowWidth >= 1440 ? 380 : 340}
+              w={windowWidth >= 1440 ? 390 : 360}
               className="shrink-0 h-full overflow-hidden"
             >
               {dossierNode}

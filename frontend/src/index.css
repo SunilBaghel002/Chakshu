@@ -17,69 +17,92 @@
 }
 
 @theme {
-  --color-bg: #080C16;
-  --color-bg-grid: rgba(63, 169, 245, 0.06);
-  --color-panel: #0E1626;
-  --color-panel-2: #131D31;
-  --color-panel-3: #1A2740;
-  --color-well: #060910;
-  --color-line: #1E2B44;
-  --color-line-strong: #31435F;
+  --color-bg: #0B0F14;
+  --color-bg-grid: rgba(77, 163, 255, 0.06);
+  --color-panel: #0F141B;
+  --color-panel-2: #171C23;
+  --color-panel-3: #1B2027;
+  --color-well: #090E15;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(77, 163, 255, 0.36);
+
+  --color-surface: #0F141B;
+  --color-surface-dim: #0F141B;
+  --color-surface-bright: #353941;
+  --color-surface-container-lowest: #090E15;
+  --color-surface-container-low: #171C23;
+  --color-surface-container: #1B2027;
+  --color-surface-container-high: #252A32;
+  --color-surface-container-highest: #30353D;
+  --color-on-surface: #DEE2ED;
+  --color-on-surface-variant: #C0C7D4;
+  --color-outline: #8A919D;
+  --color-outline-variant: #404752;
+
+  --color-primary: #A2C9FF;
+  --color-primary-container: #4DA3FF;
+  --color-on-primary-container: #003866;
+  --color-secondary: #92CCFF;
+  --color-secondary-container: #00699E;
+  --color-tertiary: #4EDEA3;
+  --color-tertiary-container: #03B67E;
+  --color-error: #FFB4AB;
+  --color-error-container: #93000A;
 
   --color-tricolour-saffron: #FF9426;
   --color-tricolour-white: #FFFFFF;
   --color-tricolour-green: #138808;
   --color-steel: #8FA3BC;
 
-  --color-ink: #E9EFF8;
-  --color-ink-2: #9DAEC6;
-  --color-ink-3: #61738C;
-  --color-ink-ghost: rgba(233, 239, 248, 0.06);
+  --color-ink: #DEE2ED;
+  --color-ink-2: #C0C7D4;
+  --color-ink-3: #8A919D;
+  --color-ink-ghost: rgba(222, 226, 237, 0.06);
 
-  --color-amber: #FF9426;
-  --color-amber-hot: #FFAA4D;
-  --color-amber-deep: #8A4208;
-  --color-amber-wash: rgba(255, 148, 38, 0.14);
-  --color-teal: #3FA9F5;
-  --color-teal-wash: rgba(63, 169, 245, 0.14);
+  --color-amber: #F59E0B;
+  --color-amber-hot: #FBBF24;
+  --color-amber-deep: #78350F;
+  --color-amber-wash: rgba(245, 158, 11, 0.14);
+  --color-teal: #4DA3FF;
+  --color-teal-wash: rgba(77, 163, 255, 0.14);
 
-  --color-signal: #FF9426;
-  --color-signal-hot: #FFAA4D;
-  --color-signal-deep: #8A4208;
-  --color-signal-ink: #1F1200;
-  --color-signal-wash: rgba(255, 148, 38, 0.14);
-  --color-ion: #3FA9F5;
-  --color-ion-hot: #6BC2FF;
-  --color-ion-wash: rgba(63, 169, 245, 0.14);
+  --color-signal: #4DA3FF;
+  --color-signal-hot: #7CC4FF;
+  --color-signal-deep: #004881;
+  --color-signal-ink: #001C38;
+  --color-signal-wash: rgba(77, 163, 255, 0.14);
+  --color-ion: #4DA3FF;
+  --color-ion-hot: #7CC4FF;
+  --color-ion-wash: rgba(77, 163, 255, 0.14);
 
-  --color-measured-fill: rgba(47, 191, 113, 0.14);
-  --color-measured-border: #2FBF71;
-  --color-measured-text: #5AD79A;
-  --color-inferred-fill: rgba(255, 148, 38, 0.12);
-  --color-inferred-border: #FF9426;
-  --color-inferred-text: #FF9426;
+  --color-measured-fill: rgba(78, 222, 163, 0.14);
+  --color-measured-border: #4EDEA3;
+  --color-measured-text: #4EDEA3;
+  --color-inferred-fill: rgba(77, 163, 255, 0.12);
+  --color-inferred-border: #4DA3FF;
+  --color-inferred-text: #4DA3FF;
   --color-unverified-fill: transparent;
-  --color-unverified-border: #61738C;
-  --color-unverified-text: #9DAEC6;
-  --color-confirmed-fill: rgba(47, 191, 113, 0.14);
-  --color-confirmed-border: #2FBF71;
-  --color-confirmed-text: #5AD79A;
-  --color-rejected-fill: rgba(229, 72, 77, 0.14);
-  --color-rejected-border: #E5484D;
-  --color-rejected-text: #F2767B;
-  --color-suppressed-fill: rgba(97, 115, 140, 0.12);
-  --color-suppressed-border: #61738C;
-  --color-suppressed-text: #9DAEC6;
+  --color-unverified-border: #404752;
+  --color-unverified-text: #8A919D;
+  --color-confirmed-fill: rgba(78, 222, 163, 0.14);
+  --color-confirmed-border: #4EDEA3;
+  --color-confirmed-text: #4EDEA3;
+  --color-rejected-fill: rgba(239, 68, 68, 0.14);
+  --color-rejected-border: #EF4444;
+  --color-rejected-text: #FFB4AB;
+  --color-suppressed-fill: rgba(64, 71, 82, 0.14);
+  --color-suppressed-border: #404752;
+  --color-suppressed-text: #C0C7D4;
 
-  --color-success: #2FBF71;
-  --color-warning: #FF9426;
-  --color-danger: #E5484D;
-  --color-info: #3FA9F5;
-  --color-neutral: #61738C;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #4DA3FF;
+  --color-neutral: #8A919D;
 
-  --font-cond: "Bahnschrift", "DIN Alternate", "Franklin Gothic Medium", "Arial Narrow", "Inter", sans-serif;
-  --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-  --font-ui: "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif;
+  --font-cond: "Geist", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --font-ui: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --spacing-s-0: 2px;
   --spacing-s-1: 4px;
@@ -115,82 +138,101 @@
 
 @layer base {
   :root {
-    /* ── §2.1 Base — deep sovereign navy, never pure black and never grey-black ── */
-    --bg: #080C16;
-    --bg-grid: rgba(63, 169, 245, 0.06);
-    --panel: #0E1626;
-    --panel-2: #131D31;
-    --panel-3: #1A2740;
-    --well: #060910;
-    --line: #1E2B44;
-    --line-strong: #31435F;
+    /* ── Stitch Deterministic Geo-Intelligence Theme Tokens ── */
+    --bg: #0B0F14;
+    --bg-grid: rgba(77, 163, 255, 0.06);
+    --panel: #0F141B;
+    --panel-2: #171C23;
+    --panel-3: #1B2027;
+    --well: #090E15;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(77, 163, 255, 0.36);
 
-    /* ── §2.2 Ink — cool sovereign white ── */
-    --ink: #E9EFF8;
-    --ink-2: #9DAEC6;
-    --ink-3: #61738C;
-    --ink-ghost: rgba(233, 239, 248, 0.06);
+    --surface: #0F141B;
+    --surface-dim: #0F141B;
+    --surface-bright: #353941;
+    --surface-container-lowest: #090E15;
+    --surface-container-low: #171C23;
+    --surface-container: #1B2027;
+    --surface-container-high: #252A32;
+    --surface-container-highest: #30353D;
+    --on-surface: #DEE2ED;
+    --on-surface-variant: #C0C7D4;
+    --outline: #8A919D;
+    --outline-variant: #404752;
 
-    /* ── §2.3 Saffron (Attention) & Ion (Data Path) ── */
-    --amber: #FF9426;
-    --amber-hot: #FFAA4D;
-    --amber-deep: #8A4208;
-    --amber-wash: rgba(255, 148, 38, 0.14);
-    --amber-tag-bg: rgba(255, 148, 38, 0.18);
-    --teal: #3FA9F5;
-    --teal-wash: rgba(63, 169, 245, 0.14);
+    --primary: #A2C9FF;
+    --primary-container: #4DA3FF;
+    --on-primary-container: #003866;
+    --secondary: #92CCFF;
+    --secondary-container: #00699E;
+    --tertiary: #4EDEA3;
+    --tertiary-container: #03B67E;
+    --error: #FFB4AB;
+    --error-container: #93000A;
 
-    /* ── v3 signal/ion aliases (PRD 9 §2.3, task 8.1 migration) ── */
-    --signal: #FF9426;
-    --signal-hot: #FFAA4D;
-    --signal-deep: #8A4208;
-    --signal-ink: #1F1200;
-    --signal-wash: rgba(255, 148, 38, 0.14);
-    --ion: #3FA9F5;
-    --ion-hot: #6BC2FF;
-    --ion-wash: rgba(63, 169, 245, 0.14);
+    /* ── Ink — cool sovereign high-contrast white ── */
+    --ink: #DEE2ED;
+    --ink-2: #C0C7D4;
+    --ink-3: #8A919D;
+    --ink-ghost: rgba(222, 226, 237, 0.06);
 
-    /* ── Tricolour tokens (PRD 9 §5.8) ── */
+    /* ── Telemetry Primary (Signal) & Baseline Amber ── */
+    --amber: #F59E0B;
+    --amber-hot: #FBBF24;
+    --amber-deep: #78350F;
+    --amber-wash: rgba(245, 158, 11, 0.14);
+    --amber-tag-bg: rgba(245, 158, 11, 0.18);
+    --teal: #4DA3FF;
+    --teal-wash: rgba(77, 163, 255, 0.14);
+
+    --signal: #4DA3FF;
+    --signal-hot: #7CC4FF;
+    --signal-deep: #004881;
+    --signal-ink: #001C38;
+    --signal-wash: rgba(77, 163, 255, 0.14);
+    --ion: #4DA3FF;
+    --ion-hot: #7CC4FF;
+    --ion-wash: rgba(77, 163, 255, 0.14);
+
+    /* ── Tricolour tokens ── */
     --tricolour-saffron: #FF9426;
     --tricolour-white: #FFFFFF;
     --tricolour-green: #138808;
     --steel: #8FA3BC;
 
-    /* ── §2.4 Semantic states ── */
-    --measured-fill: rgba(47, 191, 113, 0.14);
-    --measured-border: #2FBF71;
-    --measured-text: #5AD79A;
-    --inferred-fill: rgba(255, 148, 38, 0.12);
-    --inferred-border: #FF9426;
-    --inferred-text: #FF9426;
+    /* ── Semantic states ── */
+    --measured-fill: rgba(78, 222, 163, 0.14);
+    --measured-border: #4EDEA3;
+    --measured-text: #4EDEA3;
+    --inferred-fill: rgba(77, 163, 255, 0.12);
+    --inferred-border: #4DA3FF;
+    --inferred-text: #4DA3FF;
     --unverified-fill: transparent;
-    --unverified-border: #61738C;
-    --unverified-text: #9DAEC6;
-    --confirmed-fill: rgba(47, 191, 113, 0.14);
-    --confirmed-border: #2FBF71;
-    --confirmed-text: #5AD79A;
-    --rejected-fill: rgba(229, 72, 77, 0.14);
-    --rejected-border: #E5484D;
-    --rejected-text: #F2767B;
-    --suppressed-fill: rgba(97, 115, 140, 0.12);
-    --suppressed-border: #61738C;
-    --suppressed-text: #9DAEC6;
+    --unverified-border: #404752;
+    --unverified-text: #8A919D;
+    --confirmed-fill: rgba(78, 222, 163, 0.14);
+    --confirmed-border: #4EDEA3;
+    --confirmed-text: #4EDEA3;
+    --rejected-fill: rgba(239, 68, 68, 0.14);
+    --rejected-border: #EF4444;
+    --rejected-text: #FFB4AB;
+    --suppressed-fill: rgba(64, 71, 82, 0.14);
+    --suppressed-border: #404752;
+    --suppressed-text: #C0C7D4;
 
     /* Status colors */
-    --success: #2FBF71;
-    --warning: #FF9426;
-    --danger: #E5484D;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
     --danger-ink: #150A0A;
-    --info: #3FA9F5;
-    --neutral: #61738C;
+    --info: #4DA3FF;
+    --neutral: #8A919D;
 
-    /* ── §3 Typography ── */
-    --font-cond: "Bahnschrift", "DIN Alternate", "Franklin Gothic Medium",
-                 "Arial Narrow", "Inter", sans-serif;
-    --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo,
-                 Consolas, "Liberation Mono", monospace;
-    --font-ui:   "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto,
-                 "Noto Sans", "Noto Sans Devanagari", sans-serif;
+    /* ── Typography ── */
+    --font-cond: "Geist", "Inter", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    --font-ui:   "Geist", "Inter", ui-sans-serif, system-ui, "Noto Sans", sans-serif;
 
     /* ── §7 Motion tokens ── */
     --m-instant: 80ms ease-out;
@@ -857,5 +899,128 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Stitch Deterministic Geo-Intelligence System Classes
+   ═══════════════════════════════════════════════════════════════════════════ */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-headline-xl {
+  font-family: 'Geist', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: -0.02em;
+}
+
+.font-headline-lg {
+  font-family: 'Geist', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.015em;
+}
+
+.font-headline-md {
+  font-family: 'Geist', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.01em;
+}
+
+.font-body-lg {
+  font-family: 'Geist', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0em;
+}
+
+.font-body-md {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0em;
+}
+
+.font-body-sm {
+  font-family: 'Geist', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.005em;
+}
+
+.font-label-lg {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.02em;
+}
+
+.font-label-md {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: 0.025em;
+}
+
+.font-label-sm {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 12px;
+  letter-spacing: 0.04em;
+}
+
+.font-code-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+}
+
+.px-space-xs { padding-left: 0.25rem; padding-right: 0.25rem; }
+.py-space-xs { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.p-space-xs { padding: 0.25rem; }
+.gap-space-xs { gap: 0.25rem; }
+
+.px-space-sm { padding-left: 0.5rem; padding-right: 0.5rem; }
+.py-space-sm { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.p-space-sm { padding: 0.5rem; }
+.gap-space-sm { gap: 0.5rem; }
+
+.px-space-md { padding-left: 0.75rem; padding-right: 0.75rem; }
+.py-space-md { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.p-space-md { padding: 0.75rem; }
+.gap-space-md { gap: 0.75rem; }
+
+.px-space-lg { padding-left: 1rem; padding-right: 1rem; }
+.py-space-lg { padding-top: 1rem; padding-bottom: 1rem; }
+.p-space-lg { padding: 1rem; }
+.gap-space-lg { gap: 1rem; }
+
+.px-space-xl { padding-left: 1.5rem; padding-right: 1.5rem; }
+.py-space-xl { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.p-space-xl { padding: 1.5rem; }
+.gap-space-xl { gap: 1.5rem; }
 
 
