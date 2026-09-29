@@ -858,4 +858,57 @@
   text-transform: uppercase;
 }
 
+/* Dynamic Map Notation Badges (SIH26167 §16-§19) */
+.ask-notation-badge {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ask-badge-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(6, 9, 16, 0.90);
+  border: 1px solid var(--badge-color, #38BDF8);
+  border-radius: 3px;
+  padding: 2px 7px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.75), 0 0 6px var(--badge-color, #38BDF8);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ask-badge-inner:hover {
+  transform: scale(1.08);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.9), 0 0 10px var(--badge-color, #38BDF8);
+}
+
+.ask-badge-inner .badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--badge-color, #38BDF8);
+  display: inline-block;
+}
+
+.ask-badge-inner .badge-text {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #E9EFF8;
+}
+
+.ask-badge-tooltip {
+  background: rgba(14, 22, 38, 0.95) !important;
+  border: 1px solid #31435F !important;
+  color: #E9EFF8 !important;
+  font-family: var(--font-sans, sans-serif) !important;
+  font-size: 11px !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+}
+
 

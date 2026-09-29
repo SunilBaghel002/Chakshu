@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import type { UploadManifestData } from '../components/upload/UploadManifestPanel';
-import type { AskAnswerData } from '../components/ask/AskAnswerPanel';
 import type { SearchResultItem } from '../components/search/SearchResultsPanel';
 import type { ExportOptions } from '../components/ExportModal';
+import type { AskAnswerData, ChatMessage } from './types/ask';
+import { askQuestion } from './api';
 
 export function useAppScreens(
   showToast?: (toast: { message: string; onUndo?: () => void }) => void
@@ -24,30 +25,24 @@ export function useAppScreens(
   const [isUploading, setIsUploading] = useState(false);
   const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null);
 
-  // Ask state
+  // Ask chat & answer state
   const [askHistory, setAskHistory] = useState<string[]>([
-    'How much land was cleared between 2021 and 2024?',
-    'What is the runway area in hectares?',
-    'How many buildings were detected at Jewar?',
+    'Kitna area change hua is time interval mein?',
+    'What changed between the selected dates?',
+    'Where did the change happen?',
+    'How many buildings were detected?',
+    'How much water is present?',
   ]);
-  const [askAnswer, setAskAnswer] = useState<AskAnswerData | null>({
-    query: 'How much land was cleared between 2021 and 2024?',
-    answerText:
-      'Between 2021-01-15 and 2024-06-09, exactly 475.83 ha of agricultural land was converted to airport infrastructure and cleared earthworks. Geometry verified via Kruger UTM 43N planar ellipsoid projection.',
-    epistemicTier: 'MEASURED',
-    confidence: 0.94,
-    measuredNumbers: [
-      { label: 'Cleared Area', value: '475.83 ha', source: 'Kruger UTM 43N' },
-      { label: 'Confidence Margin', value: '0.94', source: 'Geometric Mean' },
-    ],
-    sources: [
-      'Sentinel-2 L2A tile 43RCU (2021-01-15)',
-      'Sentinel-2 L2A tile 43RCU (2024-06-09)',
-      'Deterministic Vector Engine (CVA + Otsu)',
-    ],
-    traceId: 'tr_ask_7c19a2',
-  });
+
+  const [askAnswer, setAskAnswer] = useState<AskAnswerData | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
   const [isThinking, setIsThinking] = useState(false);
+
+  const handleClearChat = useCallback(() => {
+    setChatMessages([]);
+    setAskAnswer(null);
+  }, []);
 
   // Search state
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([
@@ -106,33 +101,164 @@ export function useAppScreens(
     });
   }, [showToast]);
 
-  const handleAskQuery = useCallback((q: string) => {
-    setIsThinking(true);
-    setAskHistory((prev) => (prev.includes(q) ? prev : [...prev, q]));
-
-    setTimeout(() => {
-      setIsThinking(false);
-      const isCar = q.toLowerCase().includes('car');
-      if (isCar) {
-        setAskAnswer({
-          query: q,
-          answerText: 'Resolution Gate refusal',
-          epistemicTier: 'REFUSAL',
-          confidence: 1.0,
-        });
-      } else {
-        setAskAnswer({
-          query: q,
-          answerText: `Query "${q}" grounded against deterministic geometry. Primary area: 475.83 ha across 73 change polygons.`,
-          epistemicTier: 'MEASURED',
-          confidence: 0.92,
-          measuredNumbers: [{ label: 'Area', value: '475.83 ha', source: 'Kruger UTM' }],
-          sources: ['Chakshu Audit Registry', 'Sentinel-2 L2A'],
-          traceId: `tr_${Math.random().toString(36).slice(2, 8)}`,
-        });
+  const handleAskQuery = useCallback(
+    async (
+      q: string,
+      context?: {
+        aoiId?: string;
+        uploadId?: string;
+        dateA?: string;
+        dateB?: string;
+        mapContext?: Record<string, unknown>;
+        onHighlightEvidence?: (ids: string[], bbox?: number[]) => void;
+        onAnnotationActions?: (
+          ids: string[],
+          actions: any[],
+          labels: Record<string, string>,
+          target?: string,
+          bbox?: number[]
+        ) => void;
       }
-    }, 400);
-  }, []);
+    ) => {
+      if (!q.trim()) return;
+      const trimmed = q.trim();
+      setIsThinking(true);
+      setAskHistory((prev) => (prev.includes(trimmed) ? prev : [trimmed, ...prev.filter((x) => x !== trimmed)]));
+
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: `usr_${Date.now()}`,
+          role: 'user',
+          timestamp: nowTime,
+          text: trimmed,
+        },
+      ]);
+
+      try {
+        // Send previous turns for conversational anaphora resolution
+        const historyPayload = chatMessages.slice(-6).map((m) => ({
+          role: m.role,
+          content: m.text,
+          intent: m.intent,
+          target_class: m.targetClass,
+        }));
+
+        const res = await askQuestion(
+          trimmed,
+          context?.aoiId || 'b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1',
+          context?.uploadId,
+          context?.dateA || '2021-01-15',
+          context?.dateB || '2024-06-09',
+          historyPayload,
+          context?.mapContext
+        );
+
+        if (res.kind === 'error') {
+          showToast?.({ message: res.message || 'Query processing failed.' });
+          return;
+        }
+        if (res.kind === 'empty' || !res.data) {
+          showToast?.({ message: 'No spatial evidence found.' });
+          return;
+        }
+
+        const ans = res.data;
+        const isRefusal = ans.intent?.id === 'refusal_resolution' || Boolean(ans.capability_notice);
+        const tier: 'MEASURED' | 'INFERRED' | 'UNVERIFIED' | 'REFUSAL' = isRefusal
+          ? 'REFUSAL'
+          : ans.tier === 'template' || ans.tier === 'polished'
+          ? 'MEASURED'
+          : 'INFERRED';
+
+        // Extract verified measurement numbers
+        const measuredNums: { label: string; value: string; source: string }[] = [];
+        if (ans.measurements?.facts) {
+          for (const f of ans.measurements.facts) {
+            const fact = f as Record<string, unknown>;
+            const lbl = (fact.label as string) || (fact.type as string) || (fact.kind as string);
+            const val =
+              fact.value !== undefined
+                ? String(fact.value) + (fact.unit && fact.unit !== 'date' ? ` ${fact.unit}` : '')
+                : '';
+            if (val && lbl) {
+              measuredNums.push({
+                label: lbl.replace(/_/g, ' ').toUpperCase(),
+                value: val,
+                source: 'Kruger UTM 43N',
+              });
+            }
+          }
+        }
+
+        const primaryStat =
+          measuredNums.length > 0 && measuredNums[0]
+            ? measuredNums[0].value
+            : ans.highlights?.change_object_ids?.length
+            ? `${ans.highlights.change_object_ids.length} vectors`
+            : undefined;
+        const isTargetSpecific = Boolean(ans.intent?.id?.startsWith('selected_target'));
+        const targetTitle = isTargetSpecific
+          ? (context?.mapContext?.selected_target as { title?: string } | undefined)?.title || undefined
+          : undefined;
+
+        const answerData: AskAnswerData = {
+          query: trimmed,
+          answerText: ans.text,
+          epistemicTier: tier,
+          confidence: ans.confidence || 0.94,
+          measuredNumbers: measuredNums.length > 0 ? measuredNums : undefined,
+          sources: ans.sources?.map((s: { id: string }) => s.id) || ['Sentinel-2 L2A tile 43RCU', 'Deterministic Vector Engine'],
+          traceId: ans.answer_id,
+          temporal: ans.temporal || { date_a: context?.dateA || '2021-01-15', date_b: context?.dateB || '2024-06-09' },
+          changeObjectIds: ans.highlights?.change_object_ids,
+          focusBbox: ans.highlights?.focus_bbox_4326 || undefined,
+          mapAction: ans.highlights?.map_action || undefined,
+          mapActions: ans.map_actions || ans.highlights?.map_actions,
+          annotationLabels: ans.highlights?.annotation_labels,
+          annotationIntent: ans.annotation_intent,
+          followUps: ans.follow_ups,
+          evidenceTitles: ans.highlights?.evidence_titles,
+          primaryStat,
+          targetTitle,
+        };
+
+        setAskAnswer(answerData);
+
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `ai_${Date.now()}`,
+            role: 'assistant',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            text: ans.text,
+            intent: ans.intent?.id,
+            targetClass: (ans.slots?.target_class as string) || undefined,
+            answerData,
+          },
+        ]);
+
+        // Synchronize with map annotations & highlights
+        if (context?.onAnnotationActions) {
+          context.onAnnotationActions(
+            ans.highlights?.change_object_ids || ans.evidence_ids || [],
+            ans.map_actions || ans.highlights?.map_actions || [],
+            ans.highlights?.annotation_labels || {},
+            ans.annotation_intent?.target || (ans.slots?.target_class as string) || undefined,
+            ans.highlights?.focus_bbox_4326 || undefined
+          );
+        } else if (ans.highlights?.change_object_ids?.length && context?.onHighlightEvidence) {
+          context.onHighlightEvidence(ans.highlights.change_object_ids, ans.highlights.focus_bbox_4326 || undefined);
+        }
+      } catch (err) {
+        showToast?.({ message: 'Query processing failed.', onUndo: undefined });
+      } finally {
+        setIsThinking(false);
+      }
+    },
+    [chatMessages, showToast]
+  );
 
   const handleSearchQuery = useCallback((q: string) => {
     setIsSearching(true);
@@ -177,8 +303,10 @@ export function useAppScreens(
     handleUploadAnalyse,
     askHistory,
     askAnswer,
+    chatMessages,
     isThinking,
     handleAskQuery,
+    handleClearChat,
     searchResults,
     selectedSearchResult,
     setSelectedSearchResult,
