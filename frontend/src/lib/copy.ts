@@ -371,6 +371,18 @@ export const AUDIT_PANEL_COPY = {
   exportBtn: 'EXPORT AUDIT REPORT',
 } as const;
 
+export const TIMELINE_COPY = {
+  usablePass: 'Usable pass',
+  cloudDegraded: 'Cloud degraded',
+  baselineT0: 'T0 Baseline',
+  highChange: 'High Change Δ',
+  stepHint: '← / → Step',
+  spacePlayHint: 'Space Play',
+  clear: 'CLEAR',
+  unusable: 'UNUSABLE',
+  cloudPrefix: 'Cloud: ',
+} as const;
+
 
 
 

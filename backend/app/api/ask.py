@@ -268,7 +268,7 @@ async def ask_question(payload: AskRequest) -> Answer:
         ]
         follow_ups = ["Where did the change happen?", "What type of land changed?", "How many buildings were detected?"]
     else:
-        if intent_res.intent_id == "count_by_type":
+        if intent_res.intent_id in ("count_by_type", "building_count"):
             recorder.add_sql_query("SELECT count(*) FROM changes WHERE type = 'building';")
         bundle = ask_grounding_service.ground_query(
             intent_id=intent_res.intent_id,

@@ -350,6 +350,8 @@ class QueryRouter:
                 return RouterOutput(task=AnalysisTask.VEGETATION_SEGMENTATION, target="vegetation")
             if "building" in t:
                 return RouterOutput(task=AnalysisTask.BUILDING_DETECTION, target="building")
+            if "snow" in t:
+                return RouterOutput(task=AnalysisTask.SNOW_SEGMENTATION, target="snow")
             return RouterOutput(task=AnalysisTask.CHANGE_DETECTION, target="temporal_change")
         if res.intent_id in (
             "aoi_change_summary", "compare_two_dates", "change_detection",

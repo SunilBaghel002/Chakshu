@@ -20,20 +20,20 @@
   --color-bg: #080C16;
   --color-bg-grid: rgba(63, 169, 245, 0.06);
   --color-panel: #0E1626;
-  --color-panel-2: #131D31;
+  --color-panel-2: #141F33;
   --color-panel-3: #1A2740;
   --color-well: #060910;
   --color-line: #1E2B44;
-  --color-line-strong: #31435F;
+  --color-line-strong: #2A3B5A;
 
   --color-tricolour-saffron: #FF9426;
   --color-tricolour-white: #FFFFFF;
   --color-tricolour-green: #138808;
   --color-steel: #8FA3BC;
 
-  --color-ink: #E9EFF8;
-  --color-ink-2: #9DAEC6;
-  --color-ink-3: #61738C;
+  --color-ink: #F1F5F9;
+  --color-ink-2: #94A3B8;
+  --color-ink-3: #64748B;
   --color-ink-ghost: rgba(233, 239, 248, 0.06);
 
   --color-amber: #FF9426;
@@ -42,6 +42,13 @@
   --color-amber-wash: rgba(255, 148, 38, 0.14);
   --color-teal: #3FA9F5;
   --color-teal-wash: rgba(63, 169, 245, 0.14);
+  --color-primary-cyan: #3FA9F5;
+  --color-primary-cyan-glow: #00E5FF;
+  --color-cyan-wash: rgba(63, 169, 245, 0.12);
+  --color-verified-green: #10B981;
+  --color-positive-green: #2FBF71;
+  --color-warning-orange: #F59E0B;
+  --color-danger-red: #EF4444;
 
   --color-signal: #FF9426;
   --color-signal-hot: #FFAA4D;
@@ -119,16 +126,16 @@
     --bg: #080C16;
     --bg-grid: rgba(63, 169, 245, 0.06);
     --panel: #0E1626;
-    --panel-2: #131D31;
+    --panel-2: #141F33;
     --panel-3: #1A2740;
     --well: #060910;
     --line: #1E2B44;
-    --line-strong: #31435F;
+    --line-strong: #2A3B5A;
 
     /* ── §2.2 Ink — cool sovereign white ── */
-    --ink: #E9EFF8;
-    --ink-2: #9DAEC6;
-    --ink-3: #61738C;
+    --ink: #F1F5F9;
+    --ink-2: #94A3B8;
+    --ink-3: #64748B;
     --ink-ghost: rgba(233, 239, 248, 0.06);
 
     /* ── §2.3 Saffron (Attention) & Ion (Data Path) ── */
@@ -149,6 +156,13 @@
     --ion: #3FA9F5;
     --ion-hot: #6BC2FF;
     --ion-wash: rgba(63, 169, 245, 0.14);
+    --primary-cyan: #3FA9F5;
+    --primary-cyan-glow: #00E5FF;
+    --cyan-wash: rgba(63, 169, 245, 0.12);
+    --verified-green: #10B981;
+    --positive-green: #2FBF71;
+    --warning-orange: #F59E0B;
+    --danger-red: #EF4444;
 
     /* ── Tricolour tokens (PRD 9 §5.8) ── */
     --tricolour-saffron: #FF9426;
@@ -248,7 +262,7 @@
     /* ── Shadows ── */
     --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.55);
     --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.75);
-    --shadow-button-primary: 0 0 12px rgba(240, 180, 95, 0.35);
+    --shadow-button-primary: 0 0 12px rgba(63, 169, 245, 0.35);
   }
 
   .landing-container {
@@ -423,14 +437,14 @@
 .corner-ticks::before {
   top: -1px;
   left: -1px;
-  border-top: 2px solid var(--amber);
-  border-left: 2px solid var(--amber);
+  border-top: 2px solid var(--primary-cyan, #3FA9F5);
+  border-left: 2px solid var(--primary-cyan, #3FA9F5);
 }
 .corner-ticks::after {
   bottom: -1px;
   right: -1px;
-  border-bottom: 2px solid var(--amber);
-  border-right: 2px solid var(--amber);
+  border-bottom: 2px solid var(--primary-cyan, #3FA9F5);
+  border-right: 2px solid var(--primary-cyan, #3FA9F5);
 }
 
 /* Skewed dossier bar */
@@ -438,26 +452,26 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--amber);
-  color: var(--amber-deep);
+  background: var(--panel-2);
+  color: var(--primary-cyan, #3FA9F5);
   padding: 4px 12px 4px 8px;
-  transform: skewX(-10deg);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
 }
 .dossier-bar > * {
-  transform: skewX(10deg);
 }
 .dossier-bar::before {
   content: '';
   display: block;
   width: 6px;
   height: 6px;
-  background: var(--amber-deep);
+  background: var(--primary-cyan, #3FA9F5);
   transform: skewX(10deg);
   flex-shrink: 0;
 }
@@ -518,15 +532,14 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--amber);
-  color: var(--amber-deep);
+  background: var(--primary-cyan, #3FA9F5);
+  color: #FFFFFF;
   font-family: var(--font-cond);
   font-weight: 700;
   font-size: 13px;
   padding: 8px 18px;
   border: none;
-  border-radius: 0;
-  transform: skewX(-10deg);
+  border-radius: 6px;
   cursor: pointer;
   min-height: 36px;
   transition: background var(--m-instant);
@@ -534,13 +547,12 @@
   overflow: hidden;
 }
 .btn-primary > * {
-  transform: skewX(10deg);
 }
 .btn-primary:hover {
-  background: var(--amber-hot);
+  background: var(--primary-cyan-glow, #00E5FF);
 }
 .btn-primary:focus-visible {
-  outline: 2px solid var(--amber);
+  outline: 2px solid var(--primary-cyan, #3FA9F5);
   outline-offset: 2px;
 }
 
@@ -649,6 +661,43 @@
 }
 .leaflet-tooltip-top:before {
   border-top-color: var(--amber) !important;
+}
+
+/* Polygons pane pointer-events discipline */
+.leaflet-polygons-pane,
+.leaflet-polygonsPane-pane {
+  pointer-events: none !important;
+}
+.leaflet-polygons-pane svg,
+.leaflet-polygonsPane-pane svg {
+  pointer-events: none !important;
+}
+.leaflet-polygons-pane path,
+.leaflet-polygonsPane-pane path {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+.leaflet-polygons-pane path.poly-halo-noninteractive,
+.leaflet-polygonsPane-pane path.poly-halo-noninteractive {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* Tactical Leaflet Tooltip */
+.leaflet-tactical-tooltip {
+  background: rgba(14, 22, 38, 0.96) !important;
+  border: 1px solid var(--primary-cyan, #3FA9F5) !important;
+  border-radius: 4px !important;
+  padding: 6px 10px !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.85), 0 0 12px rgba(63, 169, 245, 0.3) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: var(--ink, #F1F5F9) !important;
+  pointer-events: none !important;
+}
+.leaflet-tactical-tooltip::before {
+  border-top-color: var(--primary-cyan, #3FA9F5) !important;
+  border-bottom-color: var(--primary-cyan, #3FA9F5) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

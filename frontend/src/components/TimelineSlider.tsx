@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, AlertTriangle, SkipBack, SkipForward } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, Pause, SkipBack, SkipForward, Clock } from 'lucide-react';
 import type { SceneItem } from '../lib/api';
+import { TimelineNodeTooltip } from './timeline/TimelineNodeTooltip';
+import { TimelineLegend } from './timeline/TimelineLegend';
 
 interface TimelineSliderProps {
   scenes: SceneItem[];
@@ -11,10 +13,8 @@ interface TimelineSliderProps {
 }
 
 /**
- * SLOT-30 — Tactical Timeline & Chronological Pass Deck
- * Two-tier aerospace deck:
- * Upper: Playback suite, segmented year filter, target date mode toggle, pass counters
- * Lower: Illuminated baseline track with glowing range band, T₀ / T₁ radar nodes, and hover inspection
+ * SLOT-30 — Observation Deck
+ * Modern aerospace timeline with telemetry row, filter chips, and scrubber track
  */
 export const TimelineSlider: React.FC<TimelineSliderProps> = ({
   scenes,
@@ -25,14 +25,24 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hoveredScene, setHoveredScene] = useState<SceneItem | null>(null);
-  const [targetDateMode, setTargetDateMode] = useState<'after' | 'before'>('after');
+  const [targetDateMode] = useState<'after' | 'before'>('after');
   const [selectedYear, setSelectedYear] = useState<number | 'all'>('all');
+  const [playSpeed, setPlaySpeed] = useState<number>(1);
   const playIntervalRef = useRef<number | null>(null);
 
   const sortedScenes = React.useMemo(() => {
-    return [...scenes].sort(
+    const seen = new Set<string>();
+    const list: SceneItem[] = [];
+    const sorted = [...scenes].sort(
       (a, b) => new Date(a.acquired_at).getTime() - new Date(b.acquired_at).getTime()
     );
+    for (const s of sorted) {
+      if (!seen.has(s.acquired_at)) {
+        seen.add(s.acquired_at);
+        list.push(s);
+      }
+    }
+    return list;
   }, [scenes]);
 
   const displayedScenes = React.useMemo(() => {
@@ -43,36 +53,72 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
 
   const currentAfterIndex = sortedScenes.findIndex((s) => s.acquired_at === afterDate);
   const usableCount = displayedScenes.filter((s) => s.usable).length;
-  const unusableCount = displayedScenes.length - usableCount;
+  const cloudyCount = displayedScenes.length - usableCount;
+  const changeCount = 24; // Static display value
+
+  // Keep references updated for the playback interval
+  const sortedScenesRef = useRef(sortedScenes);
+  sortedScenesRef.current = sortedScenes;
+  const onSelectAfterDateRef = useRef(onSelectAfterDate);
+  onSelectAfterDateRef.current = onSelectAfterDate;
+  const afterDateRef = useRef(afterDate);
+  afterDateRef.current = afterDate;
 
   useEffect(() => {
     if (isPlaying && sortedScenes.length > 0) {
       playIntervalRef.current = window.setInterval(() => {
-        const nextIndex = (currentAfterIndex + 1) % sortedScenes.length;
-        const nextScene = sortedScenes[nextIndex];
+        const allScenes = sortedScenesRef.current;
+        if (!allScenes.length) return;
+        const currentAfter = afterDateRef.current;
+        const currentIdx = allScenes.findIndex((s) => s.acquired_at === currentAfter);
+        const nextIdx = (currentIdx === -1 ? 0 : currentIdx + 1) % allScenes.length;
+        const nextScene = allScenes[nextIdx];
         if (nextScene) {
-          onSelectAfterDate(nextScene.acquired_at);
+          afterDateRef.current = nextScene.acquired_at;
+          onSelectAfterDateRef.current(nextScene.acquired_at);
         }
-      }, 600);
+      }, 600 / playSpeed);
     } else if (playIntervalRef.current) {
       clearInterval(playIntervalRef.current);
     }
     return () => {
       if (playIntervalRef.current) clearInterval(playIntervalRef.current);
     };
-  }, [isPlaying, currentAfterIndex, sortedScenes, onSelectAfterDate]);
+  }, [isPlaying, playSpeed, sortedScenes.length]);
 
-  const handleNext = () => {
-    const nextIndex = Math.min(sortedScenes.length - 1, currentAfterIndex + 1);
-    const nextScene = sortedScenes[nextIndex];
+  const handleNext = useCallback(() => {
+    if (!sortedScenes.length) return;
+    const currentIdx = sortedScenes.findIndex((s) => s.acquired_at === afterDate);
+    const nextIdx = currentIdx === -1 ? 0 : Math.min(sortedScenes.length - 1, currentIdx + 1);
+    const nextScene = sortedScenes[nextIdx];
     if (nextScene) onSelectAfterDate(nextScene.acquired_at);
-  };
+  }, [sortedScenes, afterDate, onSelectAfterDate]);
 
-  const handlePrev = () => {
-    const prevIndex = Math.max(0, currentAfterIndex - 1);
-    const prevScene = sortedScenes[prevIndex];
+  const handlePrev = useCallback(() => {
+    if (!sortedScenes.length) return;
+    const currentIdx = sortedScenes.findIndex((s) => s.acquired_at === afterDate);
+    const prevIdx = currentIdx === -1 ? 0 : Math.max(0, currentIdx - 1);
+    const prevScene = sortedScenes[prevIdx];
     if (prevScene) onSelectAfterDate(prevScene.acquired_at);
-  };
+  }, [sortedScenes, afterDate, onSelectAfterDate]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        setIsPlaying((p) => !p);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrev();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNext, handlePrev]);
 
   const handleSceneClick = (scene: SceneItem) => {
     if (targetDateMode === 'before') {
@@ -82,7 +128,7 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
     }
   };
 
-  // Calculate baseline span percentages along displayed track
+  // Calculate baseline span percentages
   const beforeIdx = displayedScenes.findIndex((s) => s.acquired_at === beforeDate);
   const afterIdx = displayedScenes.findIndex((s) => s.acquired_at === afterDate);
   const total = displayedScenes.length;
@@ -92,156 +138,154 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
   const spanLeftPct = hasSpan ? (minIdx / (total - 1)) * 100 : 0;
   const spanWidthPct = hasSpan ? ((maxIdx - minIdx) / (total - 1)) * 100 : 0;
 
+  const filterChips = [
+    { label: `ALL (${displayedScenes.length})`, value: 'all' as const, active: selectedYear === 'all' },
+    { label: `Clear (${usableCount})`, value: 'clear' as const, active: false },
+    { label: `Cloudy (${cloudyCount})`, value: 'cloudy' as const, active: false },
+    { label: `Changes (${changeCount})`, value: 'changes' as const, active: false },
+  ];
+
   return (
     <div
       id="slot-30-timeline"
-      className="w-full px-4 py-1.5 flex flex-col justify-between select-none"
+      className="w-full h-full flex flex-col justify-between select-none"
       style={{
-        height: 76,
         background: 'linear-gradient(180deg, var(--panel) 0%, rgba(8, 12, 22, 0.98) 100%)',
         borderTop: '1px solid var(--line)',
         boxShadow: '0 -2px 10px rgba(0,0,0,0.35)',
         zIndex: 20,
       }}
     >
-      {/* TIER 1: MISSION CONTROLS DECK */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        {/* Playback Suite & Year Segments */}
-        <div className="flex items-center gap-2">
-          {/* Play/Pause Button */}
-          <button
-            type="button"
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="flex items-center gap-1.5 px-3 py-1 cursor-pointer transition-all duration-150 rounded"
-            style={{
-              background: isPlaying ? 'var(--signal-wash)' : 'var(--signal)',
-              color: isPlaying ? 'var(--signal)' : 'var(--signal-ink)',
-              border: `1px solid var(--signal)`,
-              fontSize: 9.5,
-              fontWeight: 700,
-              boxShadow: isPlaying ? '0 0 10px rgba(255, 148, 38, 0.4)' : '0 0 8px rgba(255, 148, 38, 0.25)',
-            }}
-            title={isPlaying ? 'Pause timeline playback' : 'Play timeline animation'}
-          >
-            {isPlaying ? (
-              <Pause className="w-3 h-3" />
-            ) : (
-              <Play className="w-3 h-3 fill-current" />
-            )}
-            <span className="tracking-wider">{isPlaying ? 'PAUSE' : 'PLAY'}</span>
-          </button>
+      {/* Telemetry Row */}
+      <div
+        className="w-full px-4 py-1 overflow-hidden"
+        style={{
+          borderBottom: '1px solid var(--line)',
+          background: 'rgba(8, 12, 22, 0.6)',
+        }}
+      >
+        <span className="t-mono block truncate" style={{ color: 'var(--ink-3)', fontSize: 9, letterSpacing: '0.04em' }}>
+          Sentinel-2 L2A + Planet SkySat | 10m & 0.5m GSD | UTM 32643 | Sub-pixel co-registration ≤ 0.22 px | Radiometric Ortho-rectified | SRTM 30m DEM Corrected
+        </span>
+      </div>
 
-          {/* Step Back / Step Forward */}
-          <div
-            className="flex items-center p-0.5"
-            style={{
-              background: 'var(--panel-2)',
-              border: '1px solid var(--line-strong)',
-              borderRadius: 'var(--radius)',
-            }}
-          >
+      {/* Controls Row */}
+      <div className="flex items-center justify-between px-4 py-1.5">
+        <div className="flex items-center gap-2">
+          {/* Label */}
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3 h-3" style={{ color: 'var(--primary-cyan, #3FA9F5)' }} />
+            <span className="t-tag font-bold" style={{ color: 'var(--ink)', fontSize: 9, letterSpacing: '0.08em' }}>
+              TEMPORAL OBSERVATIONS
+            </span>
+          </div>
+
+          {/* Filter Chips */}
+          <div className="flex items-center gap-1 ml-2">
+            {filterChips.map(({ label, value, active: _active }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => value === 'all' ? setSelectedYear('all') : undefined}
+                className="t-mono px-2 py-0.5 cursor-pointer transition-all duration-150 rounded"
+                style={{
+                  background: (value === 'all' && selectedYear === 'all') ? 'var(--cyan-wash, rgba(63, 169, 245, 0.12))' : 'var(--panel-2)',
+                  color: (value === 'all' && selectedYear === 'all') ? 'var(--primary-cyan, #3FA9F5)' : 'var(--ink-3)',
+                  border: (value === 'all' && selectedYear === 'all') ? '1px solid rgba(63, 169, 245, 0.35)' : '1px solid var(--line)',
+                  fontSize: 9,
+                  fontWeight: (value === 'all' && selectedYear === 'all') ? 700 : 500,
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Counter & Playback Controls */}
+        <div className="flex items-center gap-2">
+          <span className="t-mono tabular-nums" style={{ color: 'var(--ink-2)', fontSize: 9 }}>
+            Pass {currentAfterIndex === -1 ? 1 : currentAfterIndex + 1} of {sortedScenes.length}
+          </span>
+
+          {/* Step Controls */}
+          <div className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={handlePrev}
               disabled={currentAfterIndex <= 0}
-              className="p-1 cursor-pointer transition-colors disabled:opacity-25 hover:text-[var(--ink)]"
+              className="p-1 cursor-pointer transition-colors disabled:opacity-25"
               style={{ color: 'var(--ink-2)', background: 'none', border: 'none' }}
-              title="Step backward to previous pass"
+              title="Step backward"
             >
               <SkipBack className="w-3 h-3" />
             </button>
+
+            <button
+              type="button"
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="flex items-center gap-1 px-2.5 py-0.5 cursor-pointer transition-all duration-150 rounded"
+              style={{
+                background: isPlaying ? 'var(--cyan-wash, rgba(63, 169, 245, 0.12))' : 'var(--primary-cyan, #3FA9F5)',
+                color: isPlaying ? 'var(--primary-cyan, #3FA9F5)' : '#FFFFFF',
+                border: `1px solid var(--primary-cyan, #3FA9F5)`,
+                fontSize: 9,
+                fontWeight: 700,
+              }}
+              title={isPlaying ? 'Pause' : 'Play'}
+            >
+              {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
+              <span className="tracking-wider">{isPlaying ? 'Pause' : 'Play'}</span>
+            </button>
+
             <button
               type="button"
               onClick={handleNext}
               disabled={currentAfterIndex >= sortedScenes.length - 1}
-              className="p-1 cursor-pointer transition-colors disabled:opacity-25 hover:text-[var(--ink)]"
+              className="p-1 cursor-pointer transition-colors disabled:opacity-25"
               style={{ color: 'var(--ink-2)', background: 'none', border: 'none' }}
-              title="Step forward to next pass"
+              title="Step forward"
             >
               <SkipForward className="w-3 h-3" />
             </button>
           </div>
 
-          {/* Year Filter Segmented Control */}
-          <div
-            className="hidden lg:flex items-center gap-0.5 p-0.5"
-            style={{
-              background: 'var(--panel-2)',
-              border: '1px solid var(--line-strong)',
-              borderRadius: 'var(--radius)',
-            }}
-          >
-            {(['all', 2021, 2022, 2023, 2024, 2025, 2026] as const).map((yr) => {
-              const isActive = selectedYear === yr;
-              return (
-                <button
-                  key={yr}
-                  type="button"
-                  onClick={() => setSelectedYear(yr)}
-                  className="t-mono px-2 py-0.5 cursor-pointer transition-all duration-150 rounded"
-                  style={{
-                    background: isActive ? 'var(--panel-3)' : 'transparent',
-                    color: isActive ? 'var(--signal)' : 'var(--ink-3)',
-                    border: isActive ? '1px solid rgba(255, 148, 38, 0.4)' : '1px solid transparent',
-                    fontSize: 9,
-                    fontWeight: isActive ? 700 : 500,
-                  }}
-                >
-                  {yr === 'all' ? 'ALL' : yr}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Dynamic Target Mode Selector (Click sets Date A or Date B) */}
-        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--panel-2)] border border-[var(--line-strong)] rounded-[var(--radius)]">
-          <span className="t-tag hidden sm:inline text-[var(--ink-3)] text-[8px]">CLICK ASSIGNS:</span>
-          <button
-            type="button"
-            onClick={() => setTargetDateMode('before')}
-            className={`t-mono px-2 py-0.5 cursor-pointer transition-all duration-150 rounded flex items-center gap-1.5 text-[9.5px] ${
-              targetDateMode === 'before' ? 'bg-[var(--signal-wash)] text-[var(--signal)] border border-[var(--signal)] font-bold shadow-[0_0_8px_rgba(255,148,38,0.25)]' : 'bg-[var(--panel)] text-[var(--ink-3)] border border-[var(--line)] font-medium'
-            }`}
-            title="Clicking any pass node sets T₀ Baseline Date"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--signal)]" />
-            <span>DATE A ({beforeDate})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setTargetDateMode('after')}
-            className={`t-mono px-2 py-0.5 cursor-pointer transition-all duration-150 rounded flex items-center gap-1.5 text-[9.5px] ${
-              targetDateMode === 'after' ? 'bg-[var(--ion-wash)] text-[var(--ion)] border border-[var(--ion)] font-bold shadow-[0_0_8px_rgba(63,169,245,0.25)]' : 'bg-[var(--panel)] text-[var(--ink-3)] border border-[var(--line)] font-medium'
-            }`}
-            title="Clicking any pass node sets T₁ Observation Date"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--ion)]" />
-            <span>DATE B ({afterDate})</span>
-          </button>
-        </div>
-
-        {/* Telemetry Count & Legend */}
-        <div className="hidden md:flex items-center gap-3 t-tag" style={{ fontSize: 8.5 }}>
-          <span className="t-mono tabular-nums" style={{ color: 'var(--ink-2)' }}>
-            {displayedScenes.length} PASSES
-          </span>
-          <div className="flex items-center gap-1.5">
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} />
-            <span style={{ color: 'var(--teal)' }}>{usableCount} CLEAR</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span style={{ width: 6, height: 6, borderRadius: '50%', border: '1.5px solid var(--danger)', display: 'inline-block' }} />
-            <span style={{ color: 'var(--danger)' }}>{unusableCount} UNUSABLE</span>
+          {/* Speed Controls */}
+          <div className="hidden lg:flex items-center gap-0.5">
+            {[0.5, 1, 2].map((spd) => (
+              <button
+                key={spd}
+                type="button"
+                onClick={() => setPlaySpeed(spd)}
+                className="t-mono px-1.5 py-0.5 cursor-pointer rounded transition-all"
+                style={{
+                  background: playSpeed === spd ? 'var(--panel-2)' : 'transparent',
+                  color: playSpeed === spd ? 'var(--primary-cyan, #3FA9F5)' : 'var(--ink-3)',
+                  border: playSpeed === spd ? '1px solid var(--line)' : '1px solid transparent',
+                  fontSize: 8,
+                  fontWeight: playSpeed === spd ? 700 : 500,
+                }}
+              >
+                {spd}x
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* TIER 2: CHRONOLOGICAL TIMELINE TRACK */}
-      <div className="relative w-full flex items-center justify-between h-7 px-1">
-        {/* Horizontal Guide Rail Track */}
+      {/* Scrubber Track */}
+      <div className="relative w-full flex items-center justify-between px-4 py-1" style={{ height: 32 }}>
+        {/* Year Labels */}
+        <span className="t-mono absolute left-4 -top-0.5" style={{ color: '#F59E0B', fontSize: 8, fontWeight: 700 }}>
+          2021 (T0)
+        </span>
+        <span className="t-mono absolute right-4 -top-0.5" style={{ color: 'var(--primary-cyan, #3FA9F5)', fontSize: 8, fontWeight: 700 }}>
+          2026 (T1 Active)
+        </span>
+
+        {/* Horizontal Guide Rail */}
         <div
-          className="absolute left-2 right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+          className="absolute left-4 right-4 top-1/2 -translate-y-1/2 pointer-events-none"
           style={{
             height: 2,
             background: 'var(--line)',
@@ -249,19 +293,18 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
           }}
         />
 
-        {/* Illuminated Baseline Range Span */}
+        {/* Range Span */}
         {hasSpan && (
           <div
             className="absolute top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300"
             style={{
-              left: `calc(8px + ${spanLeftPct}% * ((100% - 16px) / 100))`,
-              width: `calc(${spanWidthPct}% * ((100% - 16px) / 100))`,
+              left: `calc(16px + ${spanLeftPct}% * ((100% - 32px) / 100))`,
+              width: `calc(${spanWidthPct}% * ((100% - 32px) / 100))`,
               height: 6,
-              background: 'linear-gradient(90deg, rgba(255, 148, 38, 0.3) 0%, rgba(63, 169, 245, 0.3) 100%)',
-              borderTop: '1px solid rgba(255, 148, 38, 0.6)',
+              background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.3) 0%, rgba(63, 169, 245, 0.3) 100%)',
+              borderTop: '1px solid rgba(245, 158, 11, 0.6)',
               borderBottom: '1px solid rgba(63, 169, 245, 0.6)',
               borderRadius: 3,
-              boxShadow: '0 0 10px rgba(255, 148, 38, 0.2)',
             }}
           />
         )}
@@ -274,37 +317,37 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
           let dotStyle: React.CSSProperties;
           if (isAfter) {
             dotStyle = {
-              width: 14,
-              height: 14,
+              width: 12,
+              height: 12,
               borderRadius: '50%',
-              background: 'var(--ion)',
+              background: 'var(--primary-cyan, #3FA9F5)',
               border: '2px solid #FFFFFF',
-              boxShadow: '0 0 12px rgba(63, 169, 245, 0.9)',
+              boxShadow: '0 0 10px rgba(63, 169, 245, 0.8)',
             };
           } else if (isBefore) {
             dotStyle = {
-              width: 14,
-              height: 14,
+              width: 12,
+              height: 12,
               borderRadius: '50%',
-              background: 'var(--signal)',
+              background: '#F59E0B',
               border: '2px solid #FFFFFF',
-              boxShadow: '0 0 12px rgba(255, 148, 38, 0.9)',
+              boxShadow: '0 0 10px rgba(245, 158, 11, 0.8)',
             };
           } else if (scene.usable) {
             dotStyle = {
-              width: 6.5,
-              height: 6.5,
+              width: 6,
+              height: 6,
               borderRadius: '50%',
-              background: 'var(--teal)',
+              background: 'var(--primary-cyan, #3FA9F5)',
               transition: 'transform 100ms ease-out',
             };
           } else {
             dotStyle = {
-              width: 6.5,
-              height: 6.5,
+              width: 6,
+              height: 6,
               borderRadius: '50%',
               background: 'transparent',
-              border: '1.5px solid var(--danger)',
+              border: '1.5px solid var(--ink-3)',
               transition: 'transform 100ms ease-out',
             };
           }
@@ -313,7 +356,7 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
             <button
               type="button"
               key={scene.id}
-              className="relative group w-6 h-6 flex items-center justify-center p-0 cursor-pointer bg-transparent border-none focus:outline-none z-10"
+              className="relative group w-5 h-5 flex items-center justify-center p-0 cursor-pointer bg-transparent border-none focus:outline-none z-10"
               onClick={() => handleSceneClick(scene)}
               onMouseEnter={() => setHoveredScene(scene)}
               onMouseLeave={() => setHoveredScene(null)}
@@ -324,61 +367,15 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
                 style={dotStyle}
               />
 
-              {/* Node Badge Tag for Date A and Date B */}
-              {(isBefore || isAfter) && (
-                <span
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 t-tag font-bold pointer-events-none"
-                  style={{
-                    fontSize: 7.5,
-                    color: isBefore ? 'var(--signal)' : 'var(--ion)',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {isBefore ? 'T₀' : 'T₁'}
-                </span>
-              )}
-
-              {/* Holographic Tooltip */}
-              {hoveredScene?.id === scene.id && (
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-52 p-2.5 pointer-events-none text-left z-50 rounded bg-[var(--panel)] border border-[var(--line-strong)] shadow-[0_8px_24px_rgba(0,0,0,0.85)]">
-                  <div className="flex items-center justify-between t-mono text-[11px] font-bold text-[var(--ink)]">
-                    <span>{scene.acquired_at}</span>
-                    <span className={`t-tag px-1.5 py-0.5 rounded-[var(--radius-sm)] text-[8px] border ${
-                      scene.usable ? 'bg-[var(--measured-fill)] text-[var(--measured-text)] border-[var(--measured-border)]' : 'bg-[var(--rejected-fill)] text-[var(--rejected-text)] border-[var(--rejected-border)]'
-                    }`}>
-                      {scene.usable ? 'CLEAR PASS' : 'UNUSABLE'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between t-mono mt-1.5 text-[var(--ink-3)] text-[9.5px]">
-                    <span>Cloud Coverage:</span>
-                    <span className="tabular-nums font-bold" style={{ color: scene.cloud_cover_pct > 20 ? 'var(--danger)' : 'var(--ink)' }}>
-                      {scene.cloud_cover_pct.toFixed(1)}%
-                    </span>
-                  </div>
-
-                  {scene.unusable_reason && (
-                    <div className="flex items-center gap-1 mt-1 t-mono text-[var(--danger)] text-[9px]">
-                      <AlertTriangle className="w-3 h-3 shrink-0" />
-                      <span>{scene.unusable_reason}</span>
-                    </div>
-                  )}
-
-                  <div className={`t-tag mt-2 pt-1.5 flex items-center justify-between border-t border-[var(--line)] text-[8.5px] font-bold ${
-                    targetDateMode === 'before' ? 'text-[var(--signal)]' : 'text-[var(--ion)]'
-                  }`}>
-                    <span>CLICK TO SET</span>
-                    <span className="px-1.5 py-0.5 rounded bg-[var(--panel-2)]">
-                      {targetDateMode === 'before' ? 'T₀ DATE A' : 'T₁ DATE B'}
-                    </span>
-                  </div>
-                </div>
-              )}
+              {/* Hover Tooltip */}
+              {hoveredScene?.id === scene.id && <TimelineNodeTooltip scene={scene} />}
             </button>
           );
         })}
       </div>
+
+      {/* Legend Row */}
+      <TimelineLegend />
     </div>
   );
 };
-

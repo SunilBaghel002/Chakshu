@@ -1,6 +1,5 @@
 import React from 'react';
 import { ConsoleShell } from './ConsoleShell';
-import { DataStreamMarquee } from '../DataStreamMarquee';
 import { AppHeader } from '../AppHeader';
 import { TemporalBar } from '../TemporalBar';
 import { IconRail } from '../IconRail';
@@ -55,6 +54,10 @@ export const ConsoleApp: React.FC = () => {
     detectionSet,
     beforeDate,
     afterDate,
+    showClouds,
+    handleToggleClouds,
+    showPolygons,
+    handleTogglePolygons,
     activeView,
     setActiveView,
     isMock,
@@ -191,7 +194,7 @@ export const ConsoleApp: React.FC = () => {
 
   return (
     <ConsoleShell
-      marqueeNode={<DataStreamMarquee />}
+      marqueeNode={undefined}
       headerNode={
         <AppHeader
           aois={aois}
@@ -202,8 +205,15 @@ export const ConsoleApp: React.FC = () => {
           isMock={isMock}
           onToggleMock={handleToggleMock}
           areaLabel={totalAreaLabel}
-          sceneCount={scenes.length || 36}
-          usableScenes={scenes.filter((s) => s.usable).length || 29}
+          sceneCount={scenes.length || 73}
+          usableScenes={scenes.filter((s) => s.usable).length || 54}
+          beforeDate={beforeDate}
+          afterDate={afterDate}
+          onSelectBeforeDate={handleSelectBeforeDate}
+          onSelectAfterDate={handleSelectAfterDate}
+          onSwapDates={handleSwapDates}
+          onRunAnalysis={handleDetectChanges}
+          isAnalyzing={isAnalyzing}
         />
       }
       temporalBarNode={
@@ -225,8 +235,16 @@ export const ConsoleApp: React.FC = () => {
           />
         ) : (
           <TemporalBar
+            isSwipeActive={isSwipeActive}
+            onToggleSwipe={() => setIsSwipeActive(!isSwipeActive)}
+            sliderPos={sliderPos}
+            onExportGeoTiff={() => screens.setIsExportModalOpen(true)}
             beforeDate={beforeDate}
             afterDate={afterDate}
+            showPolygons={showPolygons}
+            onTogglePolygons={handleTogglePolygons}
+            showClouds={showClouds}
+            onToggleClouds={handleToggleClouds}
             onBeforeDateChange={handleSelectBeforeDate}
             onAfterDateChange={handleSelectAfterDate}
             onSwapDates={handleSwapDates}
@@ -257,7 +275,12 @@ export const ConsoleApp: React.FC = () => {
             aoiName={currentAoi?.name ?? 'Jewar Airport'}
             evidenceList={evidenceList}
             selectedEvidenceId={selectedEvidence?.change_object_id ?? null}
-            onSelectEvidence={setSelectedEvidence}
+            onSelectEvidence={(ev) => {
+              setSelectedEvidence(ev);
+              if (activeView !== 'map') {
+                setActiveView('map');
+              }
+            }}
             detectionSet={detectionSet}
             sliderPos={sliderPos}
             onSliderChange={setSliderPos}
@@ -265,6 +288,10 @@ export const ConsoleApp: React.FC = () => {
             onToggleSwipe={() => setIsSwipeActive(!isSwipeActive)}
             beforeDate={beforeDate}
             afterDate={afterDate}
+            showClouds={showClouds}
+            onToggleClouds={handleToggleClouds}
+            showPolygons={showPolygons}
+            onTogglePolygons={handleTogglePolygons}
             availableDates={availableDates}
             onSelectBeforeDate={handleSelectBeforeDate}
             onSelectAfterDate={handleSelectAfterDate}
@@ -342,6 +369,7 @@ export const ConsoleApp: React.FC = () => {
             onConfirm={handleConfirmEvidence}
             onReject={handleRejectEvidence}
             onExport={() => screens.setIsExportModalOpen(true)}
+            onOpenAsk={() => setActiveView('ask')}
           />
         ) : undefined
       }

@@ -11,7 +11,10 @@ import { ZoomStack } from './map/ZoomStack';
 import { MapLegend } from './map/MapLegend';
 import { CoordReadout } from './map/CoordReadout';
 import { LockonTag } from './map/LockonTag';
-import { getSatelliteTileConfig, type ImageryMode } from '../lib/satelliteProviders';
+import { getSatelliteTileConfig, extractYear, type ImageryMode } from '../lib/satelliteProviders';
+import { useLeafletMapInit } from '../lib/useLeafletMapInit';
+import { computeSwipeClipPolygon, adjustBBoxForSwipe } from '../lib/mapClipHelpers';
+import { MapTacticalControls } from './map/MapTacticalControls';
 import { SatelliteIntelModal } from './SatelliteIntelModal';
 import { useMapAnnotations, type MapAnnotationState } from '../lib/useMapAnnotations';
 import evidenceListFixture from '../fixtures/evidence_list.json';
@@ -22,6 +25,8 @@ interface MapPaneProps {
   onSelectEvidence: (evidence: Evidence) => void; detectionSet?: DetectionSet | null;
   sliderPos: number; onSliderChange: (pos: number) => void; isSwipeActive: boolean; onToggleSwipe: () => void;
   beforeDate: string; afterDate: string; availableDates?: string[];
+  showClouds?: boolean; onToggleClouds?: () => void;
+  showPolygons?: boolean; onTogglePolygons?: () => void;
   onSelectBeforeDate?: (date: string) => void; onSelectAfterDate?: (date: string) => void; onSwapDates?: () => void;
   presetTarget?: { center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]] } | null;
   onPresetConsumed?: () => void;
@@ -46,6 +51,10 @@ export const MapPane: React.FC<MapPaneProps> = ({
   beforeDate,
   afterDate,
   availableDates = [],
+  showClouds = false,
+  onToggleClouds,
+  showPolygons = true,
+  onTogglePolygons,
   onSelectBeforeDate,
   onSelectAfterDate,
   onSwapDates,
@@ -54,11 +63,6 @@ export const MapPane: React.FC<MapPaneProps> = ({
   askAnnotationState,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const beforeTileLayerRef = useRef<L.TileLayer | null>(null);
-  const afterTileLayerRef = useRef<L.TileLayer | null>(null);
-  const prevAoiIdRef = useRef<string | null>(null);
-
   const [imageryMode] = useState<ImageryMode>('hybrid_optimum');
   const [dehazeActive] = useState<boolean>(true);
   const [showIntelModal, setShowIntelModal] = useState<boolean>(false);
@@ -75,6 +79,22 @@ export const MapPane: React.FC<MapPaneProps> = ({
   const [lockedEvidence, setLockedEvidence] = useState<Evidence | null>(null);
   const [lockedBBox, setLockedBBox] = useState<BBox | null>(null);
   const isTagHoveredRef = useRef<boolean>(false);
+  const hoverDismissTimerRef = useRef<number | null>(null);
+
+  const { mapInstance, mapInstanceRef, prevAoiIdRef } = useLeafletMapInit({
+    containerRef: mapContainerRef,
+    aoiCoords,
+    aoiBounds,
+    selectedAoiId,
+    beforeDate,
+    afterDate,
+    imageryMode,
+    showClouds,
+    dehazeActive,
+    setCursorLat,
+    setCursorLng,
+    setCurrentZoom,
+  });
 
   // Dev visual verification support (?mockHover=1, ?greyscale=1)
   useEffect(() => {
@@ -90,118 +110,6 @@ export const MapPane: React.FC<MapPaneProps> = ({
     }
   }, [evidenceList]);
 
-
-  // Initialize Leaflet Map once on mount
-  useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current) return;
-    const map = L.map(mapContainerRef.current, {
-      center: aoiCoords,
-      zoom: 14,
-      zoomControl: false,
-      attributionControl: false,
-    });
-    if (aoiBounds) map.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15 });
-
-    const beforePane = map.createPane('beforePane');
-    beforePane.style.zIndex = '200';
-    beforePane.style.transform = 'translate3d(0,0,0)';
-    beforePane.style.filter = 'saturate(1.08) contrast(1.04) brightness(1.02)';
-    const beforeCfg = getSatelliteTileConfig(beforeDate, imageryMode, false);
-    const beforeSatellite = L.tileLayer(beforeCfg.url, {
-      maxZoom: beforeCfg.maxZoom,
-      maxNativeZoom: beforeCfg.maxNativeZoom,
-      pane: 'beforePane',
-      opacity: 1,
-    });
-    beforeSatellite.addTo(map);
-    beforeTileLayerRef.current = beforeSatellite;
-
-    const afterPane = map.createPane('afterPane');
-    afterPane.style.zIndex = '450';
-    afterPane.style.transform = 'translate3d(0,0,0)';
-    afterPane.style.willChange = 'clip-path';
-    afterPane.style.filter = dehazeActive
-      ? 'contrast(1.22) saturate(1.28) brightness(0.96)'
-      : 'saturate(1.08) contrast(1.06) brightness(1.02)';
-    const afterCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
-    const afterSatellite = L.tileLayer(afterCfg.url, {
-      maxZoom: afterCfg.maxZoom,
-      maxNativeZoom: afterCfg.maxNativeZoom,
-      pane: 'afterPane',
-      opacity: 1,
-    });
-    afterSatellite.addTo(map);
-    afterTileLayerRef.current = afterSatellite;
-
-    const polygonsPane = map.createPane('polygonsPane');
-    polygonsPane.style.zIndex = '500';
-    polygonsPane.style.pointerEvents = 'auto';
-
-    L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
-      { maxZoom: 18, opacity: 0.5 }
-    ).addTo(map);
-
-    let moveRaf: number | null = null;
-    let lastLat: number | null = null;
-    let lastLng: number | null = null;
-
-    const onLeafletMouseMove = (e: L.LeafletMouseEvent) => {
-      lastLat = e.latlng.lat;
-      lastLng = e.latlng.lng;
-      if (moveRaf === null) {
-        moveRaf = requestAnimationFrame(() => {
-          moveRaf = null;
-          if (lastLat !== null && lastLng !== null) {
-            const rLat = Number(lastLat.toFixed(4));
-            const rLng = Number(lastLng.toFixed(4));
-            setCursorLat((prev) => (prev === rLat ? prev : rLat));
-            setCursorLng((prev) => (prev === rLng ? prev : rLng));
-          }
-        });
-      }
-    };
-
-    const onLeafletMouseOut = () => {
-      if (moveRaf !== null) {
-        cancelAnimationFrame(moveRaf);
-        moveRaf = null;
-      }
-      setCursorLat(null);
-      setCursorLng(null);
-    };
-
-    map.on('mousemove', onLeafletMouseMove);
-    map.on('mouseout', onLeafletMouseOut);
-    map.on('zoomend', () => setCurrentZoom(map.getZoom()));
-    map.on('moveend', () => {
-      const c = map.getCenter();
-      trackMapViewport(map.getZoom(), [c.lat, c.lng]);
-    });
-
-    mapInstanceRef.current = map;
-    prevAoiIdRef.current = selectedAoiId ?? null;
-    setTimeout(() => map.invalidateSize(), 150);
-
-    const handleResize = () => map.invalidateSize();
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (moveRaf !== null) cancelAnimationFrame(moveRaf);
-      map.remove();
-      mapInstanceRef.current = null;
-    };
-  }, []);
-
-  // Update satellite tile layers on date changes
-  useEffect(() => {
-    if (!mapInstanceRef.current) return;
-    const bCfg = getSatelliteTileConfig(beforeDate, imageryMode, false);
-    if (beforeTileLayerRef.current) beforeTileLayerRef.current.setUrl(bCfg.url);
-    const aCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
-    if (afterTileLayerRef.current) afterTileLayerRef.current.setUrl(aCfg.url);
-  }, [beforeDate, afterDate, imageryMode]);
-
   // Swipe clip path application
   const applyClip = useCallback((pct: number) => {
     const map = mapInstanceRef.current;
@@ -209,26 +117,30 @@ export const MapPane: React.FC<MapPaneProps> = ({
     const afterPane = map.getPane('afterPane');
     const polyPane = map.getPane('polygonsPane');
     if (!afterPane) return;
+    const isPolyVisible = showPolygons ?? true;
     if (!isSwipeActive) {
       afterPane.style.display = 'none';
-      if (polyPane) { polyPane.style.display = 'block'; polyPane.style.clipPath = 'none'; }
+      if (polyPane) {
+        polyPane.style.display = isPolyVisible ? 'block' : 'none';
+        polyPane.style.clipPath = 'none';
+      }
       return;
     }
     afterPane.style.display = 'block';
-    if (polyPane) polyPane.style.display = 'block';
+    if (polyPane) {
+      polyPane.style.display = isPolyVisible ? 'block' : 'none';
+      polyPane.style.clipPath = 'none';
+    }
     const w = mapContainerRef.current?.offsetWidth || map.getSize().x;
     const h = mapContainerRef.current?.offsetHeight || map.getSize().y;
-    const nw = map.containerPointToLayerPoint([0, 0]);
-    const se = map.containerPointToLayerPoint([w, h]);
-    const clipX = map.containerPointToLayerPoint([(pct / 100) * w, 0]).x;
     const isNormal = beforeDate <= afterDate;
-    const top = nw.y - 3000, bot = se.y + 3000, l = nw.x - 3000, r = se.x + 3000;
-    const clip = isNormal
-      ? `polygon(${clipX}px ${top}px, ${r}px ${top}px, ${r}px ${bot}px, ${clipX}px ${bot}px)`
-      : `polygon(${l}px ${top}px, ${clipX}px ${top}px, ${clipX}px ${bot}px, ${l}px ${bot}px)`;
+    const clip = computeSwipeClipPolygon(pct, w, h, map, isNormal);
     afterPane.style.clipPath = clip;
-    if (polyPane) polyPane.style.clipPath = clip;
-  }, [isSwipeActive, beforeDate, afterDate]);
+    if (polyPane) {
+      polyPane.style.display = isPolyVisible ? 'block' : 'none';
+      polyPane.style.clipPath = clip;
+    }
+  }, [isSwipeActive, beforeDate, afterDate, showPolygons]);
 
   useEffect(() => {
     applyClip(sliderPos);
@@ -256,24 +168,41 @@ export const MapPane: React.FC<MapPaneProps> = ({
     onPresetConsumed?.();
   }, [presetTarget, onPresetConsumed]);
 
-  // M3 Hover Lock-On
+  // M3 Hover Lock-On with grace timer to prevent flicker
   const handleHoverWithBbox = useCallback((ev: Evidence | null, bbox: BBox | null) => {
+    if (hoverDismissTimerRef.current !== null) {
+      window.clearTimeout(hoverDismissTimerRef.current);
+      hoverDismissTimerRef.current = null;
+    }
+
     if (ev && bbox) {
+      let adjustedBBox = bbox;
+      if (isSwipeActive && mapContainerRef.current) {
+        const containerW = mapContainerRef.current.offsetWidth || 1200;
+        const isNormal = beforeDate <= afterDate;
+        const adjusted = adjustBBoxForSwipe(bbox, containerW, sliderPos, isNormal);
+        if (!adjusted) return;
+        adjustedBBox = adjusted;
+      }
       setLockedEvidence(ev);
-      setLockedBBox(bbox);
+      setLockedBBox(adjustedBBox);
       trackMapHover(ev.change_object_id);
     } else if (!isTagHoveredRef.current) {
-      setLockedEvidence(null);
-      setLockedBBox(null);
+      hoverDismissTimerRef.current = window.setTimeout(() => {
+        if (!isTagHoveredRef.current) {
+          setLockedEvidence(null);
+          setLockedBBox(null);
+        }
+      }, 180);
     }
-  }, []);
+  }, [isSwipeActive, sliderPos, beforeDate, afterDate]);
 
   useMapPolygons({
-    map: mapInstanceRef.current,
+    map: mapInstance,
     evidenceList,
     selectedEvidenceId,
     onSelectEvidence,
-    showAllPolygons: true,
+    showAllPolygons: showPolygons ?? true,
     setHoveredEvidence: () => {},
     onHoverWithBbox: handleHoverWithBbox,
     onLabelsCollisionChange: setHiddenLabelCount,
@@ -281,8 +210,19 @@ export const MapPane: React.FC<MapPaneProps> = ({
     afterDate,
   });
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'v' || e.key === 'V') {
+        onTogglePolygons?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onTogglePolygons]);
+
   useMapAnnotations({
-    map: mapInstanceRef.current,
+    map: mapInstance,
     evidenceList,
     annotationState: askAnnotationState ?? null,
     selectedEvidenceId,
@@ -298,7 +238,13 @@ export const MapPane: React.FC<MapPaneProps> = ({
   const handleFitAoi = handleHome;
   const handleToggleMeasure = useCallback(() => setIsMeasureActive((prev) => !prev), []);
   const handleSectorChange = useCallback((sec: string) => setCurrentSector(sec), []);
-  const handleTagMouseEnter = useCallback(() => { isTagHoveredRef.current = true; }, []);
+  const handleTagMouseEnter = useCallback(() => {
+    isTagHoveredRef.current = true;
+    if (hoverDismissTimerRef.current !== null) {
+      window.clearTimeout(hoverDismissTimerRef.current);
+      hoverDismissTimerRef.current = null;
+    }
+  }, []);
   const handleTagMouseLeave = useCallback(() => {
     isTagHoveredRef.current = false;
     setLockedEvidence(null);
@@ -340,6 +286,15 @@ export const MapPane: React.FC<MapPaneProps> = ({
 
       {/* SLOT-11: Sector Tag (TL) */}
       <SectorTag sector={currentSector} />
+
+      {/* Floating Tactical Map Controls: Polygons Shutdown & Baseline Cloud Toggle */}
+      <MapTacticalControls
+        showPolygons={showPolygons}
+        onTogglePolygons={onTogglePolygons}
+        beforeDate={beforeDate}
+        showClouds={showClouds}
+        onToggleClouds={onToggleClouds}
+      />
 
       {/* SLOT-12: Zoom Stack (TR) */}
       <ZoomStack

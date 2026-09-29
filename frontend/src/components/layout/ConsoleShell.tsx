@@ -245,18 +245,20 @@ export const ConsoleShell: React.FC<ConsoleShellProps> = ({
         className="flex flex-col h-screen w-screen overflow-hidden select-none"
         style={{ background: 'var(--bg)', color: 'var(--ink)' }}
       >
-        {/* Row 1: SLOT-00 Marquee (18px fixed) */}
-        <Slot id="SLOT-00" h={18} className="shrink-0">
-          {marqueeNode}
-        </Slot>
+        {/* Row 1: SLOT-00 Marquee (18px fixed, rendered only when marqueeNode is provided) */}
+        {marqueeNode ? (
+          <Slot id="SLOT-00" h={18} className="shrink-0">
+            {marqueeNode}
+          </Slot>
+        ) : null}
 
         {/* Row 2: SLOT-01 Command Bar (56px fixed) */}
         <Slot id="SLOT-01" h={56} className="shrink-0">
           {headerNode}
         </Slot>
 
-        {/* Row 3: SLOT-02 Temporal Bar (52px fixed) */}
-        <Slot id="SLOT-02" h={52} className="shrink-0">
+        {/* Row 3: SLOT-02 Temporal Bar (44px fixed) */}
+        <Slot id="SLOT-02" h={44} className="shrink-0">
           {temporalBarNode}
         </Slot>
 
@@ -277,8 +279,8 @@ export const ConsoleShell: React.FC<ConsoleShellProps> = ({
               {stageNode}
             </Slot>
 
-            {/* SLOT-30: Timeline Strip (76px fixed) */}
-            <Slot id="SLOT-30" h={76} className="shrink-0">
+            {/* SLOT-30: Timeline Strip (110px fixed) */}
+            <Slot id="SLOT-30" h={110} className="shrink-0">
               {timelineNode}
             </Slot>
           </main>
