@@ -16,11 +16,15 @@ export const AskBar: React.FC<AskBarProps> = ({ onAsk, isThinking = false }) => 
   const [showExamples, setShowExamples] = useState(false);
 
   const examples = [
-    'How much land was cleared between 2021 and 2024?',
-    'How many buildings were detected at Jewar Airport?',
-    'What is the area of the runway construction zone?',
-    'Was there any water body change during monsoon?',
-    'Can you count the individual cars in this scene?',
+    'Kitna area change hua is time interval mein?',
+    'How much area changed between 2021 and 2024?',
+    'Where did the change happen?',
+    'When did the change happen?',
+    'How many buildings were detected at Jewar?',
+    'Where are the detected buildings?',
+    'How much water is present?',
+    'What type of land changed?',
+    'Show me the changed region.',
   ];
 
   const handleSubmit = (e?: React.FormEvent) => {

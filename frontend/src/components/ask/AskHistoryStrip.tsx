@@ -19,9 +19,11 @@ export const AskHistoryStrip: React.FC<AskHistoryStripProps> = ({
     history.length > 0
       ? history.slice(-8)
       : [
-          'How much land was cleared between 2021 and 2024?',
-          'What is the runway area in hectares?',
+          'Kitna area change hua is time interval mein?',
+          'How much area changed between 2021 and 2024?',
+          'Where did the change happen?',
           'How many buildings were detected at Jewar?',
+          'How much water is present?',
         ];
 
   return (

@@ -16,11 +16,15 @@ from app.schemas.common import AnswerTier
 class AskRequest(BaseModel):
     """Payload for POST /api/v1/ask."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     question: str
     aoi_id: str | None = None
     upload_id: str | None = None
+    date_a: str | None = None
+    date_b: str | None = None
+    conversation_history: list[dict[str, Any]] = Field(default_factory=list)
+    map_context: dict[str, Any] | None = None
 
 
 class IntentMatch(BaseModel):
@@ -33,6 +37,35 @@ class IntentMatch(BaseModel):
     matched_by: str = Field(description="'embedding' | 'regex' | 'fallback'")
 
 
+class MapActionItem(BaseModel):
+    """Controlled map action targeting validated evidence IDs (SIH26167 §8, §9)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    action: str = Field(description="Controlled action, e.g. 'highlight_evidence', 'show_labels', 'clear_annotations'")
+    evidence_ids: list[str] = Field(default_factory=list)
+    params: dict[str, Any] = Field(default_factory=dict)
+
+
+class AnnotationIntent(BaseModel):
+    """Structured intermediate representation of user annotation intent (SIH26167 §4)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    intent: str = "map_annotation"
+    target: str = Field(description="e.g. 'water', 'new_buildings', 'buildings', 'vegetation_loss'")
+    operation: str = "highlight"
+    operations: list[str] = Field(default_factory=list)
+    scope: str = "current_aoi"
+    temporal_scope: str | None = None
+    temporal_range: list[str] | None = None
+    filter: dict[str, Any] | None = None
+    label_mode: str = "none"
+    measurement: str | None = None
+    evidence_required: bool = True
+    color_override: str | None = None
+
+
 class AnswerHighlights(BaseModel):
     """Spatial and object references highlighted on the map."""
 
@@ -41,6 +74,10 @@ class AnswerHighlights(BaseModel):
     change_object_ids: list[str] = Field(default_factory=list)
     detection_ids: list[str] = Field(default_factory=list)
     focus_bbox_4326: list[float] | None = None
+    map_action: str | None = None
+    evidence_titles: list[str] = Field(default_factory=list)
+    map_actions: list[MapActionItem] = Field(default_factory=list)
+    annotation_labels: dict[str, str] = Field(default_factory=dict)
 
 
 class AnswerSource(BaseModel):
@@ -87,3 +124,8 @@ class Answer(BaseModel):
     trace_url: str
     report_url: str
     generated_at: str
+    temporal: dict[str, Any] = Field(default_factory=dict)
+    follow_ups: list[str] = Field(default_factory=list)
+    annotation_intent: AnnotationIntent | None = None
+    evidence_ids: list[str] = Field(default_factory=list)
+    map_actions: list[MapActionItem] = Field(default_factory=list)

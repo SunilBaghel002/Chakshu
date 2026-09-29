@@ -13,6 +13,7 @@ import { CoordReadout } from './map/CoordReadout';
 import { LockonTag } from './map/LockonTag';
 import { getSatelliteTileConfig, type ImageryMode } from '../lib/satelliteProviders';
 import { SatelliteIntelModal } from './SatelliteIntelModal';
+import { useMapAnnotations, type MapAnnotationState } from '../lib/useMapAnnotations';
 import evidenceListFixture from '../fixtures/evidence_list.json';
 
 interface MapPaneProps {
@@ -24,6 +25,7 @@ interface MapPaneProps {
   onSelectBeforeDate?: (date: string) => void; onSelectAfterDate?: (date: string) => void; onSwapDates?: () => void;
   presetTarget?: { center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]] } | null;
   onPresetConsumed?: () => void;
+  askAnnotationState?: MapAnnotationState | null;
 }
 
 /**
@@ -49,6 +51,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
   onSwapDates,
   presetTarget,
   onPresetConsumed,
+  askAnnotationState,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -77,11 +80,9 @@ export const MapPane: React.FC<MapPaneProps> = ({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get('greyscale') === '1') {
-      document.documentElement.style.filter = 'grayscale(1)';
-    }
+    if (params.get('greyscale') === '1') document.documentElement.style.filter = 'grayscale(1)';
     if (params.get('mockHover') === '1') {
-      const target = (evidenceList.length > 0 ? evidenceList[0] : (evidenceListFixture[0] as unknown as Evidence));
+      const target = evidenceList.length > 0 ? evidenceList[0] : (evidenceListFixture[0] as unknown as Evidence);
       setLockedEvidence(target || null);
       setLockedBBox({ minX: 420, minY: 280, maxX: 720, maxY: 480 });
       setCursorLat(28.1748);
@@ -280,22 +281,21 @@ export const MapPane: React.FC<MapPaneProps> = ({
     afterDate,
   });
 
+  useMapAnnotations({
+    map: mapInstanceRef.current,
+    evidenceList,
+    annotationState: askAnnotationState ?? null,
+    selectedEvidenceId,
+    onSelectEvidence,
+  });
+
   const handleZoomIn = useCallback(() => mapInstanceRef.current?.zoomIn(), []);
   const handleZoomOut = useCallback(() => mapInstanceRef.current?.zoomOut(), []);
   const handleHome = useCallback(() => {
-    if (aoiBounds && mapInstanceRef.current) {
-      mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
-    } else {
-      mapInstanceRef.current?.flyTo(aoiCoords, 14);
-    }
+    if (aoiBounds && mapInstanceRef.current) mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
+    else mapInstanceRef.current?.flyTo(aoiCoords, 14);
   }, [aoiBounds, aoiCoords]);
-  const handleFitAoi = useCallback(() => {
-    if (aoiBounds && mapInstanceRef.current) {
-      mapInstanceRef.current.fitBounds(aoiBounds, { padding: [36, 36], maxZoom: 15, animate: true });
-    } else {
-      mapInstanceRef.current?.flyTo(aoiCoords, 14);
-    }
-  }, [aoiBounds, aoiCoords]);
+  const handleFitAoi = handleHome;
   const handleToggleMeasure = useCallback(() => setIsMeasureActive((prev) => !prev), []);
   const handleSectorChange = useCallback((sec: string) => setCurrentSector(sec), []);
   const handleTagMouseEnter = useCallback(() => { isTagHoveredRef.current = true; }, []);
