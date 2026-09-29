@@ -29,23 +29,9 @@ import type {
   Trace,
   Upload,
 } from './types';
+import { fixtures } from './apiFixtures';
 
 export type { SemanticSearchResultItem, SemanticSearchResponse };
-
-// Fixture imports for instant offline mock mode
-import aoiFixture from '../fixtures/aoi.json';
-import scenesFixture from '../fixtures/scenes.json';
-import changeSummaryFixture from '../fixtures/change_summary.json';
-import evidenceSingleFixture from '../fixtures/evidence_single.json';
-import evidenceListFixture from '../fixtures/evidence_list.json';
-import uploadGeoreferencedFixture from '../fixtures/upload_georeferenced.json';
-import uploadVisualOnlyFixture from '../fixtures/upload_visual_only.json';
-import uploadUnknownGsdFixture from '../fixtures/upload_unknown_gsd.json';
-import suppressionFixture from '../fixtures/suppression.json';
-import traceFixture from '../fixtures/trace.json';
-import calibrationFixture from '../fixtures/calibration.json';
-import answerPolishedFixture from '../fixtures/answer_polished.json';
-import answerUnsupportedFixture from '../fixtures/answer_unsupported.json';
 
 export type ApiResult<T> =
   | { kind: 'ok'; data: T }
@@ -55,7 +41,6 @@ export type ApiResult<T> =
 
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || '/api/v1';
 
-// Dynamic Mock Mode Toggle (defaults to true for standalone frontend reliability)
 let mockOverride: boolean | null = null;
 
 export function isMockMode(): boolean {
@@ -63,14 +48,13 @@ export function isMockMode(): boolean {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_MOCK !== undefined) {
     return import.meta.env.VITE_MOCK === '1' || import.meta.env.VITE_MOCK === 'true';
   }
-  return false; // Connect to live backend by default when available
+  return false;
 }
 
 export function setMockMode(enabled: boolean): void {
   mockOverride = enabled;
 }
 
-// Base Zod Schemas for boundary validation
 const ErrorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),
@@ -86,7 +70,6 @@ async function safeFetch<T>(
   fallbackData?: T
 ): Promise<ApiResult<T>> {
   if (isMockMode() && fallbackData !== undefined) {
-    // Return mock fixture with near-zero latency
     return { kind: 'ok', data: fallbackData };
   }
 
@@ -102,8 +85,6 @@ async function safeFetch<T>(
     });
 
     const json: unknown = await res.json();
-
-    // Check for error envelope
     const parsedError = ErrorEnvelopeSchema.safeParse(json);
     if (parsedError.success) {
       const err = parsedError.data.error;
@@ -129,13 +110,13 @@ async function safeFetch<T>(
 export type AoiItem = Aoi;
 
 export async function getAois(): Promise<ApiResult<AoiItem[]>> {
-  const fallback = aoiFixture as unknown as AoiItem[];
+  const fallback = fixtures.aoi as unknown as AoiItem[];
   const res = await safeFetch<AoiItem[] | { items: AoiItem[]; total: number }>('/aoi', undefined, fallback);
   return res.kind === 'ok' ? { kind: 'ok', data: Array.isArray(res.data) ? res.data : res.data.items } : res as ApiResult<AoiItem[]>;
 }
 
 export async function getAoi(id: string): Promise<ApiResult<Aoi>> {
-  return safeFetch(`/aoi/${id}`, undefined, (aoiFixture as unknown as AoiItem[]).find((a) => a.id === id) || (aoiFixture[0] as unknown as Aoi));
+  return safeFetch(`/aoi/${id}`, undefined, (fixtures.aoi as unknown as AoiItem[]).find((a) => a.id === id) || (fixtures.aoi[0] as unknown as Aoi));
 }
 
 export async function createAoi(data: AoiCreate): Promise<ApiResult<Aoi>> {
@@ -149,7 +130,7 @@ export async function triggerAoiIngest(aoiId: string): Promise<ApiResult<JobResp
 export type SceneItem = Scene;
 
 export async function getScenes(aoiId?: string, usableOnly = false, before?: string, after?: string): Promise<ApiResult<SceneItem[]>> {
-  let fallback = scenesFixture as unknown as SceneItem[];
+  let fallback = fixtures.scenes as unknown as SceneItem[];
   if (aoiId) fallback = fallback.filter((s) => s.aoi_id === aoiId);
   if (usableOnly) fallback = fallback.filter((s) => s.usable);
   const params = new URLSearchParams();
@@ -163,7 +144,7 @@ export async function getScenes(aoiId?: string, usableOnly = false, before?: str
 }
 
 export async function getScene(sceneId: string): Promise<ApiResult<Scene>> {
-  const fallback = (scenesFixture as unknown as SceneItem[]).find((s) => s.id === sceneId) || (scenesFixture[0] as unknown as Scene);
+  const fallback = (fixtures.scenes as unknown as SceneItem[]).find((s) => s.id === sceneId) || (fixtures.scenes[0] as unknown as Scene);
   return safeFetch(`/scenes/${sceneId}`, undefined, fallback);
 }
 
@@ -171,24 +152,17 @@ export async function getScene(sceneId: string): Promise<ApiResult<Scene>> {
 export async function getHealth(): Promise<
   ApiResult<{ ok: boolean; offline: boolean; gemini: boolean; db: boolean; clip_loaded: boolean }>
 > {
-  const mockHealth = {
-    ok: true,
-    offline: isMockMode(),
-    gemini: false,
-    db: true,
-    clip_loaded: true,
-  };
-  return safeFetch('/health', undefined, mockHealth);
+  return safeFetch('/health', undefined, { ok: true, offline: isMockMode(), gemini: false, db: true, clip_loaded: true });
 }
 
 // Uploads & Single-Image Detections
 export async function getUpload(id: string): Promise<ApiResult<Upload>> {
-  const fallback = id === 'visual_only' ? (uploadVisualOnlyFixture.upload as unknown as Upload) : id === 'unknown_gsd' ? (uploadUnknownGsdFixture.upload as unknown as Upload) : (uploadGeoreferencedFixture.upload as unknown as Upload);
+  const fallback = id === 'visual_only' ? (fixtures.uploadVisualOnly.upload as unknown as Upload) : id === 'unknown_gsd' ? (fixtures.uploadUnknownGsd.upload as unknown as Upload) : (fixtures.uploadGeoreferenced.upload as unknown as Upload);
   return safeFetch(`/uploads/${id}`, undefined, fallback);
 }
 
 export async function getDetections(uploadId: string, useMockFallback = true): Promise<ApiResult<DetectionSet>> {
-  const fallback = !useMockFallback ? undefined : uploadId === 'visual_only' ? (uploadVisualOnlyFixture as unknown as DetectionSet) : uploadId === 'unknown_gsd' ? (uploadUnknownGsdFixture as unknown as DetectionSet) : (uploadGeoreferencedFixture as unknown as DetectionSet);
+  const fallback = !useMockFallback ? undefined : uploadId === 'visual_only' ? (fixtures.uploadVisualOnly as unknown as DetectionSet) : uploadId === 'unknown_gsd' ? (fixtures.uploadUnknownGsd as unknown as DetectionSet) : (fixtures.uploadGeoreferenced as unknown as DetectionSet);
   return safeFetch(`/uploads/${uploadId}/detections`, undefined, fallback);
 }
 
@@ -217,8 +191,7 @@ export async function uploadImageFile(
     }
     return { kind: 'ok', data: json as Upload };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Network error';
-    return { kind: 'error', code: 'UPLOAD_ERROR', message: msg, traceId: 'trace_client' };
+    return { kind: 'error', code: 'UPLOAD_ERROR', message: err instanceof Error ? err.message : 'Network error', traceId: 'trace_client' };
   }
 }
 
@@ -232,11 +205,7 @@ export function getAnnotatedUrl(uploadId: string): string {
 
 // Changes & Evidence
 export async function getEvidence(changeObjectId: string): Promise<ApiResult<Evidence>> {
-  return safeFetch(
-    `/aoi/changes/${changeObjectId}`,
-    undefined,
-    evidenceSingleFixture as unknown as Evidence
-  );
+  return safeFetch(`/aoi/changes/${changeObjectId}`, undefined, fixtures.evidenceSingle as unknown as Evidence);
 }
 
 export interface ChangeFilterParams {
@@ -252,7 +221,7 @@ export interface ChangeFilterParams {
 }
 
 export async function getEvidenceList(aoiId?: string, filters?: ChangeFilterParams): Promise<ApiResult<Evidence[]>> {
-  const list = evidenceListFixture as unknown as Evidence[];
+  const list = fixtures.evidenceList as unknown as Evidence[];
   const fallbackFiltered = aoiId ? list.filter((e) => e.aoi_id === aoiId) : list;
   const params = new URLSearchParams();
   filters?.types?.forEach((t) => params.append('type', t));
@@ -263,10 +232,7 @@ export async function getEvidenceList(aoiId?: string, filters?: ChangeFilterPara
   const q = params.toString();
   const endpoint = `/aoi/${aoiId ?? 'default'}/changes${q ? `?${q}` : ''}`;
   const res = await safeFetch<Evidence[] | { items: Evidence[]; total: number }>(endpoint, undefined, fallbackFiltered.length > 0 ? fallbackFiltered : list);
-  if (res.kind === 'ok') {
-    return { kind: 'ok', data: Array.isArray(res.data) ? res.data : res.data.items };
-  }
-  return res as ApiResult<Evidence[]>;
+  return res.kind === 'ok' ? { kind: 'ok', data: Array.isArray(res.data) ? res.data : res.data.items } : res as ApiResult<Evidence[]>;
 }
 
 export async function triggerAoiAnalyse(aoiId: string): Promise<ApiResult<JobResponse>> {
@@ -297,19 +263,19 @@ export async function submitDecision(
 }
 
 export async function getChangeSummary(aoiId: string): Promise<ApiResult<ChangeSummary>> {
-  return safeFetch(`/aoi/${aoiId}/summary`, undefined, changeSummaryFixture as unknown as ChangeSummary);
+  return safeFetch(`/aoi/${aoiId}/summary`, undefined, fixtures.changeSummary as unknown as ChangeSummary);
 }
 
-export async function getSuppression(aoiId?: string): Promise<ApiResult<typeof suppressionFixture>> {
-  return safeFetch(`/aoi/${aoiId ?? 'default'}/suppression`, undefined, suppressionFixture);
+export async function getSuppression(aoiId?: string): Promise<ApiResult<typeof fixtures.suppression>> {
+  return safeFetch(`/aoi/${aoiId ?? 'default'}/suppression`, undefined, fixtures.suppression);
 }
 
-export async function getCalibration(aoiId?: string): Promise<ApiResult<typeof calibrationFixture>> {
-  return safeFetch(`/aoi/${aoiId ?? 'b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1'}/calibration`, undefined, calibrationFixture);
+export async function getCalibration(aoiId?: string): Promise<ApiResult<typeof fixtures.calibration>> {
+  return safeFetch(`/aoi/${aoiId ?? 'b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1'}/calibration`, undefined, fixtures.calibration);
 }
 
 export async function getTrace(traceId?: string): Promise<ApiResult<Trace>> {
-  return safeFetch(`/trace/${traceId ?? 'latest'}`, undefined, traceFixture as unknown as Trace);
+  return safeFetch(`/trace/${traceId ?? 'latest'}`, undefined, fixtures.trace as unknown as Trace);
 }
 
 export async function getJob(jobId: string): Promise<ApiResult<JobResponse>> {
@@ -320,12 +286,36 @@ export function getTileUrl(sceneId: string, z: number, x: number, y: number): st
   return `${API_BASE}/tiles/imagery/${z}/${x}/${y}.png?scene_id=${encodeURIComponent(sceneId)}`;
 }
 
-export async function askQuestion(question: string, aoiId?: string, uploadId?: string): Promise<ApiResult<Answer>> {
+export async function askQuestion(
+  question: string,
+  aoiId?: string,
+  uploadId?: string,
+  dateA?: string,
+  dateB?: string,
+  conversationHistory?: Array<Record<string, unknown>>,
+  mapContext?: Record<string, unknown>
+): Promise<ApiResult<Answer>> {
   const lower = question.toLowerCase();
   const fallback = lower.includes('vehicle') || lower.includes('car') || lower.includes('weather')
-    ? (answerUnsupportedFixture as unknown as Answer)
-    : (answerPolishedFixture as unknown as Answer);
-  return safeFetch('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, aoi_id: aoiId, upload_id: uploadId }) }, fallback);
+    ? (fixtures.answerUnsupported as unknown as Answer)
+    : (fixtures.answerPolished as unknown as Answer);
+  return safeFetch(
+    '/ask',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question,
+        aoi_id: aoiId,
+        upload_id: uploadId,
+        date_a: dateA,
+        date_b: dateB,
+        conversation_history: conversationHistory,
+        map_context: mapContext,
+      }),
+    },
+    fallback
+  );
 }
 
 export async function getAskTrace(answerId: string): Promise<ApiResult<Record<string, unknown>>> {
@@ -389,4 +379,3 @@ export async function loginAdmin(email: string, password: string): Promise<ApiRe
 export async function logoutAdmin(): Promise<ApiResult<void>> {
   return safeFetch('/auth/logout', { method: 'POST' });
 }
-

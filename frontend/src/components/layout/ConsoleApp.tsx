@@ -9,6 +9,7 @@ import { EvidenceDrawer } from '../EvidenceDrawer';
 import { StatusLine } from '../StatusLine';
 import { AmbientScanline } from '../AmbientScanline';
 import { ExportModal } from '../ExportModal';
+import type { MapAnnotationState } from '../../lib/useMapAnnotations';
 
 // Screens mapped onto standard slots (PRD 10 §5 / L5)
 import { UploadBar } from '../upload/UploadBar';
@@ -91,6 +92,106 @@ export const ConsoleApp: React.FC = () => {
       selectedEvidence
   );
 
+  const [askAnnotationState, setAskAnnotationState] = React.useState<MapAnnotationState | null>(null);
+
+  // Handle dynamic map annotation actions (SIH26167 §8, §9)
+  const handleAnnotationActions = React.useCallback(
+    (
+      ids: string[],
+      actions: any[],
+      labels: Record<string, string>,
+      target?: string,
+      bbox?: number[]
+    ) => {
+      const isClear = actions.some((a) => a.action === 'clear_annotations');
+      if (isClear || !ids.length) {
+        setAskAnnotationState(null);
+        return;
+      }
+
+      setAskAnnotationState({
+        evidenceIds: ids,
+        mapActions: actions,
+        annotationLabels: labels,
+        target,
+        focusBbox: bbox as [number, number, number, number] | undefined,
+      });
+
+      if (ids.length === 1) {
+        const found = evidenceList.find((e) => e.change_object_id === ids[0]);
+        if (found) setSelectedEvidence(found);
+      }
+    },
+    [evidenceList, setSelectedEvidence]
+  );
+
+  // Synchronize ASK evidence highlighting with map focus & selection
+  const handleHighlightEvidence = React.useCallback(
+    (ids: string[], bbox?: number[]) => {
+      if (ids && ids.length > 0) {
+        const found = evidenceList.find((e) => ids.includes(e.change_object_id));
+        if (found) {
+          setSelectedEvidence(found);
+        }
+      }
+      if (bbox && bbox.length === 4) {
+        const [minX, minY, maxX, maxY] = bbox as [number, number, number, number];
+        setPresetTarget({
+          center: [(minY + maxY) / 2, (minX + maxX) / 2],
+          bounds: [
+            [minY, minX],
+            [maxY, maxX],
+          ],
+          zoom: 16,
+        });
+      }
+    },
+    [evidenceList, setSelectedEvidence, setPresetTarget]
+  );
+
+  const handleAskWithContext = React.useCallback(
+    (query: string) => {
+      const mapContext = {
+        aoi_id: selectedAoiId,
+        aoi_name: currentAoi?.name,
+        date_a: beforeDate,
+        date_b: afterDate,
+        selected_evidence_id: selectedEvidence?.change_object_id ?? null,
+        active_annotations: askAnnotationState?.evidenceIds ?? [],
+        selected_target: selectedEvidence
+          ? {
+              id: selectedEvidence.change_object_id,
+              title:
+                (selectedEvidence as any).title ||
+                selectedEvidence.classification?.change_type ||
+                selectedEvidence.change_type ||
+                'Selected Target',
+              type:
+                selectedEvidence.classification?.change_type ||
+                selectedEvidence.change_type ||
+                'infrastructure',
+              area_m2: selectedEvidence.measurement?.area_m2,
+              area_ha: selectedEvidence.measurement?.area_m2
+                ? Number((selectedEvidence.measurement.area_m2 / 10000).toFixed(2))
+                : undefined,
+              bbox: selectedEvidence.measurement?.bbox_4326,
+            }
+          : null,
+        total_evidence_count: evidenceList.length,
+      };
+
+      screens.handleAskQuery(query, {
+        aoiId: selectedAoiId,
+        dateA: beforeDate,
+        dateB: afterDate,
+        onHighlightEvidence: handleHighlightEvidence,
+        onAnnotationActions: handleAnnotationActions,
+        mapContext,
+      });
+    },
+    [screens, selectedAoiId, currentAoi, beforeDate, afterDate, selectedEvidence, evidenceList.length, handleHighlightEvidence, handleAnnotationActions, askAnnotationState]
+  );
+
   return (
     <ConsoleShell
       marqueeNode={undefined}
@@ -124,7 +225,7 @@ export const ConsoleApp: React.FC = () => {
           />
         ) : activeView === 'ask' ? (
           <AskBar
-            onAsk={screens.handleAskQuery}
+            onAsk={handleAskWithContext}
             isThinking={screens.isThinking}
           />
         ) : activeView === 'search' ? (
@@ -197,6 +298,7 @@ export const ConsoleApp: React.FC = () => {
             onSwapDates={handleSwapDates}
             presetTarget={presetTarget}
             onPresetConsumed={() => setPresetTarget(null)}
+            askAnnotationState={askAnnotationState}
           />
         )
       }
@@ -209,7 +311,7 @@ export const ConsoleApp: React.FC = () => {
         ) : activeView === 'ask' ? (
           <AskHistoryStrip
             history={screens.askHistory}
-            onSelectQuestion={screens.handleAskQuery}
+            onSelectQuestion={handleAskWithContext}
           />
         ) : activeView === 'search' ? (
           <SearchDateStrip dates={availableDates} />
@@ -231,9 +333,17 @@ export const ConsoleApp: React.FC = () => {
           />
         ) : activeView === 'ask' ? (
           <AskAnswerPanel
+            chatMessages={screens.chatMessages}
             answer={screens.askAnswer}
             isLoading={screens.isThinking}
+            onAsk={handleAskWithContext}
+            onClearChat={screens.handleClearChat}
             onExportReport={() => screens.setIsExportModalOpen(true)}
+            onHighlightEvidence={handleHighlightEvidence}
+            selectedEvidenceId={selectedEvidence?.change_object_id ?? null}
+            selectedEvidence={selectedEvidence}
+            currentAoiName={currentAoi?.name}
+            currentDates={{ beforeDate, afterDate }}
           />
         ) : activeView === 'search' ? (
           <SearchResultsPanel

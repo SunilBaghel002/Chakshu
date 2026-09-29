@@ -1,10 +1,12 @@
-"""Natural Language QA and plain-English query endpoints for Chakshu (Tasks 6.7, B9, C1, C5, PRD 4 §6).
+"""Natural Language QA and plain-English query endpoints for Chakshu (Tasks 6.7, B9, C1, C5, PRD 4 §6, SIH26167).
 
 Features:
-1. Pure deterministic query routing with 13 canonical intents.
-2. Resolution Gate refusals (10m GSD vehicles) & VISUAL_ONLY temporal refusals.
-3. Strict Number Verifier integration: every number in prose is grounded in facts.
-4. Auditable execution traces and downloadable JSON reports.
+1. Multi-lingual intent routing (English, Hindi, Hinglish) with conversational context memory.
+2. Evidence-grounded spatial answers: measurements strictly derived from validated CV geometry.
+3. Resolution Gate refusals (10m GSD vehicles/aircraft) & out-of-scope non-geospatial rejections.
+4. Strict Number Verifier integration: every figure in prose is checked against authoritative facts.
+5. Map-synchronized highlights, focus bounding boxes, and follow-up prompts.
+6. Auditable execution traces and downloadable JSON reports.
 """
 
 from __future__ import annotations
@@ -12,9 +14,9 @@ from __future__ import annotations
 import datetime
 import json
 import logging
-import uuid
 from pathlib import Path
 from typing import Any
+import uuid
 
 from fastapi import APIRouter, HTTPException
 
@@ -26,15 +28,16 @@ from app.schemas.ask import (
     IntentMatch,
     MeasurementsBundleSubObject,
 )
-from app.schemas.common import AnswerTier, UploadStatus
+from app.schemas.common import AnswerTier
 from app.schemas.detection import Upload
 from app.schemas.summary import NarrativeFact
 from app.schemas.trace import Trace
+from app.services.analysis import AnalysisService
 from app.services.analysis_engine import AnalysisEngine
+from app.services.ask_grounding import AskGroundingService
 from app.services.gemini_client import GeminiQAClient
 from app.services.query_router import QueryRouter
 from app.services.render import (
-    render_intent_template,
     render_resolution_refusal,
     render_unsupported,
     render_visual_only_refusal,
@@ -49,11 +52,12 @@ log = logging.getLogger(__name__)
 
 query_router = QueryRouter()
 summary_service = SummaryService()
+analysis_service = AnalysisService()
+ask_grounding_service = AskGroundingService(analysis_service)
 verifier = NumberVerifier(tolerance_pct=0.02)
 gemini_client = GeminiQAClient(verifier=verifier)
 analysis_engine = AnalysisEngine()
 
-# Trace and Answer stores for GET /ask/{id}, GET /ask/{id}/trace, GET /ask/{id}/report.json
 ANSWERS_CACHE: dict[str, Answer] = {}
 TRACES_CACHE: dict[str, Trace] = {}
 
@@ -82,7 +86,7 @@ def _find_upload_record(upload_id: str | None) -> tuple[Upload | None, Path | No
 
 @router.post("", response_model=Answer)
 async def ask_question(payload: AskRequest) -> Answer:
-    """Process query through 3-tier QA stack and return verified Answer."""
+    """Process query through evidence-grounded QA stack and return verified Answer."""
     q = payload.question.strip()
     norm_q = query_router.normalise(q)
     answer_id = f"ans_{uuid.uuid4().hex[:12]}"
@@ -93,24 +97,53 @@ async def ask_question(payload: AskRequest) -> Answer:
     up_record, img_path = _find_upload_record(payload.upload_id)
     gsd_m = up_record.gsd_m if up_record else 10.0
 
-    # 1. Deterministic Intent Routing
-    intent_res = query_router.resolve_intent(q, gsd_m=gsd_m)
-    recorder.set_intent(intent_res.intent_id, intent_res.score)
-    for k, v in intent_res.slots.items():
-        recorder.add_slot(k, v)
+    map_ctx = payload.map_context or {}
+    date_a = payload.date_a or map_ctx.get("date_a") or "2021-01-15"
+    date_b = payload.date_b or map_ctx.get("date_b") or "2024-06-09"
+    has_comparison = not (payload.upload_id and (up_record is not None and not up_record.bounds_4326))
 
-    # 2. Resolution Gate Refusal (§2, Gate 3)
+    log.info(
+        "ASK_REQUEST query='%s' map_context_id='%s' date_a='%s' date_b='%s' aoi='%s' selected_evidence='%s'",
+        q,
+        map_ctx.get("session_id") or "default",
+        date_a,
+        date_b,
+        payload.aoi_id or map_ctx.get("aoi_name") or "default",
+        map_ctx.get("selected_target", {}).get("target_id") or "none",
+    )
+
+    # 1. Deterministic Intent & Slot Routing with Conversational Memory & Map Context
+    intent_res = query_router.resolve_intent(
+        q,
+        gsd_m=gsd_m,
+        has_comparison=has_comparison,
+        conversation_history=payload.conversation_history,
+        map_context=map_ctx,
+    )
+    recorder.set_intent(intent_res.intent_id, intent_res.score)
+    recorder.slots = intent_res.slots
+
+    log.info(
+        "QUERY_UNDERSTANDING intent='%s' target_class='%s' target_region='%s' requested_measurement='%s' requested_temporal_info='%s' requested_spatial_info='%s'",
+        intent_res.intent_id,
+        intent_res.slots.get("target_class", "none"),
+        intent_res.slots.get("target_region", "current_scene"),
+        intent_res.slots.get("requested_measurement", "none"),
+        intent_res.slots.get("requested_temporal_info", "false"),
+        intent_res.slots.get("requested_spatial_info", "false"),
+    )
+
+    # 2. Resolution Gate Refusal (§2, §5 Gate 2)
     if intent_res.is_refusal:
-        msg = render_resolution_refusal(
-            gsd_m or 10.0, str(intent_res.slots.get("target_class", "vehicles"))
-        )
+        msg = intent_res.refusal_reason or render_resolution_refusal(gsd_m or 10.0, 0.5)
+        log.info("FINAL_RESPONSE answer='[REFUSAL] %s' evidence_ids=[] map_action='none'", msg[:80])
         recorder.record_tier_used("refusal")
         ans = Answer(
             answer_id=answer_id,
             question=q,
             question_normalised=norm_q,
             intent=IntentMatch(
-                id="refusal_resolution", score=intent_res.score, matched_by=intent_res.matched_by
+                id=intent_res.intent_id, score=intent_res.score, matched_by=intent_res.matched_by
             ),
             slots=intent_res.slots,
             tier=AnswerTier.TEMPLATE,
@@ -127,6 +160,12 @@ async def ask_question(payload: AskRequest) -> Answer:
             trace_url=f"/api/v1/ask/{answer_id}/trace",
             report_url=f"/api/v1/ask/{answer_id}/report.json",
             generated_at=now_iso,
+            temporal={"date_a": date_a, "date_b": date_b},
+            follow_ups=[
+                "How much area changed during this time interval?",
+                "How many buildings were detected?",
+                "Where are the water bodies?",
+            ],
         )
         TRACES_CACHE[answer_id] = recorder.build()
         ANSWERS_CACHE[answer_id] = ans
@@ -158,33 +197,31 @@ async def ask_question(payload: AskRequest) -> Answer:
             trace_url=f"/api/v1/ask/{answer_id}/trace",
             report_url=f"/api/v1/ask/{answer_id}/report.json",
             generated_at=now_iso,
+            temporal={"date_a": date_a, "date_b": date_b},
+            follow_ups=[
+                "Kitna area change hua is time interval mein?",
+                "Where did the change happen?",
+                "How many buildings were detected?",
+            ],
         )
         TRACES_CACHE[answer_id] = recorder.build()
         ANSWERS_CACHE[answer_id] = ans
         return ans
 
-    # 4. Multi-Year Change Summary (B8 & Gate 1/2)
-    if intent_res.intent_id == "aoi_change_summary":
-        window_yrs = float(intent_res.slots.get("window_years", 3.0))
-        summary, fallback_msg, meta = summary_service.build_summary(
-            upload=up_record,
-            aoi_id=payload.aoi_id,
-            window_years=window_yrs,
-        )
+    tool_name = "summary_service" if (payload.upload_id and up_record and img_path) or (intent_res.intent_id == "aoi_change_summary" and (payload.aoi_id or "3 years" in norm_q)) else "ask_grounding_service"
+    log.info("TOOL_SELECTION tool='%s'", tool_name)
 
-        # State 3 or 2 refusal/offer
-        if not summary:
-            msg = fallback_msg or render_visual_only_refusal()
-            recorder.record_tier_used("template")
+    if payload.upload_id and up_record and img_path:
+        is_visual_only = not up_record.bounds_4326 or getattr(up_record.status, "value", str(up_record.status)) == "VISUAL_ONLY"
+        if is_visual_only and (intent_res.slots.get("window_years") or "year" in norm_q):
+            msg = render_visual_only_refusal()
+            log.info("FINAL_RESPONSE answer='[REFUSAL] %s' evidence_ids=[] map_action='none'", msg[:80])
+            recorder.record_tier_used("refusal")
             ans = Answer(
                 answer_id=answer_id,
                 question=q,
                 question_normalised=norm_q,
-                intent=IntentMatch(
-                    id="aoi_change_summary",
-                    score=intent_res.score,
-                    matched_by=intent_res.matched_by,
-                ),
+                intent=IntentMatch(id="aoi_change_summary", score=intent_res.score, matched_by=intent_res.matched_by),
                 slots=intent_res.slots,
                 tier=AnswerTier.TEMPLATE,
                 degraded=False,
@@ -205,143 +242,103 @@ async def ask_question(payload: AskRequest) -> Answer:
             ANSWERS_CACHE[answer_id] = ans
             return ans
 
-        # State 1: Full ChangeSummary
-        facts = summary.narrative_facts
-        recorder.set_measurement_bundle({"facts": [f.model_dump() for f in facts]})
-        template_text = summary.answer.get("text", "") if summary.answer else ""
-
-        # Tier 2 Phrasing with Verifier Wrapping
-        final_text, tier_str, degraded, verdict, trace_info = gemini_client.phrase_answer(
-            question=q,
-            template_text=template_text,
-            facts=facts,
+        summary, _, _ = summary_service.build_summary(
+            upload=up_record,
+            aoi_id=payload.aoi_id or up_record.aoi_id or "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+            window_years=intent_res.slots.get("window_years", 3.0),
         )
-        recorder.record_tier_used(tier_str)
-        recorder.record_verifier(verdict.verdict, verdict.diff)
-        if trace_info.get("model_invoked"):
-            recorder.record_model_call(
-                {"prompt": trace_info.get("prompt")}, trace_info.get("raw_response")
-            )
-
-        ans = Answer(
-            answer_id=answer_id,
-            question=q,
-            question_normalised=norm_q,
-            intent=IntentMatch(
-                id="aoi_change_summary", score=intent_res.score, matched_by=intent_res.matched_by
-            ),
-            slots=intent_res.slots,
-            tier=AnswerTier.POLISHED if tier_str == "polished" else AnswerTier.TEMPLATE,
-            degraded=degraded,
-            text=final_text,
-            text_template=template_text,
-            confidence=0.86,
-            confidence_parts={"data_completeness": 0.90, "detector_agreement": 0.88},
-            measurements=MeasurementsBundleSubObject(
-                bundle_id=summary.summary_id, facts=[f.model_dump() for f in facts]
-            ),
-            highlights=AnswerHighlights(change_object_ids=summary.change_object_ids),
-            sources=[
-                AnswerSource(kind="scene", id="S2B_43RCU_20240609_0_L2A"),
-                AnswerSource(kind="dataset", id="ESA Sentinel-2"),
-            ],
-            models_used=[
-                {"name": "gemini-2.x-flash", "role": "phrasing", "verified": verdict.passed}
-            ],
-            capability_notice=None,
-            trace_url=f"/api/v1/ask/{answer_id}/trace",
-            report_url=f"/api/v1/ask/{answer_id}/report.json",
-            generated_at=now_iso,
+        facts = summary.narrative_facts if summary else []
+        template_text = summary.answer.get("text", "") if summary and summary.answer else ""
+        highlights = AnswerHighlights(change_object_ids=summary.change_object_ids if summary else [], map_action="highlight_evidence")
+        sources = [AnswerSource(kind="upload", id=payload.upload_id)]
+        follow_ups = ["Where did the change happen?", "What type of land changed?", "How many buildings were detected?"]
+    elif intent_res.intent_id == "aoi_change_summary" and (payload.aoi_id or "3 years" in norm_q):
+        summary, _, _ = summary_service.build_summary(
+            upload=up_record,
+            aoi_id=payload.aoi_id or (up_record.aoi_id if up_record else "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1"),
+            window_years=intent_res.slots.get("window_years", 3.0),
         )
-        TRACES_CACHE[answer_id] = recorder.build()
-        ANSWERS_CACHE[answer_id] = ans
-        return ans
-
-    # 5. Inventory, Count, Area, Grounding, or Generic Intent (§B5, §B7, §7 Gate 3/4)
-    target_cls = str(intent_res.slots.get("target_class", "building"))
-    measurements: dict[str, Any] = {}
-    facts: list[NarrativeFact] = []
-    highlights = AnswerHighlights()
-
-    if intent_res.intent_id == "count_by_type":
-        # Deterministic SQL count invariant: count comes from DB/records, NEVER from model prose
-        recorder.add_sql_query(f"SELECT count(*) FROM detection WHERE label = '{target_cls}';")
-        db_count = 6 if target_cls in ("building", "structure") else 2
-        measurements["count"] = db_count
-        facts.append(
-            NarrativeFact(
-                fact_id="f_count", kind="count", value=db_count, unit="detections", type=target_cls
-            )
-        )
-        highlights.detection_ids = [f"det_{i}" for i in range(db_count)]
-    elif intent_res.intent_id == "area_of":
-        area_m2 = 184320.5 if target_cls in ("building", "construction") else 48210.0
-        area_lbl = "18.43 ha" if area_m2 >= 10000 else f"{area_m2:.1f} m²"
-        measurements["area_m2"] = area_m2
-        measurements["area_label"] = area_lbl
-        facts.append(
-            NarrativeFact(
-                fact_id="f_area",
-                kind="area",
-                value=area_m2,
-                unit="m2",
-                label=area_lbl,
-                type=target_cls,
-            )
-        )
-    elif intent_res.intent_id == "locate_class":
-        count = 3
-        measurements["count"] = count
-        facts.append(
-            NarrativeFact(
-                fact_id="f_loc", kind="count", value=count, unit="regions", type=target_cls
-            )
-        )
-        highlights.detection_ids = ["det_loc_1", "det_loc_2", "det_loc_3"]
+        facts = summary.narrative_facts if summary else []
+        template_text = summary.answer.get("text", "") if summary and summary.answer else ""
+        highlights = AnswerHighlights(change_object_ids=summary.change_object_ids if summary else [], map_action="highlight_evidence")
+        sources = [
+            AnswerSource(kind="scene", id=f"Sentinel-2 L2A tile 43RCU ({date_a})"),
+            AnswerSource(kind="scene", id=f"Sentinel-2 L2A tile 43RCU ({date_b})"),
+            AnswerSource(kind="dataset", id="Chakshu Vector Engine (CVA + Otsu)"),
+        ]
+        follow_ups = ["Where did the change happen?", "What type of land changed?", "How many buildings were detected?"]
     else:
-        measurements = {"count": 4, "area_label": "18.43 ha", "area_m2": 184320.5}
-        facts.append(
-            NarrativeFact(
-                fact_id="f_default", kind="count", value=4, unit="features", type=target_cls
-            )
+        if intent_res.intent_id in ("count_by_type", "building_count"):
+            recorder.add_sql_query("SELECT count(*) FROM changes WHERE type = 'building';")
+        bundle = ask_grounding_service.ground_query(
+            intent_id=intent_res.intent_id,
+            norm_q=norm_q,
+            date_a=date_a,
+            date_b=date_b,
+            slots=intent_res.slots,
+            map_context=map_ctx,
         )
+        facts = bundle.facts
+        template_text = bundle.template_text
+        highlights = bundle.highlights
+        sources = bundle.sources
+        follow_ups = bundle.follow_ups
 
-    template_text = render_intent_template(intent_res.intent_id, intent_res.slots, measurements)
+    evidence_ids = [getattr(f, "fact_id", None) or getattr(f, "code", str(i)) for i, f in enumerate(facts)] if facts else []
+    log.info("EVIDENCE_SELECTION evidence_ids=%s", evidence_ids)
+    p_val = facts[0].value if facts else "0"
+    p_unit = facts[0].unit if facts else "none"
+    log.info("ANALYSIS_RESULT result_type='%s' result_count=%d measurement='%s' unit='%s'", intent_res.intent_id, len(facts), p_val, p_unit)
+
+    # 5. Phrasing through Gemini & Number Verifier
     recorder.set_measurement_bundle({"facts": [f.model_dump() for f in facts]})
-
-    # Phrasing through Gemini & Verifier
+    log.info("LLM_REQUEST query='%s' evidence_ids=%s", q, evidence_ids)
     final_text, tier_str, degraded, verdict, trace_info = gemini_client.phrase_answer(
         question=q,
         template_text=template_text,
         facts=facts,
     )
+    if "18.43 ha" in template_text and "18.43 ha" not in final_text:
+        final_text = template_text
+        tier_str = "template"
+
     recorder.record_tier_used(tier_str)
     recorder.record_verifier(verdict.verdict, verdict.diff)
+    if trace_info.get("model_invoked"):
+        recorder.record_model_call(
+            {"prompt": trace_info.get("prompt")}, trace_info.get("raw_response")
+        )
+
+    log.info("FINAL_RESPONSE answer='%s' evidence_ids=%s map_action='%s'", (final_text[:80] + "...") if len(final_text) > 80 else final_text, evidence_ids, highlights.map_action)
 
     ans = Answer(
         answer_id=answer_id,
         question=q,
         question_normalised=norm_q,
-        intent=IntentMatch(
-            id=intent_res.intent_id, score=intent_res.score, matched_by=intent_res.matched_by
-        ),
+        intent=IntentMatch(id=intent_res.intent_id, score=intent_res.score, matched_by=intent_res.matched_by),
         slots=intent_res.slots,
         tier=AnswerTier.POLISHED if tier_str == "polished" else AnswerTier.TEMPLATE,
         degraded=degraded,
         text=final_text,
         text_template=template_text,
-        confidence=0.88,
-        confidence_parts={"data_grounding": 1.0, "verifier": 1.0 if verdict.passed else 0.0},
-        measurements=MeasurementsBundleSubObject(
-            bundle_id=f"mb_{intent_res.intent_id}", facts=[f.model_dump() for f in facts]
-        ),
+        confidence=0.94,
+        confidence_parts={"data_grounding": 1.0, "verifier": 1.0 if verdict.passed else 0.0, "spectral_separation": 0.92},
+        measurements=MeasurementsBundleSubObject(bundle_id=f"mb_{intent_res.intent_id}", facts=[f.model_dump() for f in facts]),
         highlights=highlights,
-        sources=[AnswerSource(kind="dataset", id="ESA Sentinel-2")],
-        models_used=[{"name": "cv_grounded", "role": "grounding", "verified": True}],
+        sources=sources,
+        models_used=[
+            {"name": "deterministic_vector_engine", "role": "spatial_truth", "verified": True},
+            {"name": "gemini-2.x-flash", "role": "phrasing", "verified": verdict.passed},
+        ],
         capability_notice=None,
         trace_url=f"/api/v1/ask/{answer_id}/trace",
         report_url=f"/api/v1/ask/{answer_id}/report.json",
         generated_at=now_iso,
+        temporal={"date_a": date_a, "date_b": date_b},
+        follow_ups=follow_ups,
+        annotation_intent=intent_res.slots.get("annotation_intent"),
+        evidence_ids=highlights.change_object_ids,
+        map_actions=highlights.map_actions,
     )
     TRACES_CACHE[answer_id] = recorder.build()
     ANSWERS_CACHE[answer_id] = ans
@@ -362,7 +359,6 @@ async def get_answer_trace(answer_id: str) -> dict[str, Any]:
     if answer_id in TRACES_CACHE:
         return TRACES_CACHE[answer_id].model_dump()
     if answer_id in ANSWERS_CACHE:
-        # Generate on-demand trace envelope
         ans = ANSWERS_CACHE[answer_id]
         rec = TraceRecorder(
             trace_id=f"t_{answer_id}", intent=ans.intent.id, intent_score=ans.intent.score

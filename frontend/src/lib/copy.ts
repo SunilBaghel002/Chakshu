@@ -275,6 +275,26 @@ export const REVIEW_COPY = {
 } as const;
 
 export const ASK_COPY = {
+  chatTitle: 'ASK SATELLITE ANALYSIS',
+  nlController: 'NATURAL LANGUAGE SPATIAL CONTROLLER',
+  groundedCv: 'GROUNDED CV',
+  defaultPromptLabel: 'DEFAULT SUGGESTED QUERY',
+  exploreQuestionsLabel: 'EXPLORE SATELLITE QUESTIONS',
+  quickLabel: 'QUICK:',
+  copied: 'COPIED',
+  copy: 'COPY',
+  viewOnMap: 'VIEW ON MAP',
+  detailsOpen: 'Details ▴',
+  detailsClose: 'Details ▾',
+  mapActive: 'MAP ACTIVE',
+  selectedTarget: 'SELECTED TARGET',
+  showOnMap: 'SHOW ON MAP',
+  activeOnMap: '● ACTIVE ON MAP',
+  spatialEvidence: 'SPATIAL EVIDENCE',
+  numberVerifierGrounding: 'NUMBER VERIFIER GROUNDING',
+  suggestedFollowUps: 'SUGGESTED FOLLOW-UPS',
+  operatorLabel: 'OPERATOR',
+  analyzingSatelliteData: 'ANALYZING SATELLITE DATA…',
   questionPlaceholder: 'Ask a question about this AOI in plain language...',
   examples: 'EXAMPLES',
   ask: 'ASK',
@@ -284,6 +304,12 @@ export const ASK_COPY = {
   exportReport: 'EXPORT REPORT',
   copyAnswer: 'COPY ANSWER',
   historyTitle: 'QUESTION HISTORY',
+  projectionLabel: 'CRS: UTM 43N (EPSG:32643)',
+  modelLabel: 'OpenCLIP · TinyCD · Kruger UTM',
+  confidenceLabel: 'CONF',
+  traceLabel: 'TRACE:',
+  activeMapAoi: 'CURRENT MAP:',
+  selectedTargetBadge: 'TARGET SELECTED',
 } as const;
 
 export const SEARCH_COPY = {

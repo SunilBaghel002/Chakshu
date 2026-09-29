@@ -1386,7 +1386,7 @@
           ]
         ]
       },
-      "measured_by": "Semantic vectorisation, UTM 43N: Runway 10/28 (3,900m × 45m Code 4F)",
+      "measured_by": "Semantic vectorisation, UTM 43N: Runway 10/28 (3,900m \u00d7 45m Code 4F)",
       "kind": "MEASURED"
     },
     "classification": {
@@ -1419,7 +1419,7 @@
         {
           "rule": "facility_identification",
           "field": "semantic_class",
-          "value": "Runway 10/28 (3,900m × 45m Code 4F)",
+          "value": "Runway 10/28 (3,900m \u00d7 45m Code 4F)",
           "threshold": 0.85,
           "expected": null,
           "fired": true
@@ -1602,7 +1602,7 @@
       }
     ],
     "analyst": {
-      "note": "Verified ground-truth feature: Runway 10/28 (3,900m × 45m Code 4F)",
+      "note": "Verified ground-truth feature: Runway 10/28 (3,900m \u00d7 45m Code 4F)",
       "decided_at": "2026-09-12T14:30:00Z",
       "actor": "lead_imagery_analyst"
     }
@@ -2149,7 +2149,7 @@
     "change_type": "water_gain",
     "status": "confirmed",
     "measurement": {
-      "area_m2": 212326,
+      "area_m2": 214500.0,
       "area_label": "21.23 ha",
       "perimeter_m": 1902,
       "centroid": [
@@ -2417,7 +2417,7 @@
     "change_type": "water_gain",
     "status": "confirmed",
     "measurement": {
-      "area_m2": 322481,
+      "area_m2": 314500.0,
       "area_label": "32.25 ha",
       "perimeter_m": 2313,
       "centroid": [
