@@ -9,7 +9,7 @@
     "cog_path": "data/scenes/S2A_43RCU_20240118_0_L2A.tif",
     "checksum_sha256": "a3f1b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2B_43RCU_20240609_0_L2A",
@@ -21,7 +21,7 @@
     "cog_path": "data/scenes/S2B_43RCU_20240609_0_L2A.tif",
     "checksum_sha256": "9c2eb2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2B_43RCU_20240714_0_L2A",
@@ -33,7 +33,7 @@
     "cog_path": "data/scenes/S2B_43RCU_20240714_0_L2A.tif",
     "checksum_sha256": "8d3cb2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2A_43RCU_20240818_0_L2A",
@@ -45,7 +45,7 @@
     "cog_path": "data/scenes/S2A_43RCU_20240818_0_L2A.tif",
     "checksum_sha256": "7a2eb2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2B_43RCU_20260803_0_L2A",
@@ -57,19 +57,19 @@
     "cog_path": "data/scenes/S2B_43RCU_20260803_0_L2A.tif",
     "checksum_sha256": "1e4fb2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210115_L2A",
     "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
     "acquired_at": "2021-01-15",
-    "cloud_cover_pct": 4.0,
+    "cloud_cover_pct": 4,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_JEWAR_20210115_L2A.tif",
     "checksum_sha256": "a3f120210115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210212_L2A",
@@ -81,7 +81,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20210212_L2A.tif",
     "checksum_sha256": "a3f120210212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210318_L2A",
@@ -93,7 +93,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20210318_L2A.tif",
     "checksum_sha256": "a3f120210318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210420_L2A",
@@ -105,7 +105,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20210420_L2A.tif",
     "checksum_sha256": "a3f120210420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210514_L2A",
@@ -117,7 +117,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20210514_L2A.tif",
     "checksum_sha256": "a3f120210514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210610_L2A",
@@ -129,7 +129,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20210610_L2A.tif",
     "checksum_sha256": "a3f120210610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210714_L2A",
@@ -141,7 +141,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20210714_L2A.tif",
     "checksum_sha256": "a3f120210714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210818_L2A",
@@ -153,7 +153,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20210818_L2A.tif",
     "checksum_sha256": "a3f120210818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20210912_L2A",
@@ -165,7 +165,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20210912_L2A.tif",
     "checksum_sha256": "a3f120210912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20211015_L2A",
@@ -177,7 +177,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20211015_L2A.tif",
     "checksum_sha256": "a3f120211015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20211122_L2A",
@@ -189,7 +189,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20211122_L2A.tif",
     "checksum_sha256": "a3f120211122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20211219_L2A",
@@ -201,7 +201,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20211219_L2A.tif",
     "checksum_sha256": "a3f120211219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220115_L2A",
@@ -213,7 +213,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20220115_L2A.tif",
     "checksum_sha256": "a3f120220115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220212_L2A",
@@ -225,7 +225,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20220212_L2A.tif",
     "checksum_sha256": "a3f120220212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220318_L2A",
@@ -237,19 +237,19 @@
     "cog_path": "data/scenes/S2_JEWAR_20220318_L2A.tif",
     "checksum_sha256": "a3f120220318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220420_L2A",
     "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
     "acquired_at": "2022-04-20",
-    "cloud_cover_pct": 5.0,
+    "cloud_cover_pct": 5,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_JEWAR_20220420_L2A.tif",
     "checksum_sha256": "a3f120220420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220514_L2A",
@@ -261,7 +261,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20220514_L2A.tif",
     "checksum_sha256": "a3f120220514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220610_L2A",
@@ -273,7 +273,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20220610_L2A.tif",
     "checksum_sha256": "a3f120220610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220714_L2A",
@@ -285,7 +285,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20220714_L2A.tif",
     "checksum_sha256": "a3f120220714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220818_L2A",
@@ -297,7 +297,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20220818_L2A.tif",
     "checksum_sha256": "a3f120220818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20220912_L2A",
@@ -309,19 +309,19 @@
     "cog_path": "data/scenes/S2_JEWAR_20220912_L2A.tif",
     "checksum_sha256": "a3f120220912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20221015_L2A",
     "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
     "acquired_at": "2022-10-15",
-    "cloud_cover_pct": 4.0,
+    "cloud_cover_pct": 4,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_JEWAR_20221015_L2A.tif",
     "checksum_sha256": "a3f120221015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20221122_L2A",
@@ -333,7 +333,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20221122_L2A.tif",
     "checksum_sha256": "a3f120221122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20221219_L2A",
@@ -345,7 +345,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20221219_L2A.tif",
     "checksum_sha256": "a3f120221219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230115_L2A",
@@ -357,7 +357,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230115_L2A.tif",
     "checksum_sha256": "a3f120230115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230212_L2A",
@@ -369,7 +369,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230212_L2A.tif",
     "checksum_sha256": "a3f120230212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230318_L2A",
@@ -381,7 +381,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230318_L2A.tif",
     "checksum_sha256": "a3f120230318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230420_L2A",
@@ -393,7 +393,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230420_L2A.tif",
     "checksum_sha256": "a3f120230420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230514_L2A",
@@ -405,7 +405,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230514_L2A.tif",
     "checksum_sha256": "a3f120230514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230610_L2A",
@@ -417,7 +417,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230610_L2A.tif",
     "checksum_sha256": "a3f120230610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230714_L2A",
@@ -429,7 +429,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230714_L2A.tif",
     "checksum_sha256": "a3f120230714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230818_L2A",
@@ -441,7 +441,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230818_L2A.tif",
     "checksum_sha256": "a3f120230818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20230912_L2A",
@@ -453,7 +453,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20230912_L2A.tif",
     "checksum_sha256": "a3f120230912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20231015_L2A",
@@ -465,7 +465,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20231015_L2A.tif",
     "checksum_sha256": "a3f120231015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20231122_L2A",
@@ -477,7 +477,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20231122_L2A.tif",
     "checksum_sha256": "a3f120231122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20231219_L2A",
@@ -489,19 +489,19 @@
     "cog_path": "data/scenes/S2_JEWAR_20231219_L2A.tif",
     "checksum_sha256": "a3f120231219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20240115_L2A",
     "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
     "acquired_at": "2024-01-15",
-    "cloud_cover_pct": 4.0,
+    "cloud_cover_pct": 4,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_JEWAR_20240115_L2A.tif",
     "checksum_sha256": "a3f120240115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20240212_L2A",
@@ -513,7 +513,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20240212_L2A.tif",
     "checksum_sha256": "a3f120240212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20240318_L2A",
@@ -525,7 +525,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20240318_L2A.tif",
     "checksum_sha256": "a3f120240318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20240420_L2A",
@@ -537,7 +537,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20240420_L2A.tif",
     "checksum_sha256": "a3f120240420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20240514_L2A",
@@ -549,7 +549,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20240514_L2A.tif",
     "checksum_sha256": "a3f120240514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20240610_L2A",
@@ -561,31 +561,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20240610_L2A.tif",
     "checksum_sha256": "a3f120240610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
-  },
-  {
-    "id": "S2_JEWAR_20240714_L2A",
-    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
-    "acquired_at": "2024-07-14",
-    "cloud_cover_pct": 84.5,
-    "usable": false,
-    "unusable_reason": "Monsoon clouds covering >20% of image",
-    "cog_path": "data/scenes/S2_JEWAR_20240714_L2A.tif",
-    "checksum_sha256": "a3f120240714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
-    "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
-  },
-  {
-    "id": "S2_JEWAR_20240818_L2A",
-    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
-    "acquired_at": "2024-08-18",
-    "cloud_cover_pct": 76.1,
-    "usable": false,
-    "unusable_reason": "Monsoon clouds covering >20% of image",
-    "cog_path": "data/scenes/S2_JEWAR_20240818_L2A.tif",
-    "checksum_sha256": "a3f120240818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
-    "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20240912_L2A",
@@ -597,7 +573,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20240912_L2A.tif",
     "checksum_sha256": "a3f120240912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20241015_L2A",
@@ -609,7 +585,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20241015_L2A.tif",
     "checksum_sha256": "a3f120241015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20241122_L2A",
@@ -621,7 +597,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20241122_L2A.tif",
     "checksum_sha256": "a3f120241122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20241219_L2A",
@@ -633,7 +609,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20241219_L2A.tif",
     "checksum_sha256": "a3f120241219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250115_L2A",
@@ -645,7 +621,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20250115_L2A.tif",
     "checksum_sha256": "a3f120250115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250212_L2A",
@@ -657,7 +633,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20250212_L2A.tif",
     "checksum_sha256": "a3f120250212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250318_L2A",
@@ -669,19 +645,19 @@
     "cog_path": "data/scenes/S2_JEWAR_20250318_L2A.tif",
     "checksum_sha256": "a3f120250318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250420_L2A",
     "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
     "acquired_at": "2025-04-20",
-    "cloud_cover_pct": 5.0,
+    "cloud_cover_pct": 5,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_JEWAR_20250420_L2A.tif",
     "checksum_sha256": "a3f120250420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250514_L2A",
@@ -693,7 +669,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20250514_L2A.tif",
     "checksum_sha256": "a3f120250514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250610_L2A",
@@ -705,7 +681,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20250610_L2A.tif",
     "checksum_sha256": "a3f120250610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250714_L2A",
@@ -717,7 +693,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20250714_L2A.tif",
     "checksum_sha256": "a3f120250714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250818_L2A",
@@ -729,7 +705,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20250818_L2A.tif",
     "checksum_sha256": "a3f120250818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20250912_L2A",
@@ -741,19 +717,19 @@
     "cog_path": "data/scenes/S2_JEWAR_20250912_L2A.tif",
     "checksum_sha256": "a3f120250912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20251015_L2A",
     "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
     "acquired_at": "2025-10-15",
-    "cloud_cover_pct": 4.0,
+    "cloud_cover_pct": 4,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_JEWAR_20251015_L2A.tif",
     "checksum_sha256": "a3f120251015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20251122_L2A",
@@ -765,7 +741,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20251122_L2A.tif",
     "checksum_sha256": "a3f120251122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20251219_L2A",
@@ -777,7 +753,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20251219_L2A.tif",
     "checksum_sha256": "a3f120251219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20260115_L2A",
@@ -789,7 +765,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20260115_L2A.tif",
     "checksum_sha256": "a3f120260115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20260212_L2A",
@@ -801,7 +777,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20260212_L2A.tif",
     "checksum_sha256": "a3f120260212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20260318_L2A",
@@ -813,7 +789,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20260318_L2A.tif",
     "checksum_sha256": "a3f120260318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20260420_L2A",
@@ -825,7 +801,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20260420_L2A.tif",
     "checksum_sha256": "a3f120260420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20260514_L2A",
@@ -837,7 +813,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20260514_L2A.tif",
     "checksum_sha256": "a3f120260514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20260610_L2A",
@@ -849,7 +825,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20260610_L2A.tif",
     "checksum_sha256": "a3f120260610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20260714_L2A",
@@ -861,7 +837,7 @@
     "cog_path": "data/scenes/S2_JEWAR_20260714_L2A.tif",
     "checksum_sha256": "a3f120260714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_JEWAR_20260818_L2A",
@@ -873,19 +849,19 @@
     "cog_path": "data/scenes/S2_JEWAR_20260818_L2A.tif",
     "checksum_sha256": "a3f120260818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210115_L2A",
     "aoi_id": "f4e2c1d0-99b8-47a6-bc54-123456789abc",
     "acquired_at": "2021-01-15",
-    "cloud_cover_pct": 4.0,
+    "cloud_cover_pct": 4,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_BHADLA_20210115_L2A.tif",
     "checksum_sha256": "a3f120210115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210212_L2A",
@@ -897,7 +873,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20210212_L2A.tif",
     "checksum_sha256": "a3f120210212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210318_L2A",
@@ -909,7 +885,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20210318_L2A.tif",
     "checksum_sha256": "a3f120210318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210420_L2A",
@@ -921,7 +897,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20210420_L2A.tif",
     "checksum_sha256": "a3f120210420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210514_L2A",
@@ -933,7 +909,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20210514_L2A.tif",
     "checksum_sha256": "a3f120210514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210610_L2A",
@@ -945,7 +921,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20210610_L2A.tif",
     "checksum_sha256": "a3f120210610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210714_L2A",
@@ -957,7 +933,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20210714_L2A.tif",
     "checksum_sha256": "a3f120210714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210818_L2A",
@@ -969,7 +945,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20210818_L2A.tif",
     "checksum_sha256": "a3f120210818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20210912_L2A",
@@ -981,7 +957,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20210912_L2A.tif",
     "checksum_sha256": "a3f120210912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20211015_L2A",
@@ -993,7 +969,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20211015_L2A.tif",
     "checksum_sha256": "a3f120211015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20211122_L2A",
@@ -1005,7 +981,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20211122_L2A.tif",
     "checksum_sha256": "a3f120211122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20211219_L2A",
@@ -1017,7 +993,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20211219_L2A.tif",
     "checksum_sha256": "a3f120211219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220115_L2A",
@@ -1029,7 +1005,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20220115_L2A.tif",
     "checksum_sha256": "a3f120220115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220212_L2A",
@@ -1041,7 +1017,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20220212_L2A.tif",
     "checksum_sha256": "a3f120220212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220318_L2A",
@@ -1053,19 +1029,19 @@
     "cog_path": "data/scenes/S2_BHADLA_20220318_L2A.tif",
     "checksum_sha256": "a3f120220318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220420_L2A",
     "aoi_id": "f4e2c1d0-99b8-47a6-bc54-123456789abc",
     "acquired_at": "2022-04-20",
-    "cloud_cover_pct": 5.0,
+    "cloud_cover_pct": 5,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_BHADLA_20220420_L2A.tif",
     "checksum_sha256": "a3f120220420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220514_L2A",
@@ -1077,7 +1053,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20220514_L2A.tif",
     "checksum_sha256": "a3f120220514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220610_L2A",
@@ -1089,7 +1065,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20220610_L2A.tif",
     "checksum_sha256": "a3f120220610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220714_L2A",
@@ -1101,7 +1077,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20220714_L2A.tif",
     "checksum_sha256": "a3f120220714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220818_L2A",
@@ -1113,7 +1089,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20220818_L2A.tif",
     "checksum_sha256": "a3f120220818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20220912_L2A",
@@ -1125,19 +1101,19 @@
     "cog_path": "data/scenes/S2_BHADLA_20220912_L2A.tif",
     "checksum_sha256": "a3f120220912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20221015_L2A",
     "aoi_id": "f4e2c1d0-99b8-47a6-bc54-123456789abc",
     "acquired_at": "2022-10-15",
-    "cloud_cover_pct": 4.0,
+    "cloud_cover_pct": 4,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_BHADLA_20221015_L2A.tif",
     "checksum_sha256": "a3f120221015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20221122_L2A",
@@ -1149,7 +1125,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20221122_L2A.tif",
     "checksum_sha256": "a3f120221122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20221219_L2A",
@@ -1161,7 +1137,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20221219_L2A.tif",
     "checksum_sha256": "a3f120221219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230115_L2A",
@@ -1173,7 +1149,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230115_L2A.tif",
     "checksum_sha256": "a3f120230115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230212_L2A",
@@ -1185,7 +1161,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230212_L2A.tif",
     "checksum_sha256": "a3f120230212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230318_L2A",
@@ -1197,7 +1173,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230318_L2A.tif",
     "checksum_sha256": "a3f120230318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230420_L2A",
@@ -1209,7 +1185,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230420_L2A.tif",
     "checksum_sha256": "a3f120230420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230514_L2A",
@@ -1221,7 +1197,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230514_L2A.tif",
     "checksum_sha256": "a3f120230514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230610_L2A",
@@ -1233,7 +1209,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230610_L2A.tif",
     "checksum_sha256": "a3f120230610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230714_L2A",
@@ -1245,7 +1221,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230714_L2A.tif",
     "checksum_sha256": "a3f120230714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230818_L2A",
@@ -1257,7 +1233,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230818_L2A.tif",
     "checksum_sha256": "a3f120230818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20230912_L2A",
@@ -1269,7 +1245,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20230912_L2A.tif",
     "checksum_sha256": "a3f120230912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20231015_L2A",
@@ -1281,7 +1257,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20231015_L2A.tif",
     "checksum_sha256": "a3f120231015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20231122_L2A",
@@ -1293,7 +1269,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20231122_L2A.tif",
     "checksum_sha256": "a3f120231122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20231219_L2A",
@@ -1305,19 +1281,19 @@
     "cog_path": "data/scenes/S2_BHADLA_20231219_L2A.tif",
     "checksum_sha256": "a3f120231219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240115_L2A",
     "aoi_id": "f4e2c1d0-99b8-47a6-bc54-123456789abc",
     "acquired_at": "2024-01-15",
-    "cloud_cover_pct": 4.0,
+    "cloud_cover_pct": 4,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_BHADLA_20240115_L2A.tif",
     "checksum_sha256": "a3f120240115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240212_L2A",
@@ -1329,7 +1305,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20240212_L2A.tif",
     "checksum_sha256": "a3f120240212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240318_L2A",
@@ -1341,7 +1317,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20240318_L2A.tif",
     "checksum_sha256": "a3f120240318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240420_L2A",
@@ -1353,7 +1329,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20240420_L2A.tif",
     "checksum_sha256": "a3f120240420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240514_L2A",
@@ -1365,7 +1341,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20240514_L2A.tif",
     "checksum_sha256": "a3f120240514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240610_L2A",
@@ -1377,7 +1353,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20240610_L2A.tif",
     "checksum_sha256": "a3f120240610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240714_L2A",
@@ -1389,7 +1365,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20240714_L2A.tif",
     "checksum_sha256": "a3f120240714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240818_L2A",
@@ -1401,7 +1377,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20240818_L2A.tif",
     "checksum_sha256": "a3f120240818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20240912_L2A",
@@ -1413,7 +1389,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20240912_L2A.tif",
     "checksum_sha256": "a3f120240912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20241015_L2A",
@@ -1425,7 +1401,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20241015_L2A.tif",
     "checksum_sha256": "a3f120241015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20241122_L2A",
@@ -1437,7 +1413,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20241122_L2A.tif",
     "checksum_sha256": "a3f120241122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20241219_L2A",
@@ -1449,7 +1425,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20241219_L2A.tif",
     "checksum_sha256": "a3f120241219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250115_L2A",
@@ -1461,7 +1437,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20250115_L2A.tif",
     "checksum_sha256": "a3f120250115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250212_L2A",
@@ -1473,7 +1449,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20250212_L2A.tif",
     "checksum_sha256": "a3f120250212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250318_L2A",
@@ -1485,19 +1461,19 @@
     "cog_path": "data/scenes/S2_BHADLA_20250318_L2A.tif",
     "checksum_sha256": "a3f120250318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250420_L2A",
     "aoi_id": "f4e2c1d0-99b8-47a6-bc54-123456789abc",
     "acquired_at": "2025-04-20",
-    "cloud_cover_pct": 5.0,
+    "cloud_cover_pct": 5,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_BHADLA_20250420_L2A.tif",
     "checksum_sha256": "a3f120250420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250514_L2A",
@@ -1509,7 +1485,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20250514_L2A.tif",
     "checksum_sha256": "a3f120250514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250610_L2A",
@@ -1521,7 +1497,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20250610_L2A.tif",
     "checksum_sha256": "a3f120250610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250714_L2A",
@@ -1533,7 +1509,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20250714_L2A.tif",
     "checksum_sha256": "a3f120250714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250818_L2A",
@@ -1545,7 +1521,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20250818_L2A.tif",
     "checksum_sha256": "a3f120250818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20250912_L2A",
@@ -1557,19 +1533,19 @@
     "cog_path": "data/scenes/S2_BHADLA_20250912_L2A.tif",
     "checksum_sha256": "a3f120250912c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20251015_L2A",
     "aoi_id": "f4e2c1d0-99b8-47a6-bc54-123456789abc",
     "acquired_at": "2025-10-15",
-    "cloud_cover_pct": 4.0,
+    "cloud_cover_pct": 4,
     "usable": true,
     "unusable_reason": null,
     "cog_path": "data/scenes/S2_BHADLA_20251015_L2A.tif",
     "checksum_sha256": "a3f120251015c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20251122_L2A",
@@ -1581,7 +1557,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20251122_L2A.tif",
     "checksum_sha256": "a3f120251122c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20251219_L2A",
@@ -1593,7 +1569,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20251219_L2A.tif",
     "checksum_sha256": "a3f120251219c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20260115_L2A",
@@ -1605,7 +1581,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20260115_L2A.tif",
     "checksum_sha256": "a3f120260115c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20260212_L2A",
@@ -1617,7 +1593,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20260212_L2A.tif",
     "checksum_sha256": "a3f120260212c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20260318_L2A",
@@ -1629,7 +1605,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20260318_L2A.tif",
     "checksum_sha256": "a3f120260318c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20260420_L2A",
@@ -1641,7 +1617,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20260420_L2A.tif",
     "checksum_sha256": "a3f120260420c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20260514_L2A",
@@ -1653,7 +1629,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20260514_L2A.tif",
     "checksum_sha256": "a3f120260514c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20260610_L2A",
@@ -1665,7 +1641,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20260610_L2A.tif",
     "checksum_sha256": "a3f120260610c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20260714_L2A",
@@ -1677,7 +1653,7 @@
     "cog_path": "data/scenes/S2_BHADLA_20260714_L2A.tif",
     "checksum_sha256": "a3f120260714c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   },
   {
     "id": "S2_BHADLA_20260818_L2A",
@@ -1689,6 +1665,6 @@
     "cog_path": "data/scenes/S2_BHADLA_20260818_L2A.tif",
     "checksum_sha256": "a3f120260818c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0",
     "sensor": "sentinel-2-l2a",
-    "gsd_m": 10.0
+    "gsd_m": 10
   }
 ]

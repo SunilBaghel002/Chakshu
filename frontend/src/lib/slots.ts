@@ -1,6 +1,6 @@
 /**
- * lib/slots.ts — Authoritative Slot Registry
- * Generated directly from prd/ui-console.md §4, §5, and prd/ui-context.md §4.
+ * lib/slots.ts â€” Authoritative Slot Registry
+ * Generated directly from prd/ui-console.md Â§4, Â§5, and prd/ui-context.md Â§4.
  *
  * Every visual area in the Chakshu console belongs to a numbered slot.
  * Unslotted UI elements are prohibited.
@@ -145,8 +145,8 @@ export const SLOTS_REGISTRY: Record<SlotId, SlotDefinition> = {
   'SLOT-16': {
     id: 'SLOT-16',
     name: 'Lock-on Dossier Tag',
-    width: 220,
-    height: 'flex',
+    width: 'full',
+    height: 'full',
     zIndex: 'var(--z-locktag)',
     permittedChildren: ['LockonTag', 'TargetLockTag'],
     collapseBehaviour: 'anchored to target bbox TL offset -8/-8; slides in/out',
@@ -198,7 +198,7 @@ export const SLOTS_REGISTRY: Record<SlotId, SlotDefinition> = {
   'SLOT-21': {
     id: 'SLOT-21',
     name: 'Dossier Tabs',
-    width: 380,
+    width: 'full',
     height: 32,
     zIndex: 'var(--z-base)',
     permittedChildren: ['DossierTabs', 'EvidenceTabs'],
@@ -208,7 +208,7 @@ export const SLOTS_REGISTRY: Record<SlotId, SlotDefinition> = {
   'SLOT-22': {
     id: 'SLOT-22',
     name: 'Dossier Measured Block',
-    width: 380,
+    width: 'full',
     height: 'flex',
     zIndex: 'var(--z-base)',
     permittedChildren: ['MeasuredBlock'],
@@ -218,28 +218,28 @@ export const SLOTS_REGISTRY: Record<SlotId, SlotDefinition> = {
   'SLOT-23': {
     id: 'SLOT-23',
     name: 'Dossier Triptych Thumbs',
-    width: 380,
-    height: 108,
+    width: 'full',
+    height: 'flex',
     zIndex: 'var(--z-base)',
     permittedChildren: ['EvidenceTriptych'],
     collapseBehaviour: '3-up 108x108 1:1 wells with BEFORE / MASK / AFTER labels',
-    description: 'Evidence triptych thumbnails with active amber frame and corner ticks',
+    description: 'Evidence triptych thumbnails with active cyan frame and corner ticks',
   },
   'SLOT-24': {
     id: 'SLOT-24',
     name: 'Dossier Confidence Gauge',
-    width: 348,
+    width: 'full',
     height: 'flex',
     zIndex: 'var(--z-base)',
     permittedChildren: ['EvidenceConfidenceGauge', 'ConfidenceIris'],
     collapseBehaviour: 'gauge + 5 component monospace rows',
-    description: '5-arc amber ramp iris + detector agreement, quality, registration, margin, persistence',
+    description: '5-arc cyan ramp iris + detector agreement, quality, registration, margin, persistence',
   },
   'SLOT-25': {
     id: 'SLOT-25',
     name: 'Dossier Actions Footer',
-    width: 380,
-    height: 52,
+    width: 'full',
+    height: 'flex',
     zIndex: 'var(--z-base)',
     permittedChildren: ['DossierActionsFooter', 'PanelFooter', 'ReviewActionsFooter', 'AskActionsFooter'],
     collapseBehaviour:
@@ -249,7 +249,7 @@ export const SLOTS_REGISTRY: Record<SlotId, SlotDefinition> = {
   'SLOT-26': {
     id: 'SLOT-26',
     name: 'Dossier Trace Rows / Suppressed',
-    width: 348,
+    width: 'full',
     height: 'flex',
     zIndex: 'var(--z-base)',
     permittedChildren: ['TraceRows', 'SuppressionPanel'],
@@ -260,7 +260,7 @@ export const SLOTS_REGISTRY: Record<SlotId, SlotDefinition> = {
     id: 'SLOT-30',
     name: 'Timeline Strip',
     width: 'flex',
-    height: 72,
+    height: 110,
     zIndex: 'var(--z-base)',
     permittedChildren: ['TimelineSlider', 'ProgressStrip', 'QuestionHistory'],
     collapseBehaviour: 'fixed height 72px at bottom of map stage flex',

@@ -17,6 +17,7 @@ import { enforceMinGapForBefore, enforceMinGapForAfter } from './satelliteProvid
 import { useConsoleActions, getPresetMap } from './useConsoleActions';
 import { TOAST_COPY } from './copy';
 import { track } from './track';
+import evidenceListFixture from '../fixtures/evidence_list.json';
 
 interface UseConsoleStateParams {
   showToast: (toast: { message: string; onUndo?: () => void }) => void;
@@ -28,13 +29,29 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
   const [scenes, setScenes] = useState<SceneItem[]>([]);
   const [, setCurrentScene] = useState<SceneItem | null>(null);
   const [, setChangeSummary] = useState<ChangeSummary | null>(null);
-  const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
-  const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
+  const [evidenceList, setEvidenceList] = useState<Evidence[]>(
+    evidenceListFixture as unknown as Evidence[]
+  );
+  const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(
+    (evidenceListFixture[0] as unknown as Evidence) || null
+  );
   const [detectionSet, setDetectionSet] = useState<DetectionSet | null>(null);
 
   // Date states for Before and After
   const [beforeDate, setBeforeDate] = useState<string>('2021-01-15');
   const [afterDate, setAfterDate] = useState<string>('2026-08-18');
+
+  // Cloud false-alarm toggle: false = cloudless baseline (default), true = raw image with cloud
+  const [showClouds, setShowClouds] = useState<boolean>(false);
+  const handleToggleClouds = useCallback(() => {
+    setShowClouds((prev) => !prev);
+  }, []);
+
+  // Polygon overlay shutdown toggle: true = polygons visible (default), false = polygons hidden
+  const [showPolygons, setShowPolygons] = useState<boolean>(true);
+  const handleTogglePolygons = useCallback(() => {
+    setShowPolygons((prev) => !prev);
+  }, []);
 
   // UI view state
   const initialView = useMemo(() => {
@@ -87,12 +104,20 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
       ]);
 
       if (scenesRes.kind === 'ok' && scenesRes.data.length > 0) {
+        const seenDates = new Set<string>();
+        const deduped: SceneItem[] = [];
         const sorted = [...scenesRes.data].sort((a, b) =>
           a.acquired_at.localeCompare(b.acquired_at)
         );
-        setScenes(sorted);
-        const firstUsable = sorted.find((s) => s.usable) || sorted[0];
-        const lastUsable = [...sorted].reverse().find((s) => s.usable) || sorted[sorted.length - 1];
+        for (const s of sorted) {
+          if (!seenDates.has(s.acquired_at)) {
+            seenDates.add(s.acquired_at);
+            deduped.push(s);
+          }
+        }
+        setScenes(deduped);
+        const firstUsable = deduped.find((s) => s.usable) || deduped[0];
+        const lastUsable = [...deduped].reverse().find((s) => s.usable) || deduped[deduped.length - 1];
         if (firstUsable) setBeforeDate(firstUsable.acquired_at);
         if (lastUsable) {
           setAfterDate(lastUsable.acquired_at);
@@ -104,8 +129,12 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
 
       if (evListRes.kind === 'ok') {
         setEvidenceList(evListRes.data);
-        if (evListRes.data.length > 0 && evListRes.data[0]) {
-          setSelectedEvidence(evListRes.data[0]);
+        if (evListRes.data.length > 0) {
+          const defaultTarget = evListRes.data.find((e) =>
+            e.measurement.measured_by?.includes('Runway 10/28') ||
+            e.measurement.measured_by?.includes('Passenger Terminal')
+          ) || evListRes.data[0];
+          if (defaultTarget) setSelectedEvidence(defaultTarget);
         }
       }
 
@@ -123,18 +152,20 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
 
   const handleSelectBeforeDate = useCallback(
     (newBefore: string) => {
-      const { before, after } = enforceMinGapForBefore(newBefore, afterDate);
-      setBeforeDate(before);
-      if (after !== afterDate) setAfterDate(after);
+      setBeforeDate(newBefore);
+      if (newBefore > afterDate) {
+        setAfterDate(newBefore);
+      }
     },
     [afterDate]
   );
 
   const handleSelectAfterDate = useCallback(
     (newAfter: string) => {
-      const { before, after } = enforceMinGapForAfter(newAfter, beforeDate);
-      setAfterDate(after);
-      if (before !== beforeDate) setBeforeDate(before);
+      setAfterDate(newAfter);
+      if (newAfter < beforeDate) {
+        setBeforeDate(newAfter);
+      }
     },
     [beforeDate]
   );
@@ -279,6 +310,8 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
     setIsSwipeActive,
     handleConfirmEvidence,
     handleRejectEvidence,
+    handleTogglePolygons,
+    handleToggleClouds,
   });
 
   return {
@@ -292,6 +325,12 @@ export function useConsoleState({ showToast }: UseConsoleStateParams) {
     detectionSet,
     beforeDate,
     afterDate,
+    showClouds,
+    setShowClouds,
+    handleToggleClouds,
+    showPolygons,
+    setShowPolygons,
+    handleTogglePolygons,
     activeView,
     setActiveView,
     isMock,

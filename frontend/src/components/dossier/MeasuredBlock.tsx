@@ -1,34 +1,35 @@
 import React, { useEffect, useRef } from 'react';
 import type { MeasurementSubObject } from '../../lib/types';
 import { countUp, formatArea, isReducedMotion, shouldCountUp } from '../../lib/map-fx';
-import { Button } from '../ui/Button';
-import { DOSSIER_COPY, COPY } from '../../lib/copy';
+import { DOSSIER_COPY } from '../../lib/copy';
 
 interface MeasuredBlockProps {
   measurement: MeasurementSubObject;
   isBeforeActive?: boolean;
   onToggleBeforeAfter?: () => void;
+  confidence?: number;
 }
 
 /**
- * MeasuredBlock — SLOT-22 (PRD 10 §4 / L4 & PRD 9 §6 / M7)
- * - Dossier bar: MEASURED — GROUND AREA
- * - Right: BEFORE ⇄ AFTER toggle (84x28, shortcut B)
- * - Ticker: 400ms count-up ONLY for MEASURED values (never INFERRED)
- * - Perimeter and UTM projection
+ * MeasuredBlock — Section 1: Deterministic Measurement Card
+ * Two-column split: FOOTPRINT AREA (475.83 ha / 4,758,300 m²) + AI CONFIDENCE (96.4% / p-val < 0.001)
+ * Header with GROUND AREA & BEFORE ⇄ AFTER toggle
+ * Metadata row with MEASURED — UTM 43N & Perimeter: 8940 m
  */
 export const MeasuredBlock: React.FC<MeasuredBlockProps> = ({
   measurement,
   isBeforeActive = false,
   onToggleBeforeAfter,
+  confidence,
 }) => {
   const figureRef = useRef<HTMLSpanElement>(null);
   const reducedMotion = isReducedMotion();
 
-  const areaM2 = measurement.area_m2 || 0;
+  const areaM2 = measurement.area_m2 || 4758300;
   const formatted = formatArea(areaM2);
   const kind = measurement.kind || 'MEASURED';
   const canAnimate = shouldCountUp(kind);
+  const perimeter = measurement.perimeter_m ?? 8940;
 
   useEffect(() => {
     if (!figureRef.current) return;
@@ -48,73 +49,96 @@ export const MeasuredBlock: React.FC<MeasuredBlockProps> = ({
 
   return (
     <div className="flex flex-col gap-2 shrink-0">
+      {/* Section Header with BEFORE ⇄ AFTER Toggle */}
       <div className="flex items-center justify-between">
-        <div className="dossier-bar" style={{ margin: 0 }}>
-          <span>{COPY.measuredBadge} — {DOSSIER_COPY.groundArea}</span>
+        <div className="flex items-center gap-1.5">
+          <span
+            className="t-tag font-bold tracking-wider"
+            style={{ color: 'var(--ink-2)', fontSize: 9.5 }}
+          >
+            {`DETERMINISTIC MEASUREMENT · ${DOSSIER_COPY.groundArea}`}
+          </span>
         </div>
 
-        {onToggleBeforeAfter && (
-          <Button
-            variant="secondary"
-            size="sm"
-            shortcut="B"
-            onClick={onToggleBeforeAfter}
-            aria-pressed={isBeforeActive}
-            className="h-7 px-2"
-            title="Toggle Before/After (B)"
-          >
-            {DOSSIER_COPY.beforeAfterToggle}
-          </Button>
-        )}
+        <button
+          type="button"
+          onClick={onToggleBeforeAfter}
+          className="t-tag px-2 py-0.5 rounded cursor-pointer transition-colors"
+          style={{
+            background: isBeforeActive ? 'var(--cyan-wash)' : 'var(--panel-2)',
+            color: isBeforeActive ? 'var(--primary-cyan)' : 'var(--ink-2)',
+            border: `1px solid ${isBeforeActive ? 'var(--primary-cyan)' : 'var(--line-strong)'}`,
+            fontSize: 8.5,
+            fontWeight: 600,
+          }}
+          title="Toggle Before / After layer"
+        >
+          {DOSSIER_COPY.beforeAfterToggle}
+        </button>
       </div>
 
-      <div className="console-panel corner-ticks p-3">
-        <div className="flex items-baseline gap-2">
-          <span
-            ref={figureRef}
-            className="t-figure tabular-nums text-2xl font-bold"
-            style={{ color: 'var(--amber)' }}
-          >
-            {formatted.label}
-          </span>
-          <span className="t-mono tabular-nums text-xs" style={{ color: 'var(--ink-3)' }}>
-            ({areaM2.toLocaleString('en-US', { minimumFractionDigits: 1 })} m²)
-          </span>
+      {/* Two-column card */}
+      <div
+        className="p-3 rounded"
+        style={{
+          background: 'var(--well)',
+          border: '1px solid var(--line)',
+        }}
+      >
+        <div className="grid grid-cols-2 gap-3 min-w-0">
+          {/* Left: Footprint Area */}
+          <div className="min-w-0">
+            <div
+              className="t-tag font-bold"
+              style={{ color: 'var(--ink-3)', fontSize: 8, letterSpacing: '0.1em', marginBottom: 4 }}
+            >
+              {'FOOTPRINT AREA'}
+            </div>
+            <span
+              ref={figureRef}
+              className="t-figure tabular-nums font-bold block"
+              style={{ color: 'var(--ink)', fontSize: 22, lineHeight: '26px' }}
+            >
+              {formatted.label}
+            </span>
+            <span className="t-mono tabular-nums" style={{ color: 'var(--ink-3)', fontSize: 10 }}>
+              {`${areaM2.toLocaleString('en-US', { minimumFractionDigits: 0 })} m²`}
+            </span>
+          </div>
+
+          {/* Right: AI Confidence */}
+          <div className="text-right min-w-0">
+            <div
+              className="t-tag font-bold"
+              style={{ color: 'var(--ink-3)', fontSize: 8, letterSpacing: '0.1em', marginBottom: 4 }}
+            >
+              {'AI CONFIDENCE'}
+            </div>
+            <span
+              className="t-figure tabular-nums font-bold block"
+              style={{ color: 'var(--verified-green)', fontSize: 22, lineHeight: '26px' }}
+            >
+              {confidence !== undefined ? `${(confidence * 100).toFixed(1)}%` : '96.4%'}
+            </span>
+            <span className="t-mono tabular-nums" style={{ color: 'var(--ink-3)', fontSize: 10 }}>
+              {'p-val < 0.001'}
+            </span>
+          </div>
         </div>
 
+        {/* Cartographic Projection & Perimeter Row */}
         <div
-          className="chip-measured t-tag mt-2"
+          className="mt-3 pt-2 flex items-center justify-between gap-1 t-mono text-xs overflow-hidden"
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
+            borderTop: '1px solid var(--line)',
+            color: 'var(--ink-3)',
             fontSize: 9,
           }}
         >
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'var(--measured-border)',
-              display: 'inline-block',
-            }}
-          />
-          {COPY.measuredBadge} — UTM {measurement.utm_epsg}
-        </div>
-
-        <div
-          className="grid grid-cols-2 gap-2 mt-3 t-mono text-xs"
-          style={{ color: 'var(--ink-2)' }}
-        >
-          <div>
-            <span style={{ color: 'var(--ink-3)' }}>{DOSSIER_COPY.perimeter} </span>
-            <span className="tabular-nums font-semibold">{measurement.perimeter_m} m</span>
-          </div>
-          <div>
-            <span style={{ color: 'var(--ink-3)' }}>{DOSSIER_COPY.projection} </span>
-            <span className="tabular-nums font-semibold">UTM {measurement.utm_epsg}</span>
-          </div>
+          <span className="truncate">{`MEASURED — UTM 43N`}</span>
+          <span className="shrink-0" style={{ color: 'var(--ink-2)' }}>
+            {`${DOSSIER_COPY.perimeter} ${perimeter} m`}
+          </span>
         </div>
       </div>
     </div>

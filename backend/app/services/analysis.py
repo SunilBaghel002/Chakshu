@@ -303,6 +303,7 @@ class AnalysisService:
             except Exception as e:
                 log.info("DB query failed (%s); using in-memory store", e)
 
+        self._load_local_store()
         items = list(self._in_memory_evidence.values())
         filtered: list[Evidence] = []
         for ev in items:

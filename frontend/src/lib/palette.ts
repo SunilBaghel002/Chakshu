@@ -128,7 +128,7 @@ export function getClassColor(label: string): string {
   if (normalized.includes('build') || normalized.includes('term') || normalized.includes('atc') || normalized.includes('cargo') || normalized.includes('arch')) {
     return PALETTE.classes.building;
   }
-  if (normalized.includes('veg') || normalized.includes('green') || normalized.includes('crop') || normalized.includes('tree')) {
+  if (normalized.includes('veg') || normalized.includes('green') || normalized.includes('crop') || normalized.includes('tree') || normalized.includes('plant') || normalized.includes('afforest')) {
     return PALETTE.classes.vegetation;
   }
   if (normalized.includes('water') || normalized.includes('pond') || normalized.includes('basin') || normalized.includes('lake') || normalized.includes('drain')) {
@@ -148,7 +148,7 @@ export function getClassBadge(label: string): { name: string; color: string; bg:
   const normalized = label.toLowerCase();
   let name = 'INFRASTRUCTURE';
   if (normalized.includes('build') || normalized.includes('term') || normalized.includes('atc') || normalized.includes('cargo')) name = 'BUILDING';
-  else if (normalized.includes('veg') || normalized.includes('green') || normalized.includes('crop')) name = 'VEGETATION';
+  else if (normalized.includes('veg') || normalized.includes('green') || normalized.includes('crop') || normalized.includes('plant') || normalized.includes('afforest')) name = 'VEGETATION';
   else if (normalized.includes('water') || normalized.includes('pond') || normalized.includes('basin') || normalized.includes('lake')) name = 'WATER';
   else if (normalized.includes('runway')) name = 'RUNWAY';
   else if (normalized.includes('taxi')) name = 'TAXIWAY';
@@ -165,4 +165,60 @@ export function formatClassLabel(label: string): string {
 
 export function getDarkerClassColor(label: string): string {
   return getClassColor(label);
+}
+
+export interface SemanticTransitionInfo {
+  fromClass: string;
+  toClass: string;
+  fullTransition: string;
+}
+
+export function getSemanticTransition(labelOrFacility: string, changeType?: string): SemanticTransitionInfo {
+  const norm = `${labelOrFacility} ${changeType || ''}`.toLowerCase();
+  let fromClass = 'Baseline Cropland / Farmland';
+  let toClass = labelOrFacility;
+
+  if (norm.includes('runway')) {
+    fromClass = 'Cropland (Agriculture)';
+    toClass = 'Asphalt Runway (Code 4F)';
+  } else if (norm.includes('taxiway')) {
+    fromClass = 'Cropland (Agriculture)';
+    toClass = 'Parallel Taxiway Alpha';
+  } else if (norm.includes('apron')) {
+    fromClass = 'Cropland (Agriculture)';
+    toClass = 'Passenger Apron Stands';
+  } else if (norm.includes('terminal')) {
+    fromClass = 'Agricultural Farmland';
+    toClass = 'Passenger Terminal 1';
+  } else if (norm.includes('atc') || norm.includes('tower')) {
+    fromClass = 'Farmland / Rural Parcel';
+    toClass = 'ATC Control Tower';
+  } else if (norm.includes('cargo') || norm.includes('logistics')) {
+    fromClass = 'Farmland / Rural Parcel';
+    toClass = 'Cargo Logistics Hub';
+  } else if (norm.includes('fuel')) {
+    fromClass = 'Farmland / Rural Parcel';
+    toClass = 'Aviation Fuel Farm';
+  } else if (norm.includes('aocc') || norm.includes('control')) {
+    fromClass = 'Farmland / Rural Parcel';
+    toClass = 'Airport Operations Centre';
+  } else if (norm.includes('water') || norm.includes('reservoir') || norm.includes('basin')) {
+    fromClass = 'Fallow / Scrubland';
+    toClass = norm.includes('basin') ? 'Runoff Attenuation Basin' : 'Stormwater Reservoir';
+  } else if (norm.includes('afforest') || norm.includes('plantation') || norm.includes('south-western')) {
+    fromClass = 'Dry Agricultural Cropland';
+    toClass = 'Dense Ecological Plantation';
+  } else if (norm.includes('green') || norm.includes('vegetation') || norm.includes('buffer') || norm.includes('grass')) {
+    fromClass = 'Graded Construction Soil';
+    toClass = norm.includes('grass') ? 'Infield Grass Strip' : 'Ecological Green Belt';
+  } else if (norm.includes('clearance') || norm.includes('earth') || norm.includes('perimeter')) {
+    fromClass = 'Agricultural Parcels';
+    toClass = 'Perimeter Earthworks';
+  }
+
+  return {
+    fromClass,
+    toClass,
+    fullTransition: `${fromClass} → ${toClass}`,
+  };
 }

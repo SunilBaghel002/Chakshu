@@ -1,5 +1,4 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import { Columns, Eye } from 'lucide-react';
 import { track } from '../lib/track';
 
 interface SwipeCompareProps {
@@ -16,16 +15,34 @@ interface SwipeCompareProps {
   onDragMove?: (newPos: number) => void;
 }
 
+const formatDateLabel = (dateStr: string | undefined, fallback: string) => { if (!dateStr) return fallback;
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const monthIdx = parseInt(parts[1] || '1', 10) - 1;
+      return `${parts[2]} ${months[monthIdx] || parts[1]} ${parts[0]}`;
+    }
+    return dateStr;
+  } catch {
+    return fallback;
+  }
+};
+
+/**
+ * SLOT-18: Swipe Controller
+ * Modern aerospace swipe overlay with baseline & current pills, circular grip handle, and split readout
+ */
 export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
   sliderPos,
   onSliderChange,
   isSwipeActive,
-  onToggleSwipe,
-  beforeDate: _beforeDate,
-  afterDate: _afterDate,
-  availableDates: _availableDates = [],
-  onSelectBeforeDate: _onSelectBeforeDate,
-  onSelectAfterDate: _onSelectAfterDate,
+  onToggleSwipe: _onToggleSwipe,
+  beforeDate,
+  afterDate,
+  availableDates = [],
+  onSelectBeforeDate,
+  onSelectAfterDate,
   onSwapDates: _onSwapDates,
   onDragMove,
 }) => {
@@ -38,11 +55,24 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
   const lastEmitTimeRef = useRef(0);
   const rafRef = useRef<number | null>(null);
 
+  const beforeOptions = React.useMemo(() => {
+    const dates = availableDates && availableDates.length > 0
+      ? availableDates
+      : ['2021-01-15', '2021-03-20', '2021-11-25', '2022-04-12', '2023-01-10', '2024-06-09', '2026-08-03'];
+    return dates.includes(beforeDate) ? dates : [beforeDate, ...dates].sort();
+  }, [availableDates, beforeDate]);
+
+  const afterOptions = React.useMemo(() => {
+    const dates = availableDates && availableDates.length > 0
+      ? availableDates
+      : ['2021-01-15', '2021-11-25', '2023-08-20', '2024-06-09', '2025-06-14', '2026-08-03'];
+    return dates.includes(afterDate) ? dates : [afterDate, ...dates].sort();
+  }, [availableDates, afterDate]);
+
   useEffect(() => {
     if (!isDraggingRef.current) {
       lastPctRef.current = sliderPos;
       if (dividerRef.current) dividerRef.current.style.left = `${sliderPos}%`;
-      if (percentTagRef.current) percentTagRef.current.textContent = `${Math.round(sliderPos)}%`;
     }
   }, [sliderPos]);
 
@@ -63,12 +93,8 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
       if (dividerRef.current) {
         dividerRef.current.style.left = `${pct}%`;
       }
-      if (percentTagRef.current) {
-        percentTagRef.current.textContent = `${Math.round(pct)}%`;
-      }
       onDragMove?.(pct);
 
-      // Throttle root state changes to ~100ms to avoid re-rendering entire ConsoleApp during drag
       const now = performance.now();
       if (now - lastEmitTimeRef.current > 100) {
         lastEmitTimeRef.current = now;
@@ -116,25 +142,11 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
   }, [onSliderChange]);
 
   if (!isSwipeActive) {
-    return (
-      <div className="absolute top-4 left-3 z-[400]">
-        <button
-          onClick={onToggleSwipe}
-          className="flex items-center gap-2 px-3.5 py-2 t-tag cursor-pointer transition-colors"
-          style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--amber)',
-            color: 'var(--amber)',
-            borderRadius: 'var(--radius)',
-            fontSize: 10,
-          }}
-        >
-          <Columns className="w-4 h-4" />
-          <span>ENABLE SPLIT VIEW</span>
-        </button>
-      </div>
-    );
+    return null;
   }
+
+  const beforeLabel = formatDateLabel(beforeDate, '15 JAN 2021');
+  const afterLabel = formatDateLabel(afterDate, '03 AUG 2026');
 
   return (
     <div
@@ -143,90 +155,165 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
       onPointerUp={handlePointerUp}
       className="absolute inset-0 pointer-events-none z-[400] select-none"
     >
-      {/* Top Center Floating HUD Mode Pill */}
+      {/* Top Left: Baseline Pill Badge */}
       <div
-        className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-auto px-2 py-1 rounded-full shadow-lg transition-all"
+        className="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded pointer-events-auto shadow-md"
         style={{
-          background: 'rgba(14, 22, 38, 0.88)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(14, 22, 38, 0.95)',
           border: '1px solid var(--line-strong)',
+          backdropFilter: 'blur(8px)',
         }}
-        onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-1.5 px-2 py-0.5 t-tag" style={{ color: 'var(--ink-2)', fontSize: 9 }}>
-          <span className="w-2 h-2 rounded-full" style={{ background: 'var(--amber)' }} />
-          <span className="t-mono font-bold" style={{ color: 'var(--amber)' }}>T₀</span>
-          <span style={{ color: 'var(--line-strong)' }}>vs</span>
-          <span className="w-2 h-2 rounded-full" style={{ background: 'var(--ion)' }} />
-          <span className="t-mono font-bold" style={{ color: 'var(--ion)' }}>T₁</span>
-          <span className="t-mono tabular-nums px-1.5 py-0.2 rounded" style={{ background: 'var(--panel)', color: 'var(--ink)' }}>
-            {Math.round(sliderPos)}%
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={onToggleSwipe}
-          className="flex items-center gap-1.5 px-2.5 py-1 t-tag cursor-pointer transition-colors rounded-full"
+        <span
           style={{
-            background: 'var(--panel-2)',
-            border: '1px solid var(--line-strong)',
-            color: 'var(--teal)',
-            fontSize: 9,
-            fontWeight: 700,
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'var(--warning-orange, #F59E0B)',
+            display: 'inline-block',
           }}
-          title="Switch to single layer view"
+        />
+        <span
+          className="t-mono font-bold"
+          style={{ color: 'var(--warning-orange, #F59E0B)', fontSize: 9.5 }}
         >
-          <Eye className="w-3 h-3" />
-          <span>SINGLE VIEW</span>
-        </button>
+          BASELINE (T0):
+        </span>
+        {onSelectBeforeDate ? (
+          <select
+            value={beforeDate}
+            onChange={(e) => onSelectBeforeDate(e.target.value)}
+            className="bg-transparent font-bold t-mono cursor-pointer focus:outline-none"
+            style={{
+              color: 'var(--ink)',
+              fontSize: 9.5,
+              border: 'none',
+              padding: 0,
+            }}
+            title="Change Baseline Date (T0)"
+          >
+            {beforeOptions.map((d) => (
+              <option key={d} value={d} style={{ background: 'var(--panel)', color: 'var(--ink)' }}>
+                {formatDateLabel(d, d)}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span
+            className="t-mono font-bold"
+            style={{ color: 'var(--ink)', fontSize: 9.5 }}
+          >
+            {beforeLabel}
+          </span>
+        )}
       </div>
 
-      {/* Vertical Hairline Divider — amber */}
+      {/* Top Right: Current Observation Pill Badge */}
+      <div
+        className="absolute top-3 right-3 flex items-center gap-2 px-2.5 py-1 rounded pointer-events-auto shadow-md"
+        style={{
+          background: 'rgba(14, 22, 38, 0.95)',
+          border: '1px solid var(--line-strong)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'var(--primary-cyan, #3FA9F5)',
+            display: 'inline-block',
+          }}
+        />
+        <span
+          className="t-mono font-bold"
+          style={{ color: 'var(--primary-cyan, #3FA9F5)', fontSize: 9.5 }}
+        >
+          CURRENT (T1):
+        </span>
+        {onSelectAfterDate ? (
+          <select
+            value={afterDate}
+            onChange={(e) => onSelectAfterDate(e.target.value)}
+            className="bg-transparent font-bold t-mono cursor-pointer focus:outline-none"
+            style={{
+              color: 'var(--ink)',
+              fontSize: 9.5,
+              border: 'none',
+              padding: 0,
+            }}
+            title="Change Observation Date (T1)"
+          >
+            {afterOptions.map((d) => (
+              <option key={d} value={d} style={{ background: 'var(--panel)', color: 'var(--ink)' }}>
+                {formatDateLabel(d, d)}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span
+            className="t-mono font-bold"
+            style={{ color: 'var(--ink)', fontSize: 9.5 }}
+          >
+            {afterLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Vertical Hairline Divider — Cyan */}
       <div
         ref={dividerRef}
         className="absolute top-0 bottom-0 pointer-events-none"
         style={{
           left: `${sliderPos}%`,
           width: 2,
-          background: 'var(--amber)',
-          boxShadow: '0 0 12px rgba(240, 180, 95, 0.6)',
+          background: 'var(--primary-cyan, #3FA9F5)',
+          boxShadow: '0 0 10px rgba(63, 169, 245, 0.6)',
         }}
       >
-        {/* Draggable Handle */}
+        {/* Draggable Grip Handle */}
         <div
           onPointerDown={handlePointerDown}
           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center cursor-ew-resize pointer-events-auto transition-transform hover:scale-110 active:scale-95"
           style={{
-            width: 40,
-            height: 40,
+            width: 32,
+            height: 32,
             borderRadius: '50%',
             background: 'var(--panel)',
-            border: '2px solid var(--amber)',
-            boxShadow: '0 0 16px rgba(240, 180, 95, 0.5)',
+            border: '2px solid var(--primary-cyan, #3FA9F5)',
+            boxShadow: '0 0 14px rgba(63, 169, 245, 0.6)',
           }}
-          title="Drag to wipe between Before and After"
+          title="Drag to compare Before and After"
         >
-          <div className="flex items-center gap-1" style={{ color: 'var(--amber)', fontSize: 10, fontWeight: 700 }}>
-            <span>◀</span>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--amber)' }} />
-            <span>▶</span>
+          {/* 6-dot grip icon (2x3 dots) */}
+          <div className="flex items-center gap-1 pointer-events-none">
+            <div className="flex flex-col gap-0.5">
+              <div style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'var(--primary-cyan, #3FA9F5)' }} />
+              <div style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'var(--primary-cyan, #3FA9F5)' }} />
+              <div style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'var(--primary-cyan, #3FA9F5)' }} />
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <div style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'var(--primary-cyan, #3FA9F5)' }} />
+              <div style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'var(--primary-cyan, #3FA9F5)' }} />
+              <div style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: 'var(--primary-cyan, #3FA9F5)' }} />
+            </div>
           </div>
         </div>
 
-        {/* Percentage tag */}
+        {/* Bottom Tag */}
         <div
           ref={percentTagRef}
-          className="absolute bottom-6 -translate-x-1/2 t-mono tabular-nums pointer-events-none px-2 py-0.5"
+          className="absolute bottom-6 -translate-x-1/2 t-mono tabular-nums pointer-events-none px-2 py-0.5 rounded shadow"
           style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            color: 'var(--ink-2)',
-            borderRadius: 'var(--radius)',
-            fontSize: 10,
+            background: 'rgba(14, 22, 38, 0.9)',
+            border: '1px solid var(--line-strong)',
+            color: 'var(--ink)',
+            fontSize: 9,
+            fontWeight: 700,
           }}
         >
-          {Math.round(sliderPos)}%
+          {'2021 🔀 2026'}
         </div>
       </div>
     </div>

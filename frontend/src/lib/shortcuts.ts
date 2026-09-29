@@ -225,6 +225,14 @@ export const SHORTCUTS_MAP: readonly ShortcutItem[] = [
     group: 'view',
     description: 'Fit camera to current AOI bounding box',
   },
+  {
+    id: 'toggle-polygons',
+    keys: ['v'],
+    displayKey: 'V',
+    label: 'Toggle Polygons',
+    group: 'view',
+    description: 'Show or hide vector change polygons on map',
+  },
 
   // Global & Overlays
   {

@@ -1,11 +1,13 @@
-import React from 'react';
+﻿import React from 'react';
 import {
-  ChevronDown,
   MapPin,
+  Sparkles,
+  ArrowLeftRight,
 } from 'lucide-react';
-import { COPY } from '../lib/copy';
+import { COPY, BUTTON_COPY } from '../lib/copy';
 import type { AoiItem } from '../lib/api';
 import { ChakshuLogo } from './ui/ChakshuLogo';
+import { getYearDifference } from '../lib/satelliteProviders';
 
 interface AppHeaderProps {
   aois: AoiItem[];
@@ -18,36 +20,55 @@ interface AppHeaderProps {
   areaLabel?: string;
   sceneCount?: number;
   usableScenes?: number;
+  beforeDate?: string;
+  afterDate?: string;
+  onSelectBeforeDate?: (date: string) => void;
+  onSelectAfterDate?: (date: string) => void;
+  onSwapDates?: () => void;
+  onRunAnalysis?: () => void;
+  isAnalyzing?: boolean;
 }
+
+const formatDateDisplay = (dateStr?: string) => { if (!dateStr) return '';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const monthIdx = parseInt(parts[1] || '1', 10) - 1;
+      return `${parts[2]} ${months[monthIdx] || parts[1]} ${parts[0]}`;
+    }
+    return dateStr;
+  } catch {
+    return dateStr;
+  }
+};
 
 /**
  * SLOT-01 — Command Bar (56px)
- * Iris lockup + brand + AOI selector + stats + nav tabs + LIVE indicator
+ * Modern aerospace header matching Target Design
  */
 export const AppHeader: React.FC<AppHeaderProps> = React.memo(({
   aois,
   selectedAoiId,
   onSelectAoi,
-  activeView,
-  onSelectView,
   isMock,
   onToggleMock,
-  areaLabel = '18.43 ha',
-  usableScenes = 29,
+  beforeDate = '2021-01-15',
+  afterDate = '2026-08-03',
+  onSelectBeforeDate,
+  onSelectAfterDate,
+  onSwapDates,
+  onRunAnalysis,
+  isAnalyzing = false,
 }) => {
-  const tabs: { key: typeof activeView; label: string }[] = [
-    { key: 'map', label: 'MAP' },
-    { key: 'review', label: 'REVIEW' },
-    { key: 'upload', label: 'UPLOAD' },
-    { key: 'search', label: 'SEARCH' },
-    { key: 'ask', label: 'ASK' },
-    { key: 'audit', label: 'AUDIT' },
-  ];
+  const gapYears = getYearDifference(beforeDate, afterDate);
+  const formattedBefore = formatDateDisplay(beforeDate);
+  const formattedAfter = formatDateDisplay(afterDate);
 
   return (
     <header
       id="slot-01-command"
-      className="w-full flex items-center justify-between px-4 select-none"
+      className="w-full flex items-center justify-between px-3 select-none gap-2"
       style={{
         height: 56,
         background: 'linear-gradient(180deg, var(--panel) 0%, rgba(14, 22, 38, 0.98) 100%)',
@@ -56,171 +77,303 @@ export const AppHeader: React.FC<AppHeaderProps> = React.memo(({
         zIndex: 30,
       }}
     >
-      {/* Left: Brand Lockup */}
-      <div className="flex items-center gap-3">
-        {/* Sovereign Platform Logo with glow */}
+      {/* 1. Left: Brand Lockup */}
+      <div className="flex items-center gap-2.5 shrink-0">
         <div className="relative flex items-center justify-center">
           <div
-            className="absolute inset-0 rounded-full blur-sm opacity-40"
-            style={{ background: 'var(--signal)' }}
+            className="absolute inset-0 rounded-full blur-sm opacity-30"
+            style={{ background: 'var(--primary-cyan, #3FA9F5)' }}
           />
-          <ChakshuLogo size={36} />
+          <ChakshuLogo size={32} />
         </div>
 
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="t-h1 font-bold" style={{ color: 'var(--signal)', fontSize: 17, letterSpacing: '0.05em' }}>
-              {COPY.appNameDevanagari}
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5">
+            <span
+              className="font-bold tracking-wider"
+              style={{
+                color: 'var(--ink)',
+                fontSize: 15,
+                fontFamily: 'var(--font-cond)',
+                letterSpacing: '0.06em',
+              }}
+            >
+              {'CHAKSHU'}
             </span>
-            <span className="t-h2 font-mono font-bold tracking-wider" style={{ color: 'var(--ink)', fontSize: 13.5, letterSpacing: '0.08em' }}>
-              {COPY.appName}
-            </span>
-            <span className="t-tag font-bold" style={{
-              background: 'linear-gradient(135deg, rgba(255, 148, 38, 0.18) 0%, rgba(255, 148, 38, 0.08) 100%)',
-              color: 'var(--signal)',
-              border: '1px solid var(--signal)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '2px 7px',
-              fontSize: 8.5,
-              letterSpacing: '0.1em',
-              boxShadow: '0 0 8px rgba(255, 148, 38, 0.2)',
-            }}>
-              {COPY.orgTag}
-            </span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>{`(${COPY.appNameDevanagari})`}</span>
           </div>
-        </div>
-      </div>
-
-      {/* Center: AOI Selector + Stats */}
-      <div className="hidden md:flex items-center gap-3">
-        {/* AOI Selector */}
-        <div className="relative">
-          <div
-            className="flex items-center gap-2 pl-3 pr-8 py-1.5 cursor-pointer transition-colors hover:border-[var(--signal)]"
+          <span
+            className="t-tag font-bold"
             style={{
-              background: 'var(--panel-2)',
-              border: '1px solid var(--line-strong)',
-              borderRadius: 'var(--radius)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+              color: 'var(--primary-cyan, #3FA9F5)',
+              fontSize: 8,
+              letterSpacing: '0.12em',
             }}
           >
-            <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--signal)' }} />
-            <select
-              value={selectedAoiId}
-              onChange={(e) => onSelectAoi(e.target.value)}
-              className="appearance-none bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
-              style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)', letterSpacing: '0.02em' }}
-            >
-              {aois.map((aoi) => (
-                <option key={aoi.id} value={aoi.id} style={{ background: 'var(--panel)', color: 'var(--ink)' }}>
-                  {aoi.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <ChevronDown
-            className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: 'var(--ink-3)' }}
-          />
-        </div>
-
-        {/* Stats Flight Telemetry Bezel */}
-        <div
-          className="flex items-center gap-3 px-3 py-1.5 t-tag"
-          style={{
-            background: 'var(--panel-2)',
-            border: '1px solid var(--line-strong)',
-            borderRadius: 'var(--radius)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-          }}
-        >
-          <span className="flex items-center gap-1.5 tabular-nums" style={{ color: 'var(--signal)' }}>
-            <span style={{ fontSize: 13.5, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{areaLabel}</span>
-            <span style={{ color: 'var(--ink-3)', fontSize: 8 }}>AREA</span>
-          </span>
-          <span style={{ color: 'var(--line-strong)' }}>|</span>
-          <span className="flex items-center gap-1.5 tabular-nums" style={{ color: 'var(--ion)' }}>
-            <span style={{ fontSize: 13.5, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{usableScenes}</span>
-            <span style={{ color: 'var(--ink-3)', fontSize: 8 }}>PASSES</span>
+            {'SATELLITE INTELLIGENCE'}
           </span>
         </div>
       </div>
 
-      {/* Right: Nav Tabs + LIVE */}
-      <div className="flex items-center gap-2.5">
-        {/* Nav tabs segmented deck */}
+      {/* 2. Location Chip */}
+      <div className="hidden md:flex items-center shrink-0">
         <div
-          className="flex items-center p-0.5 gap-0.5"
+          className="flex items-center gap-2 px-3 py-1.5"
           style={{
             background: 'var(--panel-2)',
-            border: '1px solid var(--line-strong)',
-            borderRadius: 'var(--radius)',
+            border: '1px solid var(--line)',
+            borderRadius: 6,
           }}
         >
-          {tabs.map(({ key, label }) => {
-            const isActive = activeView === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => onSelectView(key)}
-                className="t-tag px-3 py-1.5 transition-all duration-150 relative cursor-pointer"
+          <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--primary-cyan, #3FA9F5)' }} />
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1">
+              <select
+                value={selectedAoiId}
+                onChange={(e) => onSelectAoi(e.target.value)}
+                className="appearance-none bg-transparent font-bold focus:outline-none cursor-pointer pr-4"
                 style={{
-                  background: isActive ? 'var(--signal-wash)' : 'transparent',
-                  color: isActive ? 'var(--signal)' : 'var(--ink-3)',
-                  borderRadius: 'var(--radius-sm)',
-                  border: isActive ? '1px solid rgba(255, 148, 38, 0.3)' : '1px solid transparent',
-                  fontWeight: isActive ? 700 : 500,
-                  fontSize: 9.5,
-                  letterSpacing: '0.08em',
+                  color: 'var(--ink)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  letterSpacing: '0.02em',
                 }}
               >
-                {label}
-                {/* Active bottom glow accent */}
-                {isActive && (
-                  <span
-                    className="absolute -bottom-0.5 left-2 right-2"
-                    style={{
-                      height: 2,
-                      background: 'var(--signal)',
-                      borderRadius: 1,
-                      boxShadow: '0 0 6px var(--signal)',
-                    }}
-                  />
-                )}
-              </button>
-            );
-          })}
+                {aois.map((aoi) => (
+                  <option
+                    key={aoi.id}
+                    value={aoi.id}
+                    style={{ background: 'var(--panel)', color: 'var(--ink)' }}
+                  >
+                    {aoi.name.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="t-mono" style={{ color: 'var(--ink-3)', fontSize: 8.5 }}>
+              {'Jewar, UP · 28.1309° N, 77.768° E'}
+            </span>
+          </div>
         </div>
+      </div>
 
-        {/* LIVE / OFFLINE Telemetry Beacon */}
+      {/* 3. Center: Date Range Selector Pill */}
+      <div className="hidden lg:flex items-center shrink-0">
+        <div
+          className="flex items-center gap-2.5 px-3 py-1.5"
+          style={{
+            background: 'var(--well)',
+            border: '1px solid var(--line)',
+            borderRadius: 8,
+          }}
+        >
+          {/* T0 Baseline */}
+          <div className="relative flex items-center gap-1.5 cursor-pointer">
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'var(--warning-orange, #F59E0B)',
+                display: 'inline-block',
+                boxShadow: '0 0 6px rgba(245, 158, 11, 0.6)',
+              }}
+            />
+            <span className="t-tag font-bold" style={{ color: 'var(--warning-orange, #F59E0B)', fontSize: 9 }}>
+              {'T0'}
+            </span>
+            <span
+              className="t-mono tabular-nums font-bold"
+              style={{ color: 'var(--ink)', fontSize: 11 }}
+            >
+              {formattedBefore}
+            </span>
+            <input
+              type="date"
+              value={beforeDate}
+              onChange={(e) => onSelectBeforeDate?.(e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full"
+              title="Change T0 Baseline Date"
+            />
+          </div>
+
+          {/* Swap Button */}
+          <button
+            type="button"
+            onClick={onSwapDates}
+            className="p-1 rounded cursor-pointer transition-colors hover:bg-[var(--panel-2)]"
+            style={{ color: 'var(--ink-3)', border: 'none', background: 'transparent' }}
+            title="Swap Before and After dates (Shortcut: S)"
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+          </button>
+
+          {/* T1 Observation */}
+          <div className="relative flex items-center gap-1.5 cursor-pointer">
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'var(--primary-cyan, #3FA9F5)',
+                display: 'inline-block',
+                boxShadow: '0 0 6px rgba(63, 169, 245, 0.6)',
+              }}
+            />
+            <span className="t-tag font-bold" style={{ color: 'var(--primary-cyan, #3FA9F5)', fontSize: 9 }}>
+              {'T1'}
+            </span>
+            <span
+              className="t-mono tabular-nums font-bold"
+              style={{ color: 'var(--ink)', fontSize: 11 }}
+            >
+              {formattedAfter}
+            </span>
+            <input
+              type="date"
+              value={afterDate}
+              onChange={(e) => onSelectAfterDate?.(e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full"
+              title="Change T1 Observation Date"
+            />
+          </div>
+
+          {/* Delta Pill */}
+          <span
+            className="t-mono font-bold px-2 py-0.5 rounded text-[9.5px]"
+            style={{
+              background: 'rgba(16, 185, 129, 0.15)',
+              color: 'var(--verified-green, #10B981)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            {`Δ ${gapYears.toFixed(1)} YRS`}
+          </span>
+        </div>
+      </div>
+
+      {/* 4. Action Button: Detect Changes + Mode Label */}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          id="detect-changes"
+          type="button"
+          onClick={onRunAnalysis}
+          disabled={isAnalyzing}
+          className="flex items-center gap-2 px-3.5 py-1.5 cursor-pointer transition-all duration-150 rounded"
+          style={{
+            background: 'var(--primary-cyan, #3FA9F5)',
+            color: 'var(--tricolour-white, #FFFFFF)',
+            border: 'none',
+            borderRadius: 6,
+            height: 36,
+            fontWeight: 700,
+            fontSize: 12,
+            fontFamily: 'var(--font-cond)',
+            letterSpacing: '0.04em',
+            boxShadow: '0 0 12px rgba(63, 169, 245, 0.4)',
+          }}
+          title="Run Bi-temporal Change Detection (Shortcut: D)"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>{isAnalyzing ? BUTTON_COPY.detecting : BUTTON_COPY.detect}</span>
+        </button>
+
+        {/* Mode Label */}
+        <div className="hidden xl:flex flex-col leading-tight t-mono" style={{ fontSize: 8, color: 'var(--ink-3)' }}>
+          <span>{'Bi-temporal'}</span>
+          <span style={{ color: 'var(--primary-cyan, #3FA9F5)', fontWeight: 700 }}>{'CVA Mode'}</span>
+        </div>
+      </div>
+
+      {/* 5. Right: Telemetry Chips + User Profile */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Usable Telemetry */}
+        <span
+          className="hidden sm:inline-flex t-tag px-2 py-1 rounded items-center gap-1"
+          style={{
+            background: 'rgba(16, 185, 129, 0.12)',
+            color: 'var(--verified-green, #10B981)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            fontSize: 8.5,
+            fontWeight: 600,
+          }}
+        >
+          {'✓ 96% Usable'}
+        </span>
+
+        {/* Cloud Cover */}
+        <span
+          className="hidden sm:inline-flex t-tag px-2 py-1 rounded items-center gap-1"
+          style={{
+            background: 'var(--panel-2)',
+            color: 'var(--ink-2)',
+            border: '1px solid var(--line)',
+            fontSize: 8.5,
+            fontWeight: 600,
+          }}
+        >
+          {'1.2% Cloud'}
+        </span>
+
+        {/* Offline Ready Toggle */}
         <button
           type="button"
           onClick={onToggleMock}
-          title={isMock ? 'Offline Demo Mode' : 'Live Satellite API'}
-          className="flex items-center gap-2 px-3 py-1.5 t-tag cursor-pointer transition-all duration-150 rounded"
+          className="t-tag px-2 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-all"
           style={{
-            background: isMock ? 'var(--signal-wash)' : 'var(--ion-wash)',
-            border: `1px solid ${isMock ? 'var(--signal)' : 'var(--ion)'}`,
-            color: isMock ? 'var(--signal)' : 'var(--ion)',
-            boxShadow: isMock ? '0 0 8px rgba(255, 148, 38, 0.25)' : '0 0 10px rgba(63, 169, 245, 0.3)',
+            background: isMock ? 'rgba(16, 185, 129, 0.12)' : 'var(--cyan-wash, rgba(63, 169, 245, 0.12))',
+            color: isMock ? 'var(--verified-green, #10B981)' : 'var(--primary-cyan, #3FA9F5)',
+            border: `1px solid ${isMock ? 'rgba(16, 185, 129, 0.3)' : 'rgba(63, 169, 245, 0.3)'}`,
+            fontSize: 8.5,
+            fontWeight: 600,
           }}
+          title={isMock ? 'Offline Demo Mode' : 'Live Satellite API'}
         >
           <span
             className={isMock ? '' : 'animate-dot-pulse'}
             style={{
-              width: 6.5,
-              height: 6.5,
+              width: 5,
+              height: 5,
               borderRadius: '50%',
-              background: isMock ? 'var(--signal)' : 'var(--ion)',
+              background: isMock ? 'var(--verified-green, #10B981)' : 'var(--primary-cyan, #3FA9F5)',
               display: 'inline-block',
-              boxShadow: isMock ? '0 0 6px var(--signal)' : '0 0 8px var(--ion)',
             }}
           />
-          <span className="hidden lg:inline tracking-wider font-bold text-[9px]">
-            {isMock ? COPY.offlineTag : COPY.liveTag}
-          </span>
+          {isMock ? 'Offline Ready' : COPY.liveTag}
         </button>
+
+        {/* User Profile Avatar */}
+        <div
+          className="flex items-center gap-2 px-2 py-1"
+          style={{
+            background: 'var(--panel-2)',
+            border: '1px solid var(--line)',
+            borderRadius: 6,
+          }}
+        >
+          <div
+            className="flex items-center justify-center rounded-full"
+            style={{
+              width: 26,
+              height: 26,
+              background: 'var(--primary-cyan, #3FA9F5)',
+              color: 'var(--tricolour-white, #FFFFFF)',
+              fontSize: 10,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            {'AP'}
+          </div>
+          <div className="hidden xl:flex flex-col">
+            <span className="t-mono font-bold" style={{ color: 'var(--ink)', fontSize: 9.5 }}>
+              {'A. Patel'}
+            </span>
+            <span className="t-mono" style={{ color: 'var(--ink-3)', fontSize: 7.5 }}>
+              {'Sr. Geospatial Analyst'}
+            </span>
+          </div>
+        </div>
       </div>
     </header>
   );

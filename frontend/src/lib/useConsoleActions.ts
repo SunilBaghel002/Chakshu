@@ -13,6 +13,8 @@ export interface UseConsoleActionsParams {
   setIsSwipeActive: React.Dispatch<React.SetStateAction<boolean>>;
   handleConfirmEvidence: (id: string) => void;
   handleRejectEvidence: (id: string) => void;
+  handleTogglePolygons?: () => void;
+  handleToggleClouds?: () => void;
 }
 
 export function useConsoleActions({
@@ -26,6 +28,8 @@ export function useConsoleActions({
   setIsSwipeActive,
   handleConfirmEvidence,
   handleRejectEvidence,
+  handleTogglePolygons,
+  handleToggleClouds,
 }: UseConsoleActionsParams) {
   return useCallback(
     (actionId: string) => {
@@ -55,6 +59,12 @@ export function useConsoleActions({
           break;
         case 'peek-stage':
           setIsSwipeActive((prev) => !prev);
+          break;
+        case 'toggle-polygons':
+          handleTogglePolygons?.();
+          break;
+        case 'toggle-clouds':
+          handleToggleClouds?.();
           break;
         case 'close-overlay':
           if (activeView !== 'map') {

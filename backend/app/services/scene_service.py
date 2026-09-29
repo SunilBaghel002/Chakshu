@@ -67,6 +67,10 @@ class SceneService:
                                             acq_date = f"{p[:4]}-{p[4:6]}-{p[6:]}"
                                             break
 
+                                    # Check if a scene with this acquired_at already exists
+                                    if any(s.acquired_at == acq_date and s.aoi_id == "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1" for s in scenes.values()):
+                                        continue
+
                                     scenes[sid] = Scene(
                                         id=sid,
                                         aoi_id="b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
@@ -122,7 +126,7 @@ class SceneService:
                     cur.execute(query, tuple(params))
                     rows = cur.fetchall()
                     if rows:
-                        return [
+                        db_scenes = [
                             Scene(
                                 id=r[0],
                                 aoi_id=str(r[1]),
@@ -137,12 +141,20 @@ class SceneService:
                             )
                             for r in rows
                         ]
+                        seen_db_dates: set[str] = set()
+                        deduped_db: list[Scene] = []
+                        for s in db_scenes:
+                            if s.acquired_at not in seen_db_dates:
+                                seen_db_dates.add(s.acquired_at)
+                                deduped_db.append(s)
+                        return deduped_db
             except Exception as exc:
                 log.info("Database unavailable (%s); using local/fixture scenes", exc)
 
         # Local fallback filtering
         all_scenes = list(self._load_local_scenes().values())
         filtered: list[Scene] = []
+        seen_dates: set[tuple[str, str]] = set()
         for s in all_scenes:
             if aoi_id and s.aoi_id != aoi_id:
                 continue
@@ -152,6 +164,10 @@ class SceneService:
                 continue
             if after and s.acquired_at < after:
                 continue
+            date_key = (s.aoi_id, s.acquired_at)
+            if date_key in seen_dates:
+                continue
+            seen_dates.add(date_key)
             filtered.append(s)
 
         filtered.sort(key=lambda x: x.acquired_at, reverse=True)
