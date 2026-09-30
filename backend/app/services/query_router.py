@@ -162,15 +162,15 @@ class QueryRouter:
             slots["target_id"] = selected_target.get("id")
             # ONLY trigger selected_target intent if the query explicitly refers to the selected object/target
             is_explicit_target_q = any(
-                w in norm_q for w in ["iska", "iski", "iske", "is object", "is target", "selected target", "selected object", "this object", "this polygon", "selected polygon", "is target ka", "is object ka", "ye target"]
+                w in norm_q for w in ["iska", "iski", "iske", "is object", "is target", "selected target", "selected object", "this object", "this polygon", "selected polygon", "this target", "is target ka", "is object ka", "ye target"]
             )
             if is_explicit_target_q:
-                if any(w in norm_q for w in ["area", "size", "kitna", "kitni", "how large", "extent"]):
+                if any(w in norm_q for w in ["area", "size", "kitna", "kitni", "how large", "extent", "measured area"]):
                     slots["requires_measurement"] = True
                     return IntentResolution(intent_id="selected_target_area", score=0.99, matched_by="explicit_target_query", slots=slots)
-                if any(w in norm_q for w in ["what is this", "ye kya", "kya bana", "what is here", "what appeared", "ab kya"]):
+                if any(w in norm_q for w in ["what is this", "ye kya", "kya bana", "what is here", "what appeared", "ab kya", "what was constructed", "what type of structure"]):
                     return IntentResolution(intent_id="selected_target_identity", score=0.99, matched_by="explicit_target_query", slots=slots)
-                if any(w in norm_q for w in ["pehle", "before", "earlier", "purana"]):
+                if any(w in norm_q for w in ["pehle", "before", "earlier", "purana", "previously"]):
                     return IntentResolution(intent_id="selected_target_before", score=0.99, matched_by="explicit_target_query", slots=slots)
                 if any(w in norm_q for w in ["when", "kab", "timeline", "duration", "kitne time"]):
                     return IntentResolution(intent_id="selected_target_timeline", score=0.99, matched_by="explicit_target_query", slots=slots)

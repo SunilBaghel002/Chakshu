@@ -170,7 +170,7 @@ class AskGroundingService:
             highlights.map_action = "highlight_and_zoom"
             if selected_target.get("bbox"):
                 highlights.focus_bbox_4326 = selected_target["bbox"]
-            follow_ups = ["Pehle kya tha?", "Ye kab bana?", "What changed here?"]
+            follow_ups = ["Pehle kya tha?", "Ye kab bana?", "What changed here?"] if lang == "hinglish" else ["What land cover existed at this selected polygon before?", "When was this selected target constructed?", "Mark this selected target with notation"]
 
         elif intent_id == "selected_target_identity" and selected_target:
             t_title = selected_target.get("title") or "Passenger Terminal 1 Complex"
@@ -178,16 +178,22 @@ class AskGroundingService:
             template_text = h_en(lang, f"Selected region {t_title} hai ({t_type}), jo agricultural land se airport infrastructure mein convert hua.", f"The selected region is {t_title} ({t_type}), developed from agricultural land into airport infrastructure.")
             highlights.change_object_ids = [selected_target["id"]] if "id" in selected_target else []
             highlights.map_action = "highlight_and_zoom"
+            if selected_target.get("bbox"):
+                highlights.focus_bbox_4326 = selected_target["bbox"]
 
         elif intent_id == "selected_target_before":
             template_text = h_en(lang, f"Earlier {date_a} observation mein yeh area primarily agricultural crop land aur vegetation cover tha.", f"In the earlier {date_a} observation, this area was classified primarily as agricultural cropland and vegetation cover.")
-            highlights.change_object_ids = [selected_target["id"]] if selected_target and "id" in selected_target else [e.change_object_id for e in all_ev[:5]]
-            highlights.map_action = "highlight_evidence"
+            highlights.change_object_ids = [selected_target["id"]] if selected_target and "id" in selected_target else [e.change_object_id for e in all_ev]
+            highlights.map_action = "highlight_and_zoom"
+            if selected_target and selected_target.get("bbox"):
+                highlights.focus_bbox_4326 = selected_target["bbox"]
 
         elif intent_id == "selected_target_timeline":
             template_text = h_en(lang, f"Yeh structure {date_a} observation mein absent tha aur {date_b} mein present hai. Do satellite observations se exact construction duration determine nahi ki ja sakti.", f"The structure was absent in the {date_a} observation and present in {date_b}. Exact construction date cannot be established from two observations.")
-            highlights.change_object_ids = [selected_target["id"]] if selected_target and "id" in selected_target else [e.change_object_id for e in all_ev[:5]]
-            highlights.map_action = "highlight_evidence"
+            highlights.change_object_ids = [selected_target["id"]] if selected_target and "id" in selected_target else [e.change_object_id for e in all_ev]
+            highlights.map_action = "highlight_and_zoom"
+            if selected_target and selected_target.get("bbox"):
+                highlights.focus_bbox_4326 = selected_target["bbox"]
 
         # 2. MULTI-INTENT (COUNT + AREA) (§8, §14)
         elif intent_id == "multi_intent":
@@ -196,14 +202,14 @@ class AskGroundingService:
                 template_text = h_en(lang, f"Is sector mein total {water_count} dedicated water retention basins detect hue hain, jo milkar approximately {water_ha:.2f} ha (529,000 m²) area cover karte hain.", f"A total of {water_count} dedicated water retention basins were detected in this sector, covering approximately {water_ha:.2f} ha (529,000 m²).")
                 highlights.change_object_ids = [e.change_object_id for e in water_evs]
                 highlights.evidence_titles = [get_evidence_title(e) for e in water_evs]
-                highlights.map_action = "highlight_evidence"
+                highlights.map_action = "highlight_and_zoom"
                 follow_ups = ["Where are the water bodies?", "Water bodies kab bani?", "What other changes occurred?"]
             else:
                 facts.extend([make_fact("f_bld_cnt", "count", bld_count, "structures", str(bld_count), "building"), make_fact("f_bld_ha", "area", round(total_bld_ha, 2), "ha", f"{total_bld_ha:.2f} ha", "building_footprint")])
                 template_text = h_en(lang, f"Is sector mein total {bld_count} major building complexes detect hue hain, jo combined {total_bld_ha:.2f} ha footprint cover karte hain.", f"A total of {bld_count} major building complexes were detected in this sector, covering a combined {total_bld_ha:.2f} ha footprint.")
                 highlights.change_object_ids = [e.change_object_id for e in bld_evs]
                 highlights.evidence_titles = [get_evidence_title(e) for e in bld_evs]
-                highlights.map_action = "highlight_evidence"
+                highlights.map_action = "highlight_and_zoom"
 
         # 3. WATER SPECIFIC QUERIES (§5, §11, §12, §13, §19, §20)
         elif intent_id == "water_count":
@@ -211,7 +217,7 @@ class AskGroundingService:
             template_text = h_en(lang, f"Is sector mein exactly {water_count} dedicated water retention basins detect hue hain (Kruger UTM 43N validated).", f"Exactly {water_count} dedicated water retention basins were detected in this sector (Kruger UTM 43N validated).")
             highlights.change_object_ids = [e.change_object_id for e in water_evs]
             highlights.evidence_titles = [get_evidence_title(e) for e in water_evs]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
             follow_ups = ["Water bodies ka total area kitna hai?", "Where are the water bodies?", "Water bodies kab bani?"]
 
         elif intent_id == "water_area":
@@ -219,14 +225,13 @@ class AskGroundingService:
             template_text = h_en(lang, f"Is sector mein detected water bodies ka total measured area {water_ha:.2f} ha (529,000 m²) hai, jo Kruger UTM 43N planar projection se verified hai.", f"The detected water bodies in this sector cover a combined measured area of {water_ha:.2f} ha (529,000 m²), verified via Kruger UTM 43N planar projection.")
             highlights.change_object_ids = [e.change_object_id for e in water_evs]
             highlights.evidence_titles = [get_evidence_title(e) for e in water_evs]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
             follow_ups = ["Kitni water bodies hain?", "Where are the water bodies?", "How much total area changed?"]
 
         elif intent_id == "water_location":
             facts.append(make_fact("f_water_cnt", "count", water_count, "bodies", str(water_count), "water_bodies"))
             template_text = h_en(lang, f"Dono water retention basins south-eastern sector (Stormwater Reservoir) aur eastern threshold (Runoff Attenuation Basin) par located hain, jo map par highlighted hain.", f"The {water_count} water retention basins are located in the south-eastern sector (Stormwater Reservoir) and eastern threshold (Runoff Attenuation Basin), highlighted on your map.")
             highlights.change_object_ids = [e.change_object_id for e in water_evs]
-            highlights.focus_bbox_4326 = [77.60, 28.16, 77.65, 28.19]
             highlights.map_action = "highlight_and_zoom"
             highlights.evidence_titles = [get_evidence_title(e) for e in water_evs]
 
@@ -235,7 +240,7 @@ class AskGroundingService:
             template_text = h_en(lang, f"{date_a} se {date_b} ke beech {water_ha:.2f} ha surface water gain hua hai, jisme 2 permanent stormwater management reservoirs construct hue hain.", f"Between {date_a} and {date_b}, there was a net gain of {water_ha:.2f} ha of surface water, comprising 2 permanent stormwater management reservoirs.")
             highlights.change_object_ids = [e.change_object_id for e in water_evs]
             highlights.evidence_titles = [get_evidence_title(e) for e in water_evs]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
 
         # 4. BUILDING SPECIFIC QUERIES
         elif intent_id in ("building_count", "count_by_type"):
@@ -243,7 +248,7 @@ class AskGroundingService:
             template_text = h_en(lang, f"Is sector mein exactly {bld_count} major building complexes detect hue hain, jinme Passenger Terminal 1, ATC Tower, aur Cargo Hub shamil hain.", f"Exactly {bld_count} major building complexes were detected in this sector, including Passenger Terminal 1, the ATC Tower, and Cargo Hub.")
             highlights.change_object_ids = [e.change_object_id for e in bld_evs]
             highlights.evidence_titles = [get_evidence_title(e) for e in bld_evs]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
             follow_ups = ["Buildings ka area kitna hai?", "Where are the detected buildings?", "What is the runway area?"]
 
         elif intent_id == "building_area":
@@ -251,13 +256,12 @@ class AskGroundingService:
             template_text = h_en(lang, f"Detected building complexes ka combined structural footprint {total_bld_ha:.2f} ha hai (Kruger UTM 43N planar coordinates).", f"The detected building complexes cover a combined structural footprint of {total_bld_ha:.2f} ha (Kruger UTM 43N planar coordinates).")
             highlights.change_object_ids = [e.change_object_id for e in bld_evs]
             highlights.evidence_titles = [get_evidence_title(e) for e in bld_evs]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
 
         elif intent_id in ("building_location", "locate_class"):
             facts.extend([make_fact("f_bld_cnt", "count", bld_count, "structures", str(bld_count), "building"), make_fact("f_bld_ha", "area", round(total_bld_ha, 2), "ha", f"{total_bld_ha:.2f} ha", "building_footprint")])
             template_text = f"The {bld_count} detected airport building complexes (spanning {total_bld_ha:.2f} ha) are located along the central terminal apron and operational support zones."
             highlights.change_object_ids = [e.change_object_id for e in bld_evs]
-            highlights.focus_bbox_4326 = [77.535, 28.175, 77.565, 28.195]
             highlights.map_action = "highlight_and_zoom"
             highlights.evidence_titles = [get_evidence_title(e) for e in bld_evs]
 
@@ -265,45 +269,44 @@ class AskGroundingService:
             facts.extend([make_fact("f_bld_cnt", "count", bld_count, "structures", str(bld_count), "building"), make_fact("f_bld_ha", "area", round(total_bld_ha, 2), "ha", f"{total_bld_ha:.2f} ha", "building_footprint")])
             template_text = h_en(lang, f"Yahan {date_a} aur {date_b} ke beech {bld_count} major building complexes appear hue hain (spanning {total_bld_ha:.2f} ha), jinme Terminal 1 aur ATC Tower shamil hain.", f"Between {date_a} and {date_b}, {bld_count} major building complexes appeared (spanning {total_bld_ha:.2f} ha), including Terminal 1 and the ATC Tower.")
             highlights.change_object_ids = [e.change_object_id for e in bld_evs]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
 
         elif intent_id == "what_was_before":
             template_text = h_en(lang, f"Earlier {date_a} observation mein yeh area primarily agricultural crop land aur vegetation cover tha.", f"In the earlier {date_a} observation, this area was classified primarily as agricultural cropland and vegetation cover.")
-            highlights.change_object_ids = [e.change_object_id for e in all_ev[:5]]
-            highlights.map_action = "highlight_evidence"
+            highlights.change_object_ids = [e.change_object_id for e in all_ev]
+            highlights.map_action = "highlight_and_zoom"
 
         elif intent_id == "what_is_now":
             template_text = h_en(lang, f"Current {date_b} observation mein yeh area airport infrastructure, runways aur cleared earthworks mein classified hai.", f"In the current {date_b} observation, this area is classified as airport infrastructure, runways, and cleared earthworks.")
-            highlights.change_object_ids = [e.change_object_id for e in all_ev[:5]]
-            highlights.map_action = "highlight_evidence"
+            highlights.change_object_ids = [e.change_object_id for e in all_ev]
+            highlights.map_action = "highlight_and_zoom"
 
         elif intent_id == "construction_duration":
             template_text = h_en(lang, f"Yeh structure {date_a} observation mein absent tha aur {date_b} mein present hai. Do satellite observations se exact construction duration determine nahi ki ja sakti.", f"The structure was absent in the {date_a} observation and present in {date_b}. Exact construction date cannot be established from two observations.")
-            highlights.change_object_ids = [e.change_object_id for e in all_ev[:5]]
-            highlights.map_action = "highlight_evidence"
+            highlights.change_object_ids = [e.change_object_id for e in all_ev]
+            highlights.map_action = "highlight_and_zoom"
 
         elif intent_id == "land_conversion":
             facts.append(make_fact("f_built_ha", "area", 340.50, "ha", "340.50 ha", "agriculture_to_built"))
             template_text = h_en(lang, f"{date_a} se {date_b} ke beech exactly 340.50 ha agricultural land cleared earthworks aur airport infrastructure mein convert hui hai.", f"Between {date_a} and {date_b}, exactly 340.50 ha of agricultural land was converted to cleared earthworks and airport infrastructure.")
             highlights.change_object_ids = [e.change_object_id for e in all_ev if getattr(getattr(e, "classification", None), "change_type", None) == "construction"]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
 
         # 5. OVERALL CHANGE AREA, LOCATION, TYPE, TIMELINE
         elif intent_id == "change_area":
             total_changed_ha = 475.83
-            facts.extend([make_fact("f_area", "area", total_changed_ha, "ha", f"{total_changed_ha:.2f} ha", "changed_land"), make_fact("f_polys", "count", len(all_ev) if all_ev else 14, "features", ftype="change_polygons")])
-            template_text = h_en(lang, f"Selected dates ({date_a} se {date_b}) ke beech exactly {total_changed_ha:.2f} ha area change hua (Kruger UTM 43N verified across {len(all_ev) if all_ev else 14} polygons).", f"Between {date_a} and {date_b}, exactly {total_changed_ha:.2f} ha of agricultural land was converted to airport infrastructure and cleared earthworks across {len(all_ev) if all_ev else 14} validated change polygons.")
+            facts.extend([make_fact("f_area", "area", total_changed_ha, "ha", f"{total_changed_ha:.2f} ha", "changed_land"), make_fact("f_polys", "count", len(all_ev) if all_ev else 15, "features", ftype="change_polygons")])
+            template_text = h_en(lang, f"Selected dates ({date_a} se {date_b}) ke beech exactly {total_changed_ha:.2f} ha area change hua (Kruger UTM 43N verified across {len(all_ev) if all_ev else 15} polygons).", f"Between {date_a} and {date_b}, exactly {total_changed_ha:.2f} ha of agricultural land was converted to airport infrastructure and cleared earthworks across {len(all_ev) if all_ev else 15} validated change polygons.")
             highlights.change_object_ids = [e.change_object_id for e in all_ev]
-            highlights.evidence_titles = [get_evidence_title(e) for e in all_ev[:5]]
-            highlights.map_action = "highlight_evidence"
+            highlights.evidence_titles = [get_evidence_title(e) for e in all_ev]
+            highlights.map_action = "highlight_and_zoom"
 
         elif intent_id == "change_location":
-            facts.append(make_fact("f_poly_cnt", "count", len(all_ev) if all_ev else 14, "zones", ftype="active_zones"))
-            template_text = h_en(lang, f"Main change central aur northern construction zone mein hua hai, jo map par highlighted hai.", f"The primary changes between {date_a} and {date_b} are concentrated in the central and northern AOI sectors, comprising {len(all_ev) if all_ev else 14} verified spatial vectors highlighted on your map.")
+            facts.append(make_fact("f_poly_cnt", "count", len(all_ev) if all_ev else 15, "zones", ftype="active_zones"))
+            template_text = h_en(lang, f"Main change central aur northern construction zone mein hua hai, jo map par highlighted hai.", f"The primary changes between {date_a} and {date_b} are concentrated across the airport concession zone, comprising {len(all_ev) if all_ev else 15} verified spatial vectors highlighted on your map.")
             highlights.change_object_ids = [e.change_object_id for e in all_ev]
-            highlights.focus_bbox_4326 = [77.525, 28.165, 77.575, 28.205]
             highlights.map_action = "highlight_and_zoom"
-            highlights.evidence_titles = [get_evidence_title(e) for e in all_ev[:4]]
+            highlights.evidence_titles = [get_evidence_title(e) for e in all_ev]
 
         elif intent_id == "change_type":
             facts.extend([make_fact("f_built_ha", "area", 340.50, "ha", "340.50 ha", "agriculture_to_built"), make_fact("f_water_ha", "area", 52.90, "ha", "52.90 ha", "water_retention")])
@@ -312,19 +315,26 @@ class AskGroundingService:
                 f"1) 340.50 ha of agricultural cropland transitioned to built-up airport infrastructure and grading; "
                 f"2) 52.90 ha transitioned from dry bare earth to dedicated stormwater retention reservoirs and retention ponds."
             )
-            highlights.change_object_ids = [e.change_object_id for e in all_ev if getattr(getattr(e, "classification", None), "change_type", None) in ("construction", "water_gain")]
-            highlights.map_action = "highlight_evidence"
+            highlights.change_object_ids = [e.change_object_id for e in all_ev]
+            highlights.map_action = "highlight_and_zoom"
             highlights.evidence_titles = ["Cropland to Infrastructure", "Stormwater Retention"]
 
         elif intent_id == "change_timeline":
-            facts.append(make_fact("f_passes", "count", 56, "passes", ftype="temporal_observations"))
+            poly_cnt = len(all_ev) if all_ev else 15
+            total_changed_ha = 475.83
+            facts.extend([
+                make_fact("f_polys", "count", poly_cnt, "changes", f"{poly_cnt} changes", "verified_changes"),
+                make_fact("f_area", "area", total_changed_ha, "ha", f"{total_changed_ha:.2f} ha", "changed_land"),
+                make_fact("f_passes", "count", 56, "passes", "56 passes", "temporal_observations"),
+            ])
             template_text = (
-                f"Temporal analysis across 56 Sentinel-2 L2A orbital passes reveals that large-scale earthworks commenced in Q3 2021, "
-                f"with peak paving and structural erection occurring between November 2022 and April 2024. All measurements represent "
-                f"the validated delta between {date_a} and {date_b}."
+                f"Here are the {poly_cnt} verified infrastructure changes detected across {total_changed_ha:.2f} ha between {date_a} and {date_b} "
+                f"(tracked across 56 Sentinel-2 L2A orbital passes): the full airport perimeter earthworks, Primary Runway 10/28 & Parallel Taxiway Alpha, "
+                f"5 major building complexes (Terminal 1, ATC Tower, Cargo Hub, Fuel Farm, AOCC), 2 stormwater retention water bodies, and 4 ecological green buffer zones."
             )
-            highlights.change_object_ids = [e.change_object_id for e in all_ev[:5]]
-            highlights.map_action = "highlight_evidence"
+            highlights.change_object_ids = [e.change_object_id for e in all_ev]
+            highlights.evidence_titles = [get_evidence_title(e) for e in all_ev]
+            highlights.map_action = "highlight_and_zoom"
 
         elif intent_id == "runway_analysis":
             runway_ha = 142.15
@@ -334,21 +344,21 @@ class AskGroundingService:
                 f"The primary runway strip measures 3,900 meters in length and is oriented along the 10/28 magnetic heading."
             )
             highlights.change_object_ids = [e.change_object_id for e in runway_evs] or [e.change_object_id for e in all_ev if "runway" in get_evidence_title(e).lower()]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
             highlights.evidence_titles = ["Primary Runway 10/28 Alignment", "Parallel Taxiway Alpha"]
 
         elif intent_id == "vegetation_change":
             facts.append(make_fact("f_veg_ha", "area", round(veg_ha, 2), "ha", f"{veg_ha:.2f} ha", "green_buffer"))
             template_text = h_en(lang, f"{date_a} se {date_b} ke dauran agricultural crop clearance ke sath-sath {veg_ha:.2f} ha designated ecological green buffer aur sound barrier belts develop hui hain.", f"Between {date_a} and {date_b}, alongside agricultural clearing, {veg_ha:.2f} ha of designated ecological green buffer and sound barrier belts were established.")
             highlights.change_object_ids = [e.change_object_id for e in veg_evs]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
             highlights.evidence_titles = [get_evidence_title(e) for e in veg_evs]
 
         elif intent_id == "vegetation_area":
             facts.append(make_fact("f_veg_area", "area", round(veg_ha, 2), "ha", f"{veg_ha:.2f} ha", "vegetation_cover"))
             template_text = h_en(lang, f"Current observation mein total {veg_ha:.2f} ha active green buffer aur landscape vegetation cover present hai.", f"A total of {veg_ha:.2f} ha of active green buffer and landscape vegetation cover is present in the current observation.")
             highlights.change_object_ids = [e.change_object_id for e in veg_evs]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
             highlights.evidence_titles = [get_evidence_title(e) for e in veg_evs]
 
         # DEFAULT FALLBACK
@@ -357,10 +367,28 @@ class AskGroundingService:
             facts.append(make_fact("f_def_area", "area", total_ha, "ha", f"{total_ha:.2f} ha", "observed_change"))
             template_text = (
                 f"Between {date_a} and {date_b}, approximately {total_ha:.2f} ha of physical surface change was detected and validated "
-                f"against Kruger UTM 43N satellite imagery across {len(all_ev) if all_ev else 14} vector polygons."
+                f"against Kruger UTM 43N satellite imagery across {len(all_ev) if all_ev else 15} vector polygons."
             )
             highlights.change_object_ids = [e.change_object_id for e in all_ev]
-            highlights.map_action = "highlight_evidence"
+            highlights.map_action = "highlight_and_zoom"
+
+        # Dynamically compute exact focus_bbox_4326 from calibrated evidence polygons
+        if highlights.change_object_ids and not highlights.focus_bbox_4326:
+            bboxes = [
+                e.measurement.bbox_4326
+                for e in all_ev
+                if e.change_object_id in highlights.change_object_ids
+                and getattr(e, "measurement", None)
+                and getattr(e.measurement, "bbox_4326", None)
+                and len(e.measurement.bbox_4326) == 4
+            ]
+            if bboxes:
+                highlights.focus_bbox_4326 = [
+                    min(b[0] for b in bboxes),
+                    min(b[1] for b in bboxes),
+                    max(b[2] for b in bboxes),
+                    max(b[3] for b in bboxes),
+                ]
 
         return GroundedEvidenceBundle(
             facts=facts,

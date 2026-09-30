@@ -76,16 +76,19 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
     }
   }, [sliderPos]);
 
+  const containerRectRef = useRef<DOMRect | null>(null);
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     isDraggingRef.current = true;
     dragStartPctRef.current = lastPctRef.current;
+    containerRectRef.current = containerRef.current?.getBoundingClientRect() || null;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!isDraggingRef.current || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
+      const rect = containerRectRef.current || containerRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
       const pct = Math.round((x / rect.width) * 1000) / 10;
       lastPctRef.current = pct;
@@ -93,10 +96,15 @@ export const SwipeCompare: React.FC<SwipeCompareProps> = React.memo(({
       if (dividerRef.current) {
         dividerRef.current.style.left = `${pct}%`;
       }
-      onDragMove?.(pct);
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = null;
+          onDragMove?.(lastPctRef.current);
+        });
+      }
 
       const now = performance.now();
-      if (now - lastEmitTimeRef.current > 100) {
+      if (now - lastEmitTimeRef.current > 120) {
         lastEmitTimeRef.current = now;
         onSliderChange(pct);
       }

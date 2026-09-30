@@ -163,6 +163,11 @@
     --positive-green: #2FBF71;
     --warning-orange: #F59E0B;
     --danger-red: #EF4444;
+    --step-1-cyan: #00E5FF;
+    --step-2-green: #10B981;
+    --step-3-amber: #F59E0B;
+    --step-4-purple: #A855F7;
+    --step-ink-dark: #060910;
 
     /* ── Tricolour tokens (PRD 9 §5.8) ── */
     --tricolour-saffron: #FF9426;
@@ -258,6 +263,7 @@
     --z-modal: 50;
     --z-toast: 60;
     --z-tooltip: 70;
+    --z-toolbar: 450;
 
     /* ── Shadows ── */
     --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.55);

@@ -58,6 +58,8 @@ function isValidGeometry(geom: any): boolean {
   return true;
 }
 
+import { findSmallestEvidenceAtLatLng } from './mapPolygonHelpers';
+
 export function useMapAnnotations({
   map,
   evidenceList,
@@ -68,6 +70,10 @@ export function useMapAnnotations({
   const haloLayerRef = useRef<L.GeoJSON | null>(null);
   const highlightLayerRef = useRef<L.GeoJSON | null>(null);
   const labelsLayerRef = useRef<L.LayerGroup | null>(null);
+  const onSelectRef = useRef(onSelectEvidence);
+  onSelectRef.current = onSelectEvidence;
+  const selectedIdRef = useRef(selectedEvidenceId);
+  selectedIdRef.current = selectedEvidenceId;
 
   const clearAnnotationLayers = useCallback(() => {
     if (!map) return;
@@ -88,7 +94,6 @@ export function useMapAnnotations({
   useEffect(() => {
     if (!map) return;
 
-    // Check if clear action was dispatched or annotation state is empty
     const hasClearAction = annotationState?.mapActions?.some(
       (a) => a.action === 'clear_annotations'
     );
@@ -99,11 +104,12 @@ export function useMapAnnotations({
 
     clearAnnotationLayers();
 
-    // Ensure dedicated annotations pane exists
     let pane = map.getPane('askAnnotationsPane');
     if (!pane) {
       pane = map.createPane('askAnnotationsPane');
       pane.style.zIndex = '520';
+      pane.style.transform = 'translate3d(0,0,0)';
+      pane.style.willChange = 'clip-path';
       pane.style.pointerEvents = 'auto';
     }
 
@@ -111,7 +117,6 @@ export function useMapAnnotations({
     const targetKey = target || 'changed_area';
     const baseColor = customColor || SEMANTIC_COLORS[targetKey] || '#38BDF8';
 
-    // Filter and validate evidence matching the requested IDs
     const matchedEvidence: Evidence[] = [];
     evidenceIds.forEach((id) => {
       const found = evidenceList.find((e) => e.change_object_id === id);
@@ -121,8 +126,8 @@ export function useMapAnnotations({
     });
 
     if (!matchedEvidence.length) return;
+    matchedEvidence.sort((a, b) => (b.measurement?.area_m2 || 0) - (a.measurement?.area_m2 || 0));
 
-    // 1. Dark halo underlay (weight 4.5px, opacity 0.9) to make annotations pop
     const haloGroup = L.geoJSON(undefined, {
       pane: 'askAnnotationsPane',
       style: () => ({
@@ -134,18 +139,30 @@ export function useMapAnnotations({
       }),
     });
 
-    // 2. Translucent fill polygon overlay (stroke 2px, fillOpacity 0.25)
     const highlightGroup = L.geoJSON(undefined, {
       pane: 'askAnnotationsPane',
       style: (feature) => {
-        const id = feature?.properties?.change_object_id;
-        const isSelected = id === selectedEvidenceId;
+        const id = feature?.properties?.change_object_id || '';
+        const cType = feature?.properties?.change_type || '';
+        const isSelected = id === selectedIdRef.current;
+        const isPerimeter = id.startsWith('e1b10014');
+        const polyColor =
+          targetKey === 'changed_area'
+            ? cType === 'water_gain'
+              ? '#38BDF8'
+              : cType === 'vegetation_gain'
+              ? '#22C55E'
+              : isPerimeter
+              ? '#00E5FF'
+              : '#F97316'
+            : baseColor;
         return {
-          color: isSelected ? '#FFAA4D' : baseColor,
-          weight: isSelected ? 2.5 : 2.0,
+          color: isSelected ? '#FFAA4D' : polyColor,
+          weight: isPerimeter ? 2.5 : isSelected ? 2.5 : 2.0,
           opacity: 1.0,
-          fillColor: baseColor,
-          fillOpacity: isSelected ? 0.38 : 0.24,
+          fillColor: polyColor,
+          fillOpacity: isPerimeter ? 0.08 : isSelected ? 0.38 : 0.26,
+          dashArray: isPerimeter ? '6, 4' : undefined,
           className: 'ask-annotated-polygon',
         };
       },
@@ -154,22 +171,19 @@ export function useMapAnnotations({
         const ev = matchedEvidence.find((e) => e.change_object_id === evId);
 
         layer.on('mouseover', () => {
-          (layer as L.Path).setStyle({
-            weight: 2.8,
-            fillOpacity: 0.40,
-          });
+          (layer as L.Path).setStyle({ weight: 2.8, fillOpacity: 0.40 });
         });
 
         layer.on('mouseout', () => {
-          const isSel = evId === selectedEvidenceId;
-          (layer as L.Path).setStyle({
-            weight: isSel ? 2.5 : 2.0,
-            fillOpacity: isSel ? 0.38 : 0.24,
-          });
+          const isSel = evId === selectedIdRef.current;
+          (layer as L.Path).setStyle({ weight: isSel ? 2.5 : 2.0, fillOpacity: isSel ? 0.38 : 0.24 });
         });
 
-        layer.on('click', () => {
-          if (ev && onSelectEvidence) onSelectEvidence(ev);
+        layer.on('click', (e: L.LeafletMouseEvent) => {
+          L.DomEvent.stopPropagation(e);
+          const smallest = e?.latlng ? findSmallestEvidenceAtLatLng(e.latlng.lat, e.latlng.lng, evidenceList) : null;
+          const targetEv = smallest || ev;
+          if (targetEv && onSelectRef.current) onSelectRef.current(targetEv);
         });
       },
     });
@@ -177,10 +191,7 @@ export function useMapAnnotations({
     matchedEvidence.forEach((ev) => {
       const feat = {
         type: 'Feature' as const,
-        properties: {
-          change_object_id: ev.change_object_id,
-          change_type: ev.change_type,
-        },
+        properties: { change_object_id: ev.change_object_id, change_type: ev.change_type },
         geometry: ev.measurement.geom_4326,
       };
       haloGroup.addData(feat as any);
@@ -192,7 +203,6 @@ export function useMapAnnotations({
     haloLayerRef.current = haloGroup;
     highlightLayerRef.current = highlightGroup;
 
-    // 3. Compact notation badges at centroids (SIH26167 §16, §17)
     const shouldShowLabels = mapActions.some((a) => a.action === 'show_labels') || Boolean(Object.keys(annotationLabels).length);
     if (shouldShowLabels) {
       const labelsGroup = L.layerGroup([], { pane: 'askAnnotationsPane' });
@@ -235,7 +245,7 @@ export function useMapAnnotations({
         });
 
         marker.on('click', () => {
-          if (onSelectEvidence) onSelectEvidence(ev);
+          if (onSelectRef.current) onSelectRef.current(ev);
         });
 
         labelsGroup.addLayer(marker);
@@ -245,32 +255,19 @@ export function useMapAnnotations({
       labelsLayerRef.current = labelsGroup;
     }
 
-    // 4. Viewport zoom/fit if requested
-    const shouldZoom = mapActions.some(
-      (a) => a.action === 'zoom_to_evidence' || a.action === 'fit_evidence'
-    );
-    if (shouldZoom) {
-      if (annotationState.focusBbox && annotationState.focusBbox.length === 4) {
-        const [minX, minY, maxX, maxY] = annotationState.focusBbox;
-        map.fitBounds(
-          [
-            [minY, minX],
-            [maxY, maxX],
-          ],
-          { padding: [48, 48], maxZoom: 16, animate: true }
-        );
-      } else {
-        const bounds = highlightGroup.getBounds();
-        if (bounds.isValid()) {
-          map.fitBounds(bounds, { padding: [48, 48], maxZoom: 16, animate: true });
-        }
-      }
+    const polyBounds = highlightGroup.getBounds();
+    const fitOpts = { paddingTopLeft: [110, 48] as [number, number], paddingBottomRight: [48, 48] as [number, number], maxZoom: 16, animate: true };
+    if (polyBounds.isValid()) {
+      map.fitBounds(polyBounds, fitOpts);
+    } else if (annotationState.focusBbox && annotationState.focusBbox.length === 4) {
+      const [minX, minY, maxX, maxY] = annotationState.focusBbox;
+      map.fitBounds([[minY, minX], [maxY, maxX]], fitOpts);
     }
 
     return () => {
       clearAnnotationLayers();
     };
-  }, [map, evidenceList, annotationState, selectedEvidenceId, onSelectEvidence, clearAnnotationLayers]);
+  }, [map, evidenceList, annotationState, clearAnnotationLayers]);
 
   return {
     clearAnnotations: clearAnnotationLayers,

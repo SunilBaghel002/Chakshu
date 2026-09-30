@@ -4046,5 +4046,273 @@
       "decided_at": "2026-09-12T14:30:00Z",
       "actor": "lead_imagery_analyst"
     }
+  },
+  {
+    "change_object_id": "e1b10016-ffff-4000-8000-000000000016",
+    "aoi_id": "b1d3a4e9-11c2-49f3-85e2-04e82b3d91f1",
+    "change_type": "water_gain",
+    "status": "confirmed",
+    "measurement": {
+      "area_m2": 114800,
+      "area_label": "11.48 ha",
+      "perimeter_m": 1380,
+      "centroid": [
+        77.637473,
+        28.161563
+      ],
+      "bbox_4326": [
+        77.636195,
+        28.159846,
+        77.638974,
+        28.163143
+      ],
+      "utm_epsg": 32643,
+      "geom_4326": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              77.636504,
+              28.163143
+            ],
+            [
+              77.638974,
+              28.163022
+            ],
+            [
+              77.638219,
+              28.159846
+            ],
+            [
+              77.636195,
+              28.16024
+            ],
+            [
+              77.636504,
+              28.163143
+            ]
+          ]
+        ]
+      },
+      "measured_by": "Semantic vectorisation, UTM 43N: North-East Water Recharge Basin (W-03)",
+      "kind": "MEASURED"
+    },
+    "classification": {
+      "change_type": "water_gain",
+      "rule_trace": [
+        {
+          "rule": "d_ndbi_threshold",
+          "field": "d_ndbi",
+          "value": -0.22,
+          "threshold": 0.1,
+          "expected": null,
+          "fired": false
+        },
+        {
+          "rule": "d_ndvi_threshold",
+          "field": "d_ndvi",
+          "value": -0.18,
+          "threshold": -0.15,
+          "expected": null,
+          "fired": true
+        },
+        {
+          "rule": "d_ndwi_threshold",
+          "field": "d_ndwi",
+          "value": 0.45,
+          "threshold": 0.2,
+          "expected": null,
+          "fired": true
+        },
+        {
+          "rule": "facility_identification",
+          "field": "semantic_class",
+          "value": "Runoff Attenuation Basin (East Threshold)",
+          "threshold": 0.85,
+          "expected": null,
+          "fired": true
+        }
+      ],
+      "alternatives": [
+        {
+          "change_type": "construction",
+          "score": 0.18,
+          "reason": "secondary spectral transition"
+        }
+      ],
+      "kind": "INFERRED"
+    },
+    "temporal": {
+      "first_supported": "2024-10-25",
+      "last_seen": "2026-08-03",
+      "onset_interval": {
+        "start": "2021-11-25",
+        "end": "2024-10-25",
+        "days": 240
+      },
+      "onset_gaps": [],
+      "persistence_k": 4,
+      "area_series": [
+        {
+          "date": "2024-10-25",
+          "area_m2": 58000
+        },
+        {
+          "date": "2025-06-14",
+          "area_m2": 123250
+        },
+        {
+          "date": "2026-08-03",
+          "area_m2": 145000
+        }
+      ],
+      "trend": "stable",
+      "kind": "MEASURED"
+    },
+    "confidence": {
+      "overall": 0.93,
+      "parts": {
+        "detector_agreement": 0.95,
+        "image_quality": 0.92,
+        "registration": 0.96,
+        "classification_margin": 0.88,
+        "temporal_persistence": 0.94
+      },
+      "method": "geometric_mean",
+      "calibrated": true,
+      "calibration_ece": 0.038,
+      "calibration_n": 184,
+      "kind": "INFERRED"
+    },
+    "suppression_context": {
+      "candidates_generated": 412,
+      "candidates_suppressed": 398,
+      "candidates_retained": 14,
+      "by_reason": {
+        "seasonal": 210,
+        "cloud_shadow": 120,
+        "registration": 42,
+        "min_size": 26,
+        "cloud": 0,
+        "illumination": 0,
+        "snow_cover": 0,
+        "low_confidence": 0
+      }
+    },
+    "sources": {
+      "before": {
+        "scene_id": "S2A_43RCU_20211125_0_L2A",
+        "acquired_at": "2021-11-25",
+        "checksum_sha256": "7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b",
+        "cloud_cover_pct": 1.2,
+        "sensor": "high-res-temporal"
+      },
+      "after": {
+        "scene_id": "GEO_JEWAR_20260803_UHD",
+        "acquired_at": "2026-08-03",
+        "checksum_sha256": "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e",
+        "cloud_cover_pct": 0.4,
+        "sensor": "google-satellite-ultra-hd"
+      },
+      "mask_path": "data/masks/e1b10010.png",
+      "triptych_urls": {
+        "before": "/api/v1/tiles/evidence/e1b10010/before.png",
+        "mask": "/api/v1/tiles/evidence/e1b10010/mask.png",
+        "after": "/api/v1/tiles/evidence/e1b10010/after.png"
+      }
+    },
+    "models_used": [
+      {
+        "name": "index-cva-otsu",
+        "version": "1.0.0",
+        "role": "primary_detector",
+        "licence": "internal",
+        "source": null,
+        "enabled": true
+      },
+      {
+        "name": "TinyCD",
+        "version": "b1",
+        "role": "corroborating_detector",
+        "licence": "MIT",
+        "source": "AndreaCodegoni/Tiny_model_4_CD",
+        "enabled": false
+      },
+      {
+        "name": "ESA WorldCover",
+        "version": "2021 v200",
+        "role": "landcover_prior",
+        "licence": "CC-BY-4.0",
+        "source": null,
+        "enabled": true
+      }
+    ],
+    "processing_history": [
+      {
+        "step": 1,
+        "op": "reproject",
+        "detail": "EPSG:32643, bilinear"
+      },
+      {
+        "step": 2,
+        "op": "cloud_mask",
+        "detail": "SCL classes 3,8,9,11 excluded"
+      },
+      {
+        "step": 3,
+        "op": "register",
+        "detail": "phase correlation, shift 0.3 px, within tolerance"
+      },
+      {
+        "step": 4,
+        "op": "indices",
+        "detail": "NDVI, NDWI, NDBI computed"
+      },
+      {
+        "step": 5,
+        "op": "detect",
+        "detail": "index-CVA + Otsu threshold 0.184"
+      },
+      {
+        "step": 6,
+        "op": "morphology",
+        "detail": "open 3x3, min area 4 px"
+      },
+      {
+        "step": 7,
+        "op": "vectorise",
+        "detail": "rasterio.features.shapes"
+      },
+      {
+        "step": 8,
+        "op": "classify",
+        "detail": "rule table v1"
+      },
+      {
+        "step": 9,
+        "op": "suppress",
+        "detail": "8 gates, 398 of 412 discarded"
+      },
+      {
+        "step": 10,
+        "op": "measure",
+        "detail": "ST_Area UTM 43N"
+      },
+      {
+        "step": 11,
+        "op": "onset",
+        "detail": "forward walk, k=3"
+      },
+      {
+        "step": 12,
+        "op": "confidence",
+        "detail": "geometric mean of 5 components"
+      }
+    ],
+    "analyst": {
+      "note": "Verified ground-truth feature: North-East Water Recharge Basin (W-03)",
+      "decided_at": "2026-09-12T14:30:00Z",
+      "actor": "lead_imagery_analyst"
+    }
   }
 ]

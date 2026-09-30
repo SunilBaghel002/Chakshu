@@ -26,7 +26,7 @@ class GeminiDetectionAdapter:
     def __init__(self, api_key: str | None = None, model_name: str | None = None) -> None:
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model_name = model_name or settings.GEMINI_MODEL
-        self.enabled = bool(settings.GEMINI_ENABLED and self.api_key and not settings.OFFLINE)
+        self.enabled = bool(api_key is not None and settings.GEMINI_ENABLED and not settings.OFFLINE)
 
     def downscale_image(self, img: Image.Image) -> tuple[Image.Image, float]:
         longest = max(img.size)

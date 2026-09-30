@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Map, Search, CheckCircle2, ShieldCheck, Settings, MessageSquare, Inbox } from 'lucide-react';
 
 export type NavView = 'map' | 'review' | 'upload' | 'ask' | 'search' | 'audit';
@@ -31,7 +31,7 @@ export const IconRail: React.FC<IconRailProps> = React.memo(({
   const topItems: RailItem[] = [
     { view: 'map', icon: <Map className="w-4.5 h-4.5" strokeWidth={1.8} />, label: 'MAP', shortcut: 'G M' },
     { view: 'review', icon: <CheckCircle2 className="w-4.5 h-4.5" strokeWidth={1.8} />, label: 'REVIEW', shortcut: 'G R', badge: 24 },
-    { view: 'upload', icon: <Inbox className="w-4.5 h-4.5" strokeWidth={1.8} />, label: 'INGEST', shortcut: 'G U' },
+    { view: 'upload', icon: <Inbox className="w-4.5 h-4.5" strokeWidth={1.8} />, label: 'INSIGHT', shortcut: 'G U' },
     { view: 'search', icon: <Search className="w-4.5 h-4.5" strokeWidth={1.8} />, label: 'SEARCH', shortcut: 'G F' },
     { view: 'ask', icon: <MessageSquare className="w-4.5 h-4.5" strokeWidth={1.8} />, label: 'COPILOT', shortcut: 'G Q' },
     { view: 'audit', icon: <ShieldCheck className="w-4.5 h-4.5" strokeWidth={1.8} />, label: 'AUDIT', shortcut: 'G A' },

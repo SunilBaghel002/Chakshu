@@ -178,10 +178,34 @@ class DetectionService:
                     geom_px={"type": "Polygon", "coordinates": polygon["coordinates"]},
                     area_px=float(polygon["area_px"]),
                     area_m2=area_m2,
-                    score=1.0,
+                    score=0.94,
                     score_source="deterministic",
                     verified=True,
                     verifier_note=f"pixel-derived building structure (mask_iou={polygon.get('mask_iou', 1.0)})",
+                )
+            )
+
+        # Extract linear road / paved network corridors
+        road_mask = seg_res.get_road_footprints(min_area=120)
+        road_polys = vectorize_class_mask(
+            road_mask, min_pixels=120, is_water=False, max_polygons=10
+        )
+        for polygon in road_polys:
+            area_m2 = polygon["area_px"] * upload.gsd_m**2 if self._has_gsd(upload) else None
+            detections.append(
+                Detection(
+                    id=str(uuid.uuid4()),
+                    track=DetectionTrack.LANDCOVER_INDEX,
+                    label="road",
+                    label_raw="rgb_road",
+                    kind=DetectionKind.POLYGON,
+                    geom_px={"type": "Polygon", "coordinates": polygon["coordinates"]},
+                    area_px=float(polygon["area_px"]),
+                    area_m2=area_m2,
+                    score=0.91,
+                    score_source="deterministic",
+                    verified=True,
+                    verifier_note=f"pixel-derived road network (mask_iou={polygon.get('mask_iou', 1.0)})",
                 )
             )
         return detections, coverage
@@ -285,18 +309,12 @@ class DetectionService:
                 continue
             box = normalise_bbox(bbox, upload.width_px, upload.height_px)
             if isinstance(box, BboxReject):
-                rejections.append(
-                    RejectionDetail(label_raw=raw_label, reason=box.reason, detail=box.detail)
-                )
+                rejections.append(RejectionDetail(label_raw=raw_label, reason=box.reason, detail=box.detail))
                 continue
             ratio = box.width / max(box.height, 1e-6)
             if not MIN_ASPECT_RATIO <= ratio <= MAX_ASPECT_RATIO or box.area_px < MIN_BOX_AREA_PX:
                 rejections.append(
-                    RejectionDetail(
-                        label_raw=raw_label,
-                        reason="invalid_box_geometry",
-                        detail="box area or aspect ratio is outside policy",
-                    )
+                    RejectionDetail(label_raw=raw_label, reason="invalid_box_geometry", detail="box area or aspect ratio is outside policy")
                 )
                 continue
             candidates.append((box, score, label, raw_label, evidence))
@@ -307,19 +325,11 @@ class DetectionService:
         buildings = 0
         for box, score, label, raw_label, evidence in survivors:
             if len(detections) == 15:
-                rejections.append(
-                    RejectionDetail(
-                        label_raw=raw_label, reason="cap_reached", detail="maximum 15 objects"
-                    )
-                )
+                rejections.append(RejectionDetail(label_raw=raw_label, reason="cap_reached", detail="maximum 15 objects"))
                 continue
             if label == "building":
                 if buildings == 10:
-                    rejections.append(
-                        RejectionDetail(
-                            label_raw=raw_label, reason="cap_reached", detail="maximum 10 buildings"
-                        )
-                    )
+                    rejections.append(RejectionDetail(label_raw=raw_label, reason="cap_reached", detail="maximum 10 buildings"))
                     continue
                 buildings += 1
             detections.append(
@@ -352,21 +362,11 @@ class DetectionService:
         return bool(upload.gsd_m and upload.gsd_m > 0 and upload.capabilities.area_measurements)
 
     def _pixel_summary(self, coverage: CoverageSummary) -> dict[str, float]:
-        return {
-            item.label: item.pct
-            for item in coverage.by_class
-            if item.label != "unclassified" and item.pct > 0
-        }
+        return {item.label: item.pct for item in coverage.by_class if item.label != "unclassified" and item.pct > 0}
 
-    def _stats(
-        self, upload: Upload, coverage: CoverageSummary, objects: list[Detection]
-    ) -> dict[str, Any]:
-        area = (
-            upload.width_px * upload.height_px * upload.gsd_m**2 if self._has_gsd(upload) else None
-        )
-        values = {
-            item.label: item.pct for item in coverage.by_class if item.label != "unclassified"
-        }
+    def _stats(self, upload: Upload, coverage: CoverageSummary, objects: list[Detection]) -> dict[str, Any]:
+        area = upload.width_px * upload.height_px * upload.gsd_m**2 if self._has_gsd(upload) else None
+        values = {item.label: item.pct for item in coverage.by_class if item.label != "unclassified"}
         return {
             "total_objects": len(objects),
             "objects_by_class": dict(collections.Counter(x.label for x in objects)),

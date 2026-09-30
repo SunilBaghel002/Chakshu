@@ -115,3 +115,93 @@ export function computeContainerBBoxFromLayer(map: L.Map | null, layer: L.Path):
     maxY: Math.max(nw.y, se.y),
   };
 }
+
+export function getEvidenceDisplayTitle(ev: any): string {
+  if (!ev) return 'Selected Target';
+  const measuredBy = ev.measurement?.measured_by;
+  if (typeof measuredBy === 'string' && measuredBy.trim()) {
+    return measuredBy.replace(/^Semantic vectorisation,\s*UTM\s*43N:\s*/i, '').trim();
+  }
+  return (
+    ev.title ||
+    ev.class_name ||
+    ev.classification?.change_type ||
+    ev.change_type ||
+    'Selected Target'
+  );
+}
+
+function pointInRing(lng: number, lat: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i]?.[0] ?? 0;
+    const yi = ring[i]?.[1] ?? 0;
+    const xj = ring[j]?.[0] ?? 0;
+    const yj = ring[j]?.[1] ?? 0;
+    const intersect = yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi + 1e-12) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+export function findSmallestEvidenceAtLatLng<T extends { measurement?: any; temporal?: any }>(
+  lat: number,
+  lng: number,
+  evidenceList: T[],
+  afterDate?: string
+): T | null {
+  const matches: T[] = [];
+  for (const ev of evidenceList) {
+    const onset = ev.temporal?.first_supported;
+    if (onset && afterDate && onset > afterDate) continue;
+    const geom = ev.measurement?.geom_4326;
+    if (!geom || !Array.isArray(geom.coordinates)) continue;
+    const rings: number[][][] =
+      geom.type === 'Polygon'
+        ? [geom.coordinates[0]]
+        : geom.type === 'MultiPolygon'
+        ? geom.coordinates.map((p: number[][][]) => p[0])
+        : [];
+    if (rings.some((r) => Array.isArray(r) && pointInRing(lng, lat, r))) {
+      matches.push(ev);
+    }
+  }
+  if (!matches.length) return null;
+  matches.sort((a, b) => (a.measurement?.area_m2 || Infinity) - (b.measurement?.area_m2 || Infinity));
+  return matches[0] || null;
+}
+
+export function lonLatToTile(lon: number, lat: number, zoom: number): { x: number; y: number } {
+  const n = Math.pow(2, zoom);
+  const x = Math.floor(((lon + 180) / 360) * n);
+  const latRad = (lat * Math.PI) / 180;
+  const y = Math.floor(((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n);
+  return { x, y };
+}
+
+export function buildMiniMaskPoints(geom?: { type: string; coordinates: any }): string {
+  if (!geom || !geom.coordinates) return '30,50 130,42 135,108 25,115';
+  const ring: [number, number][] =
+    geom.type === 'Polygon' ? geom.coordinates[0] : geom.type === 'MultiPolygon' ? geom.coordinates[0][0] : [];
+  if (!ring || ring.length < 3) return '30,50 130,42 135,108 25,115';
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [lon, lat] of ring) {
+    if (lon < minX) minX = lon;
+    if (lon > maxX) maxX = lon;
+    if (lat < minY) minY = lat;
+    if (lat > maxY) maxY = lat;
+  }
+  const spanX = Math.max(maxX - minX, 1e-5);
+  const spanY = Math.max(maxY - minY, 1e-5);
+  const pad = 20;
+  const size = 160 - pad * 2;
+  return ring
+    .map(([lon, lat]) => {
+      const px = pad + ((lon - minX) / spanX) * size;
+      const py = pad + (1 - (lat - minY) / spanY) * size;
+      return `${px.toFixed(1)},${py.toFixed(1)}`;
+    })
+    .join(' ');
+}
+
+

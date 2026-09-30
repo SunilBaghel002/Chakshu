@@ -121,8 +121,9 @@ def annotate_image(
         label = str(det.get("label", "")).lower()
         is_water = label == "water"
         is_building = label in ("building", "built_structure")
+        is_road = label == "road"
 
-        if not is_water and not is_building and not overlay_lc:
+        if not is_water and not is_building and not is_road and not overlay_lc:
             continue
 
         pts = _extract_polygon_points(det, scale_x, scale_y, w, h)
@@ -140,8 +141,8 @@ def annotate_image(
             elif is_water:
                 # Evidence outline only when overlay_lc is False
                 overlay_draw.line(pts + [pts[0]], fill=WATER_OUTLINE_RGBA, width=2, joint="curve")
-            elif is_building:
-                # Building structure outline
+            elif is_building or is_road:
+                # Building or road structure outline
                 overlay_draw.line(pts + [pts[0]], fill=style["stroke"], width=2, joint="curve")
 
     # Composite alpha polygons

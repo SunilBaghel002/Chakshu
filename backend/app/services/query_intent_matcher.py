@@ -261,11 +261,24 @@ def match_semantic_intents(
             intent_id="change_type", score=0.96, matched_by="semantic_rules", slots=slots
         )
 
-    # 14. CHANGE TIMELINE ("When did change happen?", "Kab badla?", "Timeline of change")
+    # 14. CHANGE TIMELINE ("When did change happen?", "Kab badla?", "What changed between the selected dates?")
     if (
-        any(w in norm_q for w in ["when", "kab", "timeline", "date", "dates", "timing"])
-        and any(w in norm_q for w in ["change", "changed", "badla", "happened", "cleared"])
-    ) or any(phrase in norm_q for phrase in ["when did the change happen", "when did it change", "kab change hua"]):
+        (
+            any(w in norm_q for w in ["when", "kab", "timeline", "date", "dates", "timing"])
+            and any(w in norm_q for w in ["change", "changed", "changes", "badla", "happened", "cleared"])
+        )
+        or any(
+            phrase in norm_q
+            for phrase in [
+                "when did the change happen",
+                "when did it change",
+                "kab change hua",
+                "what changed between",
+                "what changes between",
+            ]
+        )
+        or (("what changed" in norm_q or "what changes" in norm_q) and "3 years" not in norm_q and "window_years" not in slots)
+    ):
         return IntentResolution(
             intent_id="change_timeline", score=0.95, matched_by="semantic_rules", slots=slots
         )

@@ -19,7 +19,7 @@ import { UploadProgressStrip } from '../upload/UploadProgressStrip';
 
 import { ReviewQueuePanel } from '../review/ReviewQueuePanel';
 
-import { AskBar } from '../ask/AskBar';
+import { getEvidenceDisplayTitle } from '../../lib/mapPolygonHelpers';
 import { AskAnswerPanel } from '../ask/AskAnswerPanel';
 import { AskHistoryStrip } from '../ask/AskHistoryStrip';
 
@@ -44,71 +44,31 @@ export const ConsoleApp: React.FC = () => {
   }, []);
 
   const {
-    aois,
-    selectedAoiId,
-    setSelectedAoiId,
-    scenes,
-    evidenceList,
-    selectedEvidence,
-    setSelectedEvidence,
-    detectionSet,
-    beforeDate,
-    afterDate,
-    showClouds,
-    handleToggleClouds,
-    showPolygons,
-    handleTogglePolygons,
-    activeView,
-    setActiveView,
-    isMock,
-    handleToggleMock,
-    sliderPos,
-    setSliderPos,
-    isSwipeActive,
-    setIsSwipeActive,
-    isAnalyzing,
-    handleSelectBeforeDate,
-    handleSelectAfterDate,
-    handleSwapDates,
-    handleDetectChanges,
-    handleConfirmEvidence,
-    handleRejectEvidence,
-    currentAoi,
-    aoiCoords,
-    aoiBounds,
-    availableDates,
-    totalAreaLabel,
-    presetTarget,
-    setPresetTarget,
-    handleShortcutAction,
+    aois, selectedAoiId, setSelectedAoiId, scenes, evidenceList, selectedEvidence,
+    setSelectedEvidence, detectionSet, beforeDate, afterDate, showClouds, handleToggleClouds,
+    showPolygons, handleTogglePolygons, activeView, setActiveView, isMock, handleToggleMock,
+    sliderPos, setSliderPos, isSwipeActive, setIsSwipeActive, isAnalyzing,
+    handleSelectBeforeDate, handleSelectAfterDate, handleSwapDates, handleDetectChanges,
+    handleConfirmEvidence, handleRejectEvidence, currentAoi, aoiCoords, aoiBounds,
+    availableDates, totalAreaLabel, presetTarget, setPresetTarget, handleShortcutAction,
   } = state;
 
   const hasActiveDossier = Boolean(
-    activeView === 'upload' ||
-      activeView === 'ask' ||
-      activeView === 'search' ||
-      activeView === 'review' ||
-      activeView === 'audit' ||
-      selectedEvidence
+    activeView === 'upload' || activeView === 'ask' || activeView === 'search' ||
+    activeView === 'review' || activeView === 'audit' || selectedEvidence
   );
 
   const [askAnnotationState, setAskAnnotationState] = React.useState<MapAnnotationState | null>(null);
 
   // Handle dynamic map annotation actions (SIH26167 §8, §9)
   const handleAnnotationActions = React.useCallback(
-    (
-      ids: string[],
-      actions: any[],
-      labels: Record<string, string>,
-      target?: string,
-      bbox?: number[]
-    ) => {
+    (ids: string[], actions: any[], labels: Record<string, string>, target?: string, bbox?: number[]) => {
       const isClear = actions.some((a) => a.action === 'clear_annotations');
       if (isClear || !ids.length) {
         setAskAnnotationState(null);
         return;
       }
-
+      if (isSwipeActive && sliderPos > 20) setSliderPos(15);
       setAskAnnotationState({
         evidenceIds: ids,
         mapActions: actions,
@@ -116,37 +76,34 @@ export const ConsoleApp: React.FC = () => {
         target,
         focusBbox: bbox as [number, number, number, number] | undefined,
       });
-
       if (ids.length === 1) {
         const found = evidenceList.find((e) => e.change_object_id === ids[0]);
         if (found) setSelectedEvidence(found);
       }
     },
-    [evidenceList, setSelectedEvidence]
+    [evidenceList, setSelectedEvidence, isSwipeActive, sliderPos, setSliderPos]
   );
 
   // Synchronize ASK evidence highlighting with map focus & selection
   const handleHighlightEvidence = React.useCallback(
     (ids: string[], bbox?: number[]) => {
+      if (isSwipeActive && sliderPos > 20) setSliderPos(15);
       if (ids && ids.length > 0) {
+        setAskAnnotationState({
+          evidenceIds: ids,
+          mapActions: [{ action: 'highlight_and_zoom', evidence_ids: ids }],
+          annotationLabels: {},
+          focusBbox: bbox as [number, number, number, number] | undefined,
+        });
         const found = evidenceList.find((e) => ids.includes(e.change_object_id));
-        if (found) {
-          setSelectedEvidence(found);
-        }
+        if (found && ids.length === 1) setSelectedEvidence(found);
       }
       if (bbox && bbox.length === 4) {
         const [minX, minY, maxX, maxY] = bbox as [number, number, number, number];
-        setPresetTarget({
-          center: [(minY + maxY) / 2, (minX + maxX) / 2],
-          bounds: [
-            [minY, minX],
-            [maxY, maxX],
-          ],
-          zoom: 16,
-        });
+        setPresetTarget({ center: [(minY + maxY) / 2, (minX + maxX) / 2], bounds: [[minY, minX], [maxY, maxX]], zoom: 16 });
       }
     },
-    [evidenceList, setSelectedEvidence, setPresetTarget]
+    [evidenceList, setSelectedEvidence, setPresetTarget, isSwipeActive, sliderPos, setSliderPos]
   );
 
   const handleAskWithContext = React.useCallback(
@@ -161,11 +118,7 @@ export const ConsoleApp: React.FC = () => {
         selected_target: selectedEvidence
           ? {
               id: selectedEvidence.change_object_id,
-              title:
-                (selectedEvidence as any).title ||
-                selectedEvidence.classification?.change_type ||
-                selectedEvidence.change_type ||
-                'Selected Target',
+              title: getEvidenceDisplayTitle(selectedEvidence),
               type:
                 selectedEvidence.classification?.change_type ||
                 selectedEvidence.change_type ||
@@ -219,14 +172,18 @@ export const ConsoleApp: React.FC = () => {
       temporalBarNode={
         activeView === 'upload' ? (
           <UploadBar
+            source={screens.uploadSource}
+            onSourceChange={screens.setUploadSource}
+            sensor={screens.uploadSensor}
+            onSensorChange={screens.handleSensorChange}
+            resolutionGsd={screens.uploadManifest?.resolutionMPerPx ?? 0.5}
+            viewMode={screens.uploadViewMode}
+            onViewModeChange={screens.setUploadViewMode}
+            hasImage={Boolean(screens.uploadPreviewUrl)}
+            onLoadSample={() => void screens.handleLoadSampleScene(false)}
             onAnalyse={screens.handleUploadAnalyse}
             isAnalysing={screens.isUploading}
-            canAnalyse={Boolean(screens.uploadManifest)}
-          />
-        ) : activeView === 'ask' ? (
-          <AskBar
-            onAsk={handleAskWithContext}
-            isThinking={screens.isThinking}
+            canAnalyse={true}
           />
         ) : activeView === 'search' ? (
           <SearchBar
@@ -264,7 +221,16 @@ export const ConsoleApp: React.FC = () => {
         activeView === 'upload' ? (
           <UploadDropzone
             onFileSelected={screens.handleFileSelected}
+            onLoadSample={() => void screens.handleLoadSampleScene(false)}
             previewUrl={screens.uploadPreviewUrl}
+            annotatedUrl={screens.uploadAnnotatedUrl}
+            detectionSet={screens.uploadDetectionSet}
+            selectedDetectionId={screens.selectedUploadDetectionId}
+            onSelectDetection={screens.setSelectedUploadDetectionId}
+            viewMode={screens.uploadViewMode}
+            layerFilter={screens.uploadLayerFilter}
+            onLayerFilterChange={screens.setUploadLayerFilter}
+            isAnalysing={screens.isUploading}
             onClear={() => screens.handleFileSelected(new File([], ''))}
           />
         ) : (
@@ -277,7 +243,7 @@ export const ConsoleApp: React.FC = () => {
             selectedEvidenceId={selectedEvidence?.change_object_id ?? null}
             onSelectEvidence={(ev) => {
               setSelectedEvidence(ev);
-              if (activeView !== 'map') {
+              if (activeView !== 'map' && activeView !== 'ask') {
                 setActiveView('map');
               }
             }}
@@ -299,6 +265,10 @@ export const ConsoleApp: React.FC = () => {
             presetTarget={presetTarget}
             onPresetConsumed={() => setPresetTarget(null)}
             askAnnotationState={askAnnotationState}
+            chatMessages={screens.chatMessages}
+            askAnswer={screens.askAnswer}
+            onAskQuery={handleAskWithContext}
+            onHighlightEvidence={handleHighlightEvidence}
           />
         )
       }
@@ -329,6 +299,11 @@ export const ConsoleApp: React.FC = () => {
         activeView === 'upload' ? (
           <UploadManifestPanel
             manifest={screens.uploadManifest}
+            detectionSet={screens.uploadDetectionSet}
+            selectedDetectionId={screens.selectedUploadDetectionId}
+            onSelectDetection={screens.setSelectedUploadDetectionId}
+            layerFilter={screens.uploadLayerFilter}
+            onLayerFilterChange={screens.setUploadLayerFilter}
             isLoading={screens.isUploading}
           />
         ) : activeView === 'ask' ? (
@@ -342,6 +317,8 @@ export const ConsoleApp: React.FC = () => {
             onHighlightEvidence={handleHighlightEvidence}
             selectedEvidenceId={selectedEvidence?.change_object_id ?? null}
             selectedEvidence={selectedEvidence}
+            evidenceList={evidenceList}
+            onSelectEvidence={setSelectedEvidence}
             currentAoiName={currentAoi?.name}
             currentDates={{ beforeDate, afterDate }}
           />

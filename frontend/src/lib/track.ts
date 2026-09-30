@@ -77,8 +77,7 @@ function isTelemetryEnabled(): boolean {
   return (
     import.meta.env.NEXT_PUBLIC_TELEMETRY === 'on' ||
     import.meta.env.VITE_TELEMETRY === 'on' ||
-    import.meta.env.VITE_TELEMETRY === '1' ||
-    Boolean(import.meta.env.DEV)
+    import.meta.env.VITE_TELEMETRY === '1'
   );
 }
 
@@ -132,7 +131,9 @@ export function flushQueue(): void {
   try {
     const jsonStr = JSON.stringify(payload);
     const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = '/api/v1/events';
+    const rawBase = (import.meta.env?.VITE_API_BASE || import.meta.env?.VITE_API_URL || import.meta.env?.VITE_BACKEND_URL || '').trim().replace(/\/+$/, '');
+    const apiBase = !rawBase ? '/api/v1' : rawBase.endsWith('/api/v1') ? rawBase : `${rawBase}/api/v1`;
+    const url = `${apiBase}/events`;
 
     let beaconSent = false;
     if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {

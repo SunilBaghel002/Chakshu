@@ -5,11 +5,8 @@ import { LANDING_COPY } from '../../lib/landingCopy';
 import { ChakshuLogo } from '../ui/ChakshuLogo';
 
 /**
- * W2.0 · Sticky Nav (64px)
- * Specs: PRD 13 §2 W2.0
- * - 64px height, --bg at 88% + 12px backdrop blur, 1px --line bottom
- * - Below 900px nav links collapse into MENU ghost button
- * - OPEN CONSOLE is the page's only primary while nav is visible
+ * W2.0 · Sticky Console Command Nav (64px)
+ * Styled to match the Chakshu Console AppHeader (SLOT-01 Command Bar)
  */
 export const LandingNav: React.FC = () => {
   const navigate = useNavigate();
@@ -40,53 +37,129 @@ export const LandingNav: React.FC = () => {
       className="sticky top-0 w-full border-b border-[var(--line)] flex flex-col select-none"
       style={{
         zIndex: 'var(--z-sticky)',
-        background: scrolled ? 'rgba(8,12,22,0.92)' : 'rgba(8,12,22,0.88)',
+        background: scrolled
+          ? 'rgba(8, 12, 22, 0.96)'
+          : 'linear-gradient(180deg, var(--panel) 0%, rgba(14, 22, 38, 0.95) 100%)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)',
       }}
     >
       <div className="h-16 px-6 flex items-center justify-between landing-container">
-        {/* Left: Brand Lockup */}
+        {/* Left: Console Brand Lockup */}
         <div className="flex items-center gap-3 shrink-0">
-          <ChakshuLogo size={36} />
-          <span className="text-2xl font-bold tracking-wider text-[var(--signal)] font-sans">
-            {LANDING_COPY.appNameDevanagari}
-          </span>
-          <span className="text-xs uppercase tracking-widest text-[var(--ink)] font-mono font-semibold">
-            {LANDING_COPY.appName}
-          </span>
+          <div className="relative flex items-center justify-center">
+            <div
+              className="absolute inset-0 rounded-full blur-sm opacity-35"
+              style={{ background: 'var(--primary-cyan)' }}
+            />
+            <ChakshuLogo size={34} />
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span
+                className="font-bold tracking-wider"
+                style={{
+                  color: 'var(--ink)',
+                  fontSize: 15,
+                  fontFamily: 'var(--font-cond)',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                {LANDING_COPY.appName}
+              </span>
+              <span
+                className="font-bold"
+                style={{ color: 'var(--primary-cyan)', fontSize: 12 }}
+              >
+                {`(${LANDING_COPY.appNameDevanagari})`}
+              </span>
+            </div>
+            <span
+              className="t-tag"
+              style={{
+                color: 'var(--primary-cyan)',
+                fontSize: 8.5,
+                letterSpacing: '0.12em',
+              }}
+            >
+              {'SATELLITE INTELLIGENCE CONSOLE'}
+            </span>
+          </div>
         </div>
 
-        {/* Center: Nav Links (hidden below 900px) */}
-        <nav className="landing-nav-desktop items-center gap-6 text-xs font-mono tracking-wider text-[var(--ink-2)]">
+        {/* Center: Console Slot Navigation Pills */}
+        <nav className="landing-nav-desktop items-center gap-2 text-xs font-mono tracking-wider">
           {navLinks.map((link) => (
             <button
               key={link.label}
               type="button"
               onClick={() => scrollTo(link.href)}
-              className="hover:text-[var(--signal)] transition-colors cursor-pointer bg-transparent border-none"
+              className="px-3 py-1.5 rounded transition-all cursor-pointer"
+              style={{
+                background: 'var(--panel-2)',
+                color: 'var(--ink-2)',
+                border: '1px solid var(--line)',
+                fontSize: 10.5,
+                letterSpacing: '0.08em',
+              }}
             >
               {link.label}
             </button>
           ))}
         </nav>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-3">
-          {/* MENU ghost button (below 900px) */}
+        {/* Right: Telemetry Chips & Console Launch */}
+        <div className="flex items-center gap-2.5">
+          <div className="hidden xl:flex items-center gap-1.5">
+            <span
+              className="t-tag px-2 py-1 rounded flex items-center gap-1"
+              style={{
+                background: 'rgba(16, 185, 129, 0.12)',
+                color: 'var(--verified-green)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                fontSize: 8.5,
+                fontWeight: 700,
+              }}
+            >
+              {'✓ 96% USABLE'}
+            </span>
+            <span
+              className="t-tag px-2 py-1 rounded flex items-center gap-1.5"
+              style={{
+                background: 'var(--cyan-wash)',
+                color: 'var(--primary-cyan)',
+                border: '1px solid rgba(63, 169, 245, 0.3)',
+                fontSize: 8.5,
+                fontWeight: 700,
+              }}
+            >
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background: 'var(--primary-cyan)',
+                  display: 'inline-block',
+                }}
+              />
+              {'UTM 43N · ON-PREM'}
+            </span>
+          </div>
+
           <button
             type="button"
             onClick={() => setMenuOpen(!menuOpen)}
-            className="landing-nav-mobile-btn text-xs font-mono font-semibold tracking-wider text-[var(--ink-2)] hover:text-[var(--signal)] transition-colors px-3 py-2 border border-[var(--line)] rounded-[var(--r-ctl)] cursor-pointer bg-transparent"
+            className="landing-nav-mobile-btn text-xs font-mono font-semibold tracking-wider text-[var(--ink-2)] hover:text-[var(--primary-cyan)] transition-colors px-3 py-2 border border-[var(--line)] rounded-[var(--r-ctl)] cursor-pointer bg-transparent"
           >
-            MENU
+            {'MENU'}
           </button>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/console')}
-            className="text-xs text-[var(--ink-3)] hidden sm:inline-flex"
+            className="text-xs text-[var(--ink-2)] hidden sm:inline-flex"
           >
             {LANDING_COPY.navSignIn}
           </Button>
@@ -109,7 +182,7 @@ export const LandingNav: React.FC = () => {
               key={link.label}
               type="button"
               onClick={() => scrollTo(link.href)}
-              className="text-left text-sm font-mono tracking-wider text-[var(--ink-2)] hover:text-[var(--signal)] transition-colors py-2 border-b border-[var(--line)] last:border-b-0 cursor-pointer bg-transparent"
+              className="text-left text-sm font-mono tracking-wider text-[var(--ink-2)] hover:text-[var(--primary-cyan)] transition-colors py-2 border-b border-[var(--line)] last:border-b-0 cursor-pointer bg-transparent"
             >
               {link.label}
             </button>

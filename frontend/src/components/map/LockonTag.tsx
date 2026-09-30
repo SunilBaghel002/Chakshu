@@ -194,7 +194,7 @@ export const LockonTag: React.FC<LockonTagProps> = React.memo(({
 
       {/* Skewed Dossier Tag Panel */}
       <div
-        className="absolute pointer-events-auto corner-ticks cursor-pointer"
+        className="absolute pointer-events-none corner-ticks"
         style={{
           left: tagLeft,
           top: tagTop,

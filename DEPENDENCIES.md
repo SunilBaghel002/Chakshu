@@ -16,6 +16,7 @@ All dependencies must use permissive licenses (MIT, BSD, Apache-2.0). **Copyleft
 | `tailwind-merge` | 3.0.2 | MIT | https://github.com/dcastil/tailwind-merge | Conflict-free utility class merging |
 | `lucide-react` | 1.16.0 | ISC | https://github.com/lucide-icons/lucide | Permissive iconography |
 | `zod` | 3.24.2 | MIT | https://github.com/colinhacks/zod | Runtime schema validation & API contract parsing |
+| `axios` | ^1.8.0 | MIT | https://github.com/axios/axios | Cross-origin HTTP client for cloud backend connectivity |
 | `leaflet` | 1.9.4 | BSD-2-Clause | https://github.com/Leaflet/Leaflet | Interactive raster map pane (Phase 1–6 legacy, to be replaced by MapLibre GL in 8.20) |
 
 ### Frontend Dev Dependencies

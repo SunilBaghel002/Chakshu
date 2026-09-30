@@ -43,7 +43,6 @@ const DecideIcon = () => (
   </svg>
 );
 
-/* ── Feature card icons ── */
 const SearchIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="11" cy="11" r="8" />
@@ -171,7 +170,7 @@ const CARDS: FeatureCard[] = [
 
 /**
  * W2.3 · How It Works (5 steps) & W2.4 · Feature Cards (6 cards)
- * Specs: PRD 13 §2 W2.3, W2.4
+ * Styled as Console Dossier Panels with electric cyan accents
  */
 export const LandingFeatures: React.FC = () => {
   const navigate = useNavigate();
@@ -179,36 +178,56 @@ export const LandingFeatures: React.FC = () => {
   return (
     <div className="w-full bg-[var(--bg)] flex flex-col">
       {/* W2.3 · How It Works */}
-      <section id="how-it-works" className="px-6 py-16 md:py-24 border-b border-[var(--line)] landing-container">
-        <div className="mb-12">
-          <span
-            className="font-mono text-[var(--signal)] block mb-2"
-            style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
-          >
-            {LANDING_COPY.methodologyLabel}
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold font-cond tracking-tight text-[var(--ink)]">
-            {LANDING_COPY.howTitle}
-          </h2>
+      <section id="how-it-works" className="px-6 py-16 md:py-20 border-b border-[var(--line)] landing-container">
+        <div className="mb-10 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <span
+              className="font-mono block mb-2"
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--primary-cyan)',
+              }}
+            >
+              {LANDING_COPY.methodologyLabel}
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold font-cond tracking-tight text-[var(--ink)]">
+              {LANDING_COPY.howTitle}
+            </h2>
+          </div>
+          <div className="dossier-bar" style={{ margin: 0 }}>
+            <span>{'5-STAGE DETERMINISTIC PIPELINE'}</span>
+          </div>
         </div>
 
-        {/* Horizontal above 1024px, vertical below */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {STEPS.map((step, i) => {
             const StepIcon = STEP_ICONS[i] as React.FC;
             return (
               <div
                 key={step.num}
-                className="p-5 bg-[var(--panel)] border border-[var(--line)] rounded-[var(--r-panel)] flex flex-col gap-3 relative group"
+                className="p-5 bg-[var(--panel)] border border-[var(--line)] rounded flex flex-col gap-3 relative group transition-colors hover:border-[var(--primary-cyan)]"
               >
                 <div className="flex items-start justify-between">
                   <span
                     className="font-extrabold font-mono"
-                    style={{ fontSize: 32, color: 'rgba(255,148,38,0.25)', lineHeight: 1 }}
+                    style={{
+                      fontSize: 28,
+                      color: 'rgba(63, 169, 245, 0.35)',
+                      lineHeight: 1,
+                    }}
                   >
                     {step.num}
                   </span>
-                  <span className="text-[var(--signal)]">
+                  <span
+                    className="p-2 rounded"
+                    style={{
+                      background: 'var(--cyan-wash)',
+                      color: 'var(--primary-cyan)',
+                      border: '1px solid rgba(63, 169, 245, 0.3)',
+                    }}
+                  >
                     {StepIcon && <StepIcon />}
                   </span>
                 </div>
@@ -223,57 +242,80 @@ export const LandingFeatures: React.FC = () => {
           })}
         </div>
 
-        {/* Pipeline diagram caption */}
-        <div className="mt-8 p-4 border border-[var(--line)] rounded-[var(--r-panel)] bg-[var(--panel)]">
+        {/* Pipeline flow bar */}
+        <div className="mt-8 p-4 border border-[var(--line)] rounded bg-[var(--panel)]">
           <div
             className="font-mono text-[var(--ink-3)] text-center"
             style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
           >
-            ARCHITECTURE · FULL VERSION IN THE SUBMISSION
+            {'ARCHITECTURE · FULL VERSION IN THE SUBMISSION'}
           </div>
-          <div className="mt-3 flex items-center justify-center gap-2 text-xs font-mono text-[var(--ink-2)]">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs font-mono text-[var(--ink-2)]">
             {STEPS.map((step, i) => (
               <React.Fragment key={step.num}>
-                <span className="px-2 py-1 bg-[var(--panel-2)] border border-[var(--line)] rounded text-[var(--signal)] font-bold">
+                <span
+                  className="px-2.5 py-1 rounded font-bold"
+                  style={{
+                    background: 'var(--panel-2)',
+                    border: '1px solid rgba(63, 169, 245, 0.35)',
+                    color: 'var(--primary-cyan)',
+                  }}
+                >
                   {step.title}
                 </span>
-                {i < STEPS.length - 1 && <span className="text-[var(--ink-3)]">→</span>}
+                {i < STEPS.length - 1 && (
+                  <span style={{ color: 'var(--ink-3)' }}>{'→'}</span>
+                )}
               </React.Fragment>
             ))}
           </div>
         </div>
       </section>
 
-      {/* W2.4 · Features — 6 cards */}
-      <section id="features" className="px-6 py-16 md:py-24 border-b border-[var(--line)] landing-container">
-        <div className="mb-12">
-          <span
-            className="font-mono text-[var(--signal)] block mb-2"
-            style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
-          >
-            {LANDING_COPY.capabilitiesLabel}
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold font-cond tracking-tight text-[var(--ink)]">
-            {LANDING_COPY.capabilitiesTitle}
-          </h2>
+      {/* W2.4 · Features — 6 Console Capability Cards */}
+      <section id="features" className="px-6 py-16 md:py-20 border-b border-[var(--line)] landing-container">
+        <div className="mb-10 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <span
+              className="font-mono block mb-2"
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--primary-cyan)',
+              }}
+            >
+              {LANDING_COPY.capabilitiesLabel}
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold font-cond tracking-tight text-[var(--ink)]">
+              {LANDING_COPY.capabilitiesTitle}
+            </h2>
+          </div>
+          <div className="dossier-bar" style={{ margin: 0 }}>
+            <span>{'6 CONSOLE WORKSPACES'}</span>
+          </div>
         </div>
 
-        {/* 3×2 above 1024, 2×3 at 768, 1 column below */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {CARDS.map((card) => (
             <div
               key={card.title}
-              className="group p-5 bg-[var(--panel)] border border-[var(--line)] rounded-[var(--r-panel)] flex flex-col justify-between gap-4 transition-all duration-150 hover:border-[var(--signal)]/60 hover:-translate-y-0.5 relative"
-              style={{ padding: 20 }}
+              className="group p-5 bg-[var(--panel)] border border-[var(--line)] rounded flex flex-col justify-between gap-4 transition-all duration-150 hover:border-[var(--primary-cyan)] hover:-translate-y-0.5 relative"
             >
-              {/* Corner ticks on hover only */}
-              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[var(--signal)] opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[var(--signal)] opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[var(--signal)] opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-[var(--signal)] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[var(--primary-cyan)] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[var(--primary-cyan)] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[var(--primary-cyan)] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-[var(--primary-cyan)] opacity-0 group-hover:opacity-100 transition-opacity" />
 
               <div>
-                <div className="text-[var(--signal)] mb-3">
+                <div
+                  className="inline-flex p-2.5 rounded mb-3"
+                  style={{
+                    background: 'var(--cyan-wash)',
+                    color: 'var(--primary-cyan)',
+                    border: '1px solid rgba(63, 169, 245, 0.3)',
+                  }}
+                >
                   <card.Icon />
                 </div>
                 <h3
@@ -293,11 +335,16 @@ export const LandingFeatures: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate(card.link)}
-                className="font-mono font-semibold tracking-wider text-[var(--signal)] hover:text-[var(--signal-hot)] flex items-center gap-1.5 pt-3 border-t border-[var(--line)] cursor-pointer bg-transparent border-b-0 border-l-0 border-r-0"
-                style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
+                className="font-mono font-semibold tracking-wider flex items-center gap-1.5 pt-3 border-t border-[var(--line)] cursor-pointer bg-transparent border-b-0 border-l-0 border-r-0"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--primary-cyan)',
+                }}
               >
                 <span>{LANDING_COPY.seeIt}</span>
-                <span>→</span>
+                <span>{'→'}</span>
               </button>
             </div>
           ))}

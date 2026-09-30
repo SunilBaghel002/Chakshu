@@ -56,74 +56,60 @@ export function useLeafletMapInit({
 
     const beforePane = map.createPane('beforePane');
     beforePane.style.zIndex = '200';
-    beforePane.style.transform = 'translate3d(0,0,0)';
-    const isCloudFiltered = extractYear(beforeDate) === 2021 && !showClouds;
-    beforePane.style.filter = isCloudFiltered
-      ? 'contrast(1.18) saturate(1.15) brightness(1.02)'
-      : 'saturate(1.08) contrast(1.04) brightness(1.02)';
     const beforeCfg = getSatelliteTileConfig(beforeDate, imageryMode, false, showClouds);
     const beforeSatellite = L.tileLayer(beforeCfg.url, {
       maxZoom: beforeCfg.maxZoom,
       maxNativeZoom: beforeCfg.maxNativeZoom,
       pane: 'beforePane',
       opacity: 1,
+      updateWhenIdle: true,
+      keepBuffer: 2,
     });
     beforeSatellite.addTo(map);
     beforeTileLayerRef.current = beforeSatellite;
 
     const afterPane = map.createPane('afterPane');
     afterPane.style.zIndex = '450';
-    afterPane.style.transform = 'translate3d(0,0,0)';
     afterPane.style.willChange = 'clip-path';
-    afterPane.style.filter = dehazeActive
-      ? 'contrast(1.22) saturate(1.28) brightness(0.96)'
-      : 'saturate(1.08) contrast(1.06) brightness(1.02)';
     const afterCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
     const afterSatellite = L.tileLayer(afterCfg.url, {
       maxZoom: afterCfg.maxZoom,
       maxNativeZoom: afterCfg.maxNativeZoom,
       pane: 'afterPane',
       opacity: 1,
+      updateWhenIdle: true,
+      keepBuffer: 2,
     });
     afterSatellite.addTo(map);
     afterTileLayerRef.current = afterSatellite;
 
     const polygonsPane = map.createPane('polygonsPane');
     polygonsPane.style.zIndex = '500';
-    polygonsPane.style.transform = 'translate3d(0,0,0)';
     polygonsPane.style.willChange = 'clip-path';
     polygonsPane.style.pointerEvents = 'none';
 
+    const askAnnotationsPane = map.createPane('askAnnotationsPane');
+    askAnnotationsPane.style.zIndex = '520';
+    askAnnotationsPane.style.willChange = 'clip-path';
+    askAnnotationsPane.style.pointerEvents = 'auto';
+
     L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
-      { maxZoom: 18, opacity: 0.5 }
+      { maxZoom: 18, opacity: 0.5, updateWhenIdle: true }
     ).addTo(map);
 
-    let moveRaf: number | null = null;
-    let lastLat: number | null = null;
-    let lastLng: number | null = null;
-
+    let lastMoveTs = 0;
     const onLeafletMouseMove = (e: L.LeafletMouseEvent) => {
-      lastLat = e.latlng.lat;
-      lastLng = e.latlng.lng;
-      if (moveRaf === null) {
-        moveRaf = requestAnimationFrame(() => {
-          moveRaf = null;
-          if (lastLat !== null && lastLng !== null) {
-            const rLat = Number(lastLat.toFixed(4));
-            const rLng = Number(lastLng.toFixed(4));
-            setCursorLat((prev) => (prev === rLat ? prev : rLat));
-            setCursorLng((prev) => (prev === rLng ? prev : rLng));
-          }
-        });
-      }
+      const now = performance.now();
+      if (now - lastMoveTs < 120) return;
+      lastMoveTs = now;
+      const rLat = Number(e.latlng.lat.toFixed(4));
+      const rLng = Number(e.latlng.lng.toFixed(4));
+      setCursorLat((prev) => (prev === rLat ? prev : rLat));
+      setCursorLng((prev) => (prev === rLng ? prev : rLng));
     };
 
     const onLeafletMouseOut = () => {
-      if (moveRaf !== null) {
-        cancelAnimationFrame(moveRaf);
-        moveRaf = null;
-      }
       setCursorLat(null);
       setCursorLng(null);
     };
@@ -145,7 +131,6 @@ export function useLeafletMapInit({
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (moveRaf !== null) cancelAnimationFrame(moveRaf);
       map.remove();
       mapInstanceRef.current = null;
       setMapInstance(null);
@@ -157,13 +142,6 @@ export function useLeafletMapInit({
     if (!mapInstanceRef.current) return;
     const bCfg = getSatelliteTileConfig(beforeDate, imageryMode, false, showClouds);
     if (beforeTileLayerRef.current) beforeTileLayerRef.current.setUrl(bCfg.url);
-    const beforePane = mapInstanceRef.current.getPane('beforePane');
-    if (beforePane) {
-      const isCloudFiltered = extractYear(beforeDate) === 2021 && !showClouds;
-      beforePane.style.filter = isCloudFiltered
-        ? 'contrast(1.18) saturate(1.15) brightness(1.02)'
-        : 'saturate(1.08) contrast(1.04) brightness(1.02)';
-    }
     const aCfg = getSatelliteTileConfig(afterDate, imageryMode, true);
     if (afterTileLayerRef.current) afterTileLayerRef.current.setUrl(aCfg.url);
   }, [beforeDate, afterDate, imageryMode, showClouds]);

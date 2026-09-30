@@ -54,6 +54,7 @@ TARGET_SYNONYMS: dict[str, list[str]] = {
         "where did the change happen", "yaha ka changed area", "changed jagah",
     ],
     "construction": [
+        "newly constructed areas", "newly constructed area", "newly constructed",
         "construction", "earthworks", "construction zone", "construction area",
         "nirman", "grading",
     ],
@@ -77,7 +78,7 @@ OPERATION_SYNONYMS: dict[str, list[str]] = {
     ],
     "highlight": [
         "highlight", "highlight karo", "mark", "mark karo", "show", "dikhao",
-        "outline", "fill", "locate", "display", "point out",
+        "outline", "fill", "locate", "display", "point out", "identify",
     ],
     "label": [
         "with notation", "notation ke saath", "notation ke sath", "notation",
@@ -113,13 +114,13 @@ def is_annotation_request(norm_q: str) -> bool:
             "how much water area", "what area",
         ]
     ) and not any(
-        op in norm_q for op in ["highlight", "mark", "show", "dikhao", "notation", "label"]
+        op in norm_q for op in ["highlight", "mark", "show", "dikhao", "notation", "label", "identify"]
     )
     if is_pure_measurement:
         return False
 
     annotation_triggers = [
-        "highlight", "mark", "show", "dikhao", "notation", "label",
+        "highlight", "mark", "show", "dikhao", "notation", "label", "identify",
         "outline", "fill", "clear", "zoom", "compare", "karo", "kar",
         "with notation", "with area", "only the largest", "sabse bada",
         "where are", "where is", "locate", "kahan hain", "kidhar hain",
@@ -225,7 +226,7 @@ def extract_label_mode(norm_q: str, ops: list[str]) -> str:
     """Determine notation label mode."""
     if any(w in norm_q for w in ["with area", "area ke saath", "area ke sath", "show their area"]):
         return "with_area"
-    if "label" in ops or any(w in norm_q for w in OPERATION_SYNONYMS["label"]):
+    if "label" in ops or "identify" in norm_q or any(w in norm_q for w in OPERATION_SYNONYMS["label"]):
         return "requested"
     return "none"
 

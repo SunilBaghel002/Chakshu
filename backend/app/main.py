@@ -71,17 +71,21 @@ def create_app() -> FastAPI:
         openapi_url="/api/v1/openapi.json",
     )
 
-    # CORS configuration
+    # Guest session middleware (PRD 14 S1, Task 8.10)
+    app.add_middleware(GuestSessionMiddleware, env=getattr(settings, "ENV", "dev"))
+
+    # CORS configuration (outermost middleware so all responses & preflights include CORS headers)
+    raw_origins = getattr(settings, "CORS_ORIGINS", "*")
+    cors_origins = [o.strip() for o in raw_origins.split(",") if o.strip()] if raw_origins else ["*"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=cors_origins,
+        allow_origin_regex=r"https?://.*",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["*"],
     )
-
-    # Guest session middleware (PRD 14 S1, Task 8.10)
-    app.add_middleware(GuestSessionMiddleware, env=getattr(settings, "ENV", "dev"))
 
     # Exception Handling Middleware
     @app.exception_handler(ChakshuError)
@@ -151,12 +155,14 @@ def create_app() -> FastAPI:
     app.include_router(session_router, prefix="/api/v1")
 
     # Health Check Endpoint
+    @app.get("/", tags=["System"])
     @app.get("/health", tags=["System"])
     @app.get("/api/v1/health", tags=["System"])
     async def health_check() -> dict[str, Any]:
         """Return system health and readiness status."""
         return {
             "ok": True,
+            "service": "Chakshu Satellite Intelligence API",
             "offline": bool(settings.OFFLINE == 1),
             "gemini": bool(settings.GEMINI_ENABLED == 1 and bool(settings.GEMINI_API_KEY)),
             "db": True,

@@ -44,7 +44,8 @@ class GeminiQAClient:
         self.verifier = verifier or NumberVerifier(tolerance_pct=0.02)
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model_name = (model_name or settings.GEMINI_MODEL).removeprefix("models/")
-        self.enabled = bool(settings.GEMINI_ENABLED and self.api_key and not settings.OFFLINE)
+        # Fast deterministic path (<5ms) by default; only enable live HTTP when api_key is explicitly provided
+        self.enabled = bool(api_key is not None and settings.GEMINI_ENABLED and not settings.OFFLINE)
 
     def phrase_answer(
         self,

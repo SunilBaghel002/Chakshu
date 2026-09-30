@@ -136,7 +136,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
       </div>
 
       {/* SLOT-20: DossierHeader */}
-      <Slot id="SLOT-20" className="shrink-0">
+      <Slot id="SLOT-20" w="100%" className="shrink-0">
         <DossierHeader
           evidence={evidence}
           decision={decision}

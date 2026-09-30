@@ -85,7 +85,7 @@ export const LandingScreen: React.FC = () => {
 
   return (
     <PrimaryOwnerProvider>
-      <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)] flex flex-col font-sans selection:bg-[var(--signal)] selection:text-[var(--bg)]">
+      <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)] flex flex-col font-sans selection:bg-[var(--primary-cyan)] selection:text-[var(--ink)]">
         <LandingNav />
 
         <main className="flex-1 flex flex-col">
@@ -115,8 +115,15 @@ export const LandingScreen: React.FC = () => {
         </div>
 
         {/* Small screen notice for console */}
-        <div className="lg:hidden fixed bottom-4 left-4 right-4 p-3 bg-[var(--signal-wash)] border border-[var(--signal)] rounded-[var(--r-panel)] text-center font-mono text-xs text-[var(--signal)] font-bold z-[var(--z-toast)]">
-          THE CONSOLE NEEDS A DESKTOP · YOU ARE ON THE OVERVIEW
+        <div
+          className="lg:hidden fixed bottom-4 left-4 right-4 p-3 rounded text-center font-mono text-xs font-bold z-[var(--z-toast)]"
+          style={{
+            background: 'var(--cyan-wash)',
+            border: '1px solid var(--primary-cyan)',
+            color: 'var(--primary-cyan)',
+          }}
+        >
+          {'THE CONSOLE NEEDS A DESKTOP · YOU ARE ON THE OVERVIEW'}
         </div>
       </div>
     </PrimaryOwnerProvider>

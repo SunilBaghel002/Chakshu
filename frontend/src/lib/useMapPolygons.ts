@@ -7,6 +7,7 @@ import {
   getPolyStyle,
   buildPolygonTooltipHtml,
   computeContainerBBoxFromLayer,
+  findSmallestEvidenceAtLatLng,
 } from './mapPolygonHelpers';
 
 interface UseMapPolygonsProps {
@@ -40,39 +41,48 @@ export function useMapPolygons({
   const subpixelMarkersRef = useRef<L.LayerGroup | null>(null);
   const subpixelMarkersListRef = useRef<Array<{ marker: L.CircleMarker; onset?: string | null }>>([]);
   const polygonLayersRef = useRef<Map<string, { layer: L.Path; color: string; evId: string; isTrack3: boolean }>>(new Map());
+
   const beforeDateRef = useRef(beforeDate);
   beforeDateRef.current = beforeDate;
   const afterDateRef = useRef(afterDate);
   afterDateRef.current = afterDate;
+  const selectedIdRef = useRef(selectedEvidenceId);
+  selectedIdRef.current = selectedEvidenceId;
+  const showAllRef = useRef(showAllPolygons);
+  showAllRef.current = showAllPolygons;
+  const onSelectRef = useRef(onSelectEvidence);
+  onSelectRef.current = onSelectEvidence;
+  const setHoveredRef = useRef(setHoveredEvidence);
+  setHoveredRef.current = setHoveredEvidence;
+  const onHoverBboxRef = useRef(onHoverWithBbox);
+  onHoverBboxRef.current = onHoverWithBbox;
+  const onCollisionRef = useRef(onLabelsCollisionChange);
+  onCollisionRef.current = onLabelsCollisionChange;
+
   const prevDatesRef = useRef({ beforeDate, afterDate, showAllPolygons });
 
-  // Re-calculate screen-space label collision suppression (PRD 9 §5.1)
   const evaluateLabelCollisions = useCallback(() => {
     if (!map || !evidenceList.length) {
-      onLabelsCollisionChange?.(0);
+      onCollisionRef.current?.(0);
       return;
     }
-
     const labelItems: Array<{ id: string; x: number; y: number; width: number; height: number; priority?: number }> = [];
-
     evidenceList.forEach((ev) => {
       const centroid = ev.measurement.centroid;
       if (!centroid) return;
-      // centroid is [lng, lat]
       const pt = map.latLngToContainerPoint([centroid[1], centroid[0]]);
       labelItems.push({
         id: ev.change_object_id,
         x: pt.x,
         y: pt.y,
-        width: 140, // standard label footprint
+        width: 140,
         height: 36,
         priority: ev.measurement.area_m2 || 0,
       });
     });
-
     const { hiddenCount } = checkLabelCollisions(labelItems);
-    onLabelsCollisionChange?.(hiddenCount);
-  }, [map, evidenceList, onLabelsCollisionChange]);
+    onCollisionRef.current?.(hiddenCount);
+  }, [map, evidenceList]);
 
   useEffect(() => {
     if (!map) return;
@@ -97,14 +107,13 @@ export function useMapPolygons({
       (a, b) => (b.measurement.area_m2 || 0) - (a.measurement.area_m2 || 0)
     );
 
-    // Dark halo underlay layer (1px dark halo extends 1px on each side of 1.5px stroke: weight 3.5)
     const haloGroup = L.geoJSON(undefined, {
       pane: 'polygonsPane',
       interactive: false,
       style: (feature) => {
         const onset = feature?.properties?.first_supported;
-        const isEmerged = Boolean(!onset || !afterDate || onset <= afterDate);
-        if (!showAllPolygons || !isEmerged) {
+        const isEmerged = Boolean(!onset || !afterDateRef.current || onset <= afterDateRef.current);
+        if (!showAllRef.current || !isEmerged) {
           return { color: 'transparent', weight: 0, opacity: 0, fill: false };
         }
         return {
@@ -117,9 +126,7 @@ export function useMapPolygons({
       },
       onEachFeature: (feature, layer) => {
         const id = feature?.properties?.change_object_id;
-        if (id) {
-          haloLayersMapRef.current.set(id, layer as L.Path);
-        }
+        if (id) haloLayersMapRef.current.set(id, layer as L.Path);
       },
     });
 
@@ -131,8 +138,8 @@ export function useMapPolygons({
         const isPreExisting = feature?.properties?.is_pre_existing || false;
         const isTrack3 = feature?.properties?.is_track3 || false;
         const onset = feature?.properties?.first_supported;
-        const isEmerged = Boolean(!onset || !afterDate || onset <= afterDate);
-        return getPolyStyle(id === selectedEvidenceId, color, showAllPolygons, isPreExisting, isTrack3, isEmerged);
+        const isEmerged = Boolean(!onset || !afterDateRef.current || onset <= afterDateRef.current);
+        return getPolyStyle(id === selectedIdRef.current, color, showAllRef.current, isPreExisting, isTrack3, isEmerged);
       },
       onEachFeature: (feature, layer) => {
         const props = feature.properties;
@@ -157,23 +164,28 @@ export function useMapPolygons({
           confPct,
         });
 
-        (layer as L.Path).bindTooltip(tooltipHtml, {
-          sticky: true,
-          direction: 'auto',
-          className: 'leaflet-tactical-tooltip',
-          opacity: 0.98,
-          offset: L.point(10, 10),
-        });
+        const isPerimeter = (matched?.measurement?.area_m2 || 0) > 5000000;
+
+        if (!isPerimeter) {
+          (layer as L.Path).bindTooltip(tooltipHtml, {
+            sticky: false,
+            direction: 'top',
+            className: 'leaflet-tactical-tooltip',
+            opacity: 0.98,
+            offset: L.point(0, -6),
+          });
+        }
 
         const triggerHover = () => {
+          if (isPerimeter) return;
           if (matched) {
-            setHoveredEvidence(matched);
+            setHoveredRef.current(matched);
             const bbox = computeContainerBBoxFromLayer(map, layer as L.Path);
-            onHoverWithBbox?.(matched, bbox);
+            onHoverBboxRef.current?.(matched, bbox);
           }
           (layer as L.Path).setStyle({
-            weight: 2.0,
-            color: '#F5C15C',
+            weight: 2.2,
+            color: '#00E5FF',
             fillColor: color,
             fillOpacity: 0.45,
             dashArray: isTrack3 ? '4, 4' : undefined,
@@ -181,32 +193,38 @@ export function useMapPolygons({
         };
 
         const triggerUnhover = () => {
-          setHoveredEvidence(null);
-          onHoverWithBbox?.(null, null);
+          setHoveredRef.current(null);
+          onHoverBboxRef.current?.(null, null);
           const onset = props.first_supported;
           const curBefore = beforeDateRef.current;
           const curAfter = afterDateRef.current;
           const isPre = Boolean(curBefore && onset && onset < curBefore);
           const isEmerged = Boolean(!onset || !curAfter || onset <= curAfter);
           (layer as L.Path).setStyle(
-            getPolyStyle(props.change_object_id === selectedEvidenceId, color, showAllPolygons, isPre, isTrack3, isEmerged)
+            getPolyStyle(props.change_object_id === selectedIdRef.current, color, showAllRef.current, isPre, isTrack3, isEmerged)
           );
         };
 
         const triggerSelect = (e?: L.LeafletMouseEvent | MouseEvent) => {
-          if (e) {
-            if ('originalEvent' in e) L.DomEvent.stopPropagation(e);
-            else if ('stopPropagation' in e) e.stopPropagation();
+          let targetEv = matched || null;
+          if (e && 'latlng' in e && e.latlng) {
+            const smallest = findSmallestEvidenceAtLatLng(e.latlng.lat, e.latlng.lng, evidenceList, afterDateRef.current);
+            if (smallest) targetEv = smallest;
+            L.DomEvent.stopPropagation(e);
+          } else if (e && 'clientX' in e) {
+            const rect = map.getContainer().getBoundingClientRect();
+            const latlng = map.containerPointToLatLng([e.clientX - rect.left, e.clientY - rect.top]);
+            const smallest = findSmallestEvidenceAtLatLng(latlng.lat, latlng.lng, evidenceList, afterDateRef.current);
+            if (smallest) targetEv = smallest;
+            e.stopPropagation();
           }
-          if (matched) onSelectEvidence(matched);
+          if (targetEv) onSelectRef.current(targetEv);
         };
 
-        // Leaflet event hooks
         layer.on('mouseover', triggerHover);
         layer.on('mouseout', triggerUnhover);
         layer.on('click', triggerSelect);
 
-        // Native DOM event hooks for 100% click/hover reliability
         layer.on('add', () => {
           const pathEl = (layer as unknown as { _path?: SVGElement })._path;
           if (pathEl) {
@@ -221,7 +239,6 @@ export function useMapPolygons({
       },
     });
 
-    // Sub-pixel crosshair dots marker group (PRD 9 §5.1)
     const subpixelGroup = L.layerGroup([], { pane: 'polygonsPane' });
 
     sorted.forEach((ev) => {
@@ -253,17 +270,16 @@ export function useMapPolygons({
         haloGroup.addData(feature as unknown as GeoJSON.GeoJsonObject);
         layerGroup.addData(feature as unknown as GeoJSON.GeoJsonObject);
 
-        // If area is very small (sub-pixel box when zoomed out), also add crosshair dot
         if (ev.measurement.centroid && ev.measurement.area_m2 && ev.measurement.area_m2 < 120) {
           const latLng: [number, number] = [ev.measurement.centroid[1], ev.measurement.centroid[0]];
-          const isEmerged = Boolean(!onset || !afterDate || onset <= afterDate);
+          const isEmerged = Boolean(!onset || !afterDateRef.current || onset <= afterDateRef.current);
           const dot = L.circleMarker(latLng, {
             radius: 2,
             color: '#0B0D10',
             weight: 3,
             fillColor: color,
-            fillOpacity: isEmerged && showAllPolygons ? 1 : 0,
-            opacity: isEmerged && showAllPolygons ? 1 : 0,
+            fillOpacity: isEmerged && showAllRef.current ? 1 : 0,
+            opacity: isEmerged && showAllRef.current ? 1 : 0,
             pane: 'polygonsPane',
             interactive: false,
           });
@@ -277,7 +293,6 @@ export function useMapPolygons({
     layerGroup.addTo(map);
     subpixelGroup.addTo(map);
 
-    // Ensure all rendered SVG paths have pointer-events: auto and cursor: pointer
     layerGroup.eachLayer((l) => {
       const pathEl = (l as unknown as { _path?: SVGElement })._path;
       if (pathEl) {
@@ -291,25 +306,29 @@ export function useMapPolygons({
     geojsonLayerRef.current = layerGroup;
     subpixelMarkersRef.current = subpixelGroup;
 
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      if (!showAllRef.current) return;
+      const smallest = findSmallestEvidenceAtLatLng(e.latlng.lat, e.latlng.lng, evidenceList, afterDateRef.current);
+      if (smallest) onSelectRef.current(smallest);
+    };
+
     evaluateLabelCollisions();
     map.on('moveend zoomend', evaluateLabelCollisions);
+    map.on('click', handleMapClick);
 
     return () => {
       map.off('moveend zoomend', evaluateLabelCollisions);
+      map.off('click', handleMapClick);
     };
-  }, [map, evidenceList, onSelectEvidence, showAllPolygons, setHoveredEvidence, onHoverWithBbox, evaluateLabelCollisions]);
+  }, [map, evidenceList, evaluateLabelCollisions]);
 
   const prevSelectedIdRef = useRef<string | null>(null);
 
-  // In-place lightweight style update on selection / date changes without layer recreation
   useEffect(() => {
     if (map) {
       const polyPane = map.getPane('polygonsPane');
-      if (polyPane) {
-        polyPane.style.display = showAllPolygons ? 'block' : 'none';
-      }
+      if (polyPane) polyPane.style.display = showAllPolygons ? 'block' : 'none';
     }
-
     if (!evidenceList.length || !polygonLayersRef.current.size) return;
 
     const prevId = prevSelectedIdRef.current;
@@ -321,7 +340,6 @@ export function useMapPolygons({
       prevDatesRef.current.showAllPolygons !== showAllPolygons;
     prevDatesRef.current = { beforeDate, afterDate, showAllPolygons };
 
-    // Fast-path: if only selection changed and dates/visibility didn't change
     if (!datesChanged && prevId !== selectedEvidenceId) {
       if (prevId && polygonLayersRef.current.has(prevId)) {
         const prevEntry = polygonLayersRef.current.get(prevId)!;
@@ -342,7 +360,6 @@ export function useMapPolygons({
       return;
     }
 
-    // Full style refresh if dates or visibility changed
     polygonLayersRef.current.forEach(({ layer, color, evId, isTrack3 }) => {
       const ev = evidenceList.find((e) => e.change_object_id === evId);
       if (!ev) return;
@@ -352,31 +369,21 @@ export function useMapPolygons({
       const isSelected = evId === selectedEvidenceId;
       layer.setStyle(getPolyStyle(isSelected, color, showAllPolygons, isPreExisting, isTrack3, isEmerged));
       const pathEl = (layer as unknown as { _path?: SVGElement })._path;
-      if (pathEl) {
-        pathEl.style.pointerEvents = isEmerged && showAllPolygons ? 'auto' : 'none';
-      }
+      if (pathEl) pathEl.style.pointerEvents = isEmerged && showAllPolygons ? 'auto' : 'none';
     });
 
-    // Synchronize halo layers
     haloLayersMapRef.current.forEach((haloLayer, evId) => {
       const ev = evidenceList.find((e) => e.change_object_id === evId);
       const onset = ev?.temporal?.first_supported;
       const isEmerged = Boolean(!onset || !afterDate || onset <= afterDate);
-      if (!showAllPolygons || !isEmerged) {
-        haloLayer.setStyle({ color: 'transparent', weight: 0, opacity: 0 });
-      } else {
-        haloLayer.setStyle({ color: '#0B0D10', weight: 3.5, opacity: 0.95 });
-      }
+      if (!showAllPolygons || !isEmerged) haloLayer.setStyle({ color: 'transparent', weight: 0, opacity: 0 });
+      else haloLayer.setStyle({ color: '#0B0D10', weight: 3.5, opacity: 0.95 });
     });
 
-    // Synchronize subpixel dots
     subpixelMarkersListRef.current.forEach(({ marker, onset }) => {
       const isEmerged = Boolean(!onset || !afterDate || onset <= afterDate);
-      if (!showAllPolygons || !isEmerged) {
-        marker.setStyle({ opacity: 0, fillOpacity: 0 });
-      } else {
-        marker.setStyle({ opacity: 1, fillOpacity: 1 });
-      }
+      if (!showAllPolygons || !isEmerged) marker.setStyle({ opacity: 0, fillOpacity: 0 });
+      else marker.setStyle({ opacity: 1, fillOpacity: 1 });
     });
   }, [selectedEvidenceId, showAllPolygons, beforeDate, afterDate, evidenceList]);
 }

@@ -15,8 +15,10 @@ import { getSatelliteTileConfig, extractYear, type ImageryMode } from '../lib/sa
 import { useLeafletMapInit } from '../lib/useLeafletMapInit';
 import { computeSwipeClipPolygon, adjustBBoxForSwipe } from '../lib/mapClipHelpers';
 import { MapTacticalControls } from './map/MapTacticalControls';
+import { NlpEvidenceOverlay } from './map/NlpEvidenceOverlay';
 import { SatelliteIntelModal } from './SatelliteIntelModal';
 import { useMapAnnotations, type MapAnnotationState } from '../lib/useMapAnnotations';
+import type { AskAnswerData, ChatMessage } from '../lib/types/ask';
 import evidenceListFixture from '../fixtures/evidence_list.json';
 
 interface MapPaneProps {
@@ -31,6 +33,10 @@ interface MapPaneProps {
   presetTarget?: { center: [number, number]; zoom?: number; bounds?: [[number, number], [number, number]] } | null;
   onPresetConsumed?: () => void;
   askAnnotationState?: MapAnnotationState | null;
+  chatMessages?: ChatMessage[];
+  askAnswer?: AskAnswerData | null;
+  onAskQuery?: (query: string) => void;
+  onHighlightEvidence?: (ids: string[], bbox?: number[]) => void;
 }
 
 /**
@@ -38,29 +44,11 @@ interface MapPaneProps {
  * Specs: PRD 9 §6 (M1–M4), §5.1; PRD 10 §4 (SLOT-11..18).
  */
 export const MapPane: React.FC<MapPaneProps> = ({
-  selectedAoiId,
-  aoiCoords,
-  aoiBounds,
-  evidenceList,
-  selectedEvidenceId,
-  onSelectEvidence,
-  sliderPos,
-  onSliderChange,
-  isSwipeActive,
-  onToggleSwipe,
-  beforeDate,
-  afterDate,
-  availableDates = [],
-  showClouds = false,
-  onToggleClouds,
-  showPolygons = true,
-  onTogglePolygons,
-  onSelectBeforeDate,
-  onSelectAfterDate,
-  onSwapDates,
-  presetTarget,
-  onPresetConsumed,
-  askAnnotationState,
+  selectedAoiId, aoiCoords, aoiBounds, evidenceList, selectedEvidenceId, onSelectEvidence,
+  sliderPos, onSliderChange, isSwipeActive, onToggleSwipe, beforeDate, afterDate,
+  availableDates = [], showClouds = false, onToggleClouds, showPolygons = true, onTogglePolygons,
+  onSelectBeforeDate, onSelectAfterDate, onSwapDates, presetTarget, onPresetConsumed,
+  askAnnotationState, chatMessages, askAnswer, onAskQuery, onHighlightEvidence,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [imageryMode] = useState<ImageryMode>('hybrid_optimum');
@@ -116,6 +104,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
     if (!map) return;
     const afterPane = map.getPane('afterPane');
     const polyPane = map.getPane('polygonsPane');
+    const askPane = map.getPane('askAnnotationsPane');
     if (!afterPane) return;
     const isPolyVisible = showPolygons ?? true;
     if (!isSwipeActive) {
@@ -123,6 +112,9 @@ export const MapPane: React.FC<MapPaneProps> = ({
       if (polyPane) {
         polyPane.style.display = isPolyVisible ? 'block' : 'none';
         polyPane.style.clipPath = 'none';
+      }
+      if (askPane) {
+        askPane.style.clipPath = 'none';
       }
       return;
     }
@@ -140,6 +132,10 @@ export const MapPane: React.FC<MapPaneProps> = ({
       polyPane.style.display = isPolyVisible ? 'block' : 'none';
       polyPane.style.clipPath = clip;
     }
+    // Clip NLP annotation overlays to T1 (current) side during swipe
+    if (askPane) {
+      askPane.style.clipPath = clip;
+    }
   }, [isSwipeActive, beforeDate, afterDate, showPolygons]);
 
   useEffect(() => {
@@ -147,9 +143,9 @@ export const MapPane: React.FC<MapPaneProps> = ({
     const map = mapInstanceRef.current;
     if (!map) return;
     const onSync = () => applyClip(sliderPos);
-    map.on('move zoom resize', onSync);
-    return () => { map.off('move zoom resize', onSync); };
-  }, [applyClip, sliderPos]);
+    map.on('move zoom viewreset moveend zoomend resize', onSync);
+    return () => { map.off('move zoom viewreset moveend zoomend resize', onSync); };
+  }, [applyClip, sliderPos, askAnnotationState]);
   // AOI fly-to & camera presets
   useEffect(() => {
     if (!mapInstanceRef.current || !selectedAoiId) return;
@@ -279,6 +275,7 @@ export const MapPane: React.FC<MapPaneProps> = ({
       <MapReticleOverlay
         containerRef={mapContainerRef}
         onSectorChange={handleSectorChange}
+        enabled={false}
       />
 
       {/* SLOT-17: Ghost sector numeral */}
@@ -294,6 +291,20 @@ export const MapPane: React.FC<MapPaneProps> = ({
         beforeDate={beforeDate}
         showClouds={showClouds}
         onToggleClouds={onToggleClouds}
+      />
+
+      {/* 4-Stage NLP Verification & Evidence Overlay (Left Sidebar below Baseline) */}
+      <NlpEvidenceOverlay
+        evidenceList={evidenceList}
+        selectedEvidenceId={selectedEvidenceId}
+        onSelectEvidence={onSelectEvidence}
+        beforeDate={beforeDate}
+        afterDate={afterDate}
+        chatMessages={chatMessages}
+        askAnswer={askAnswer}
+        askAnnotationState={askAnnotationState}
+        onAskQuery={onAskQuery}
+        onHighlightEvidence={onHighlightEvidence}
       />
 
       {/* SLOT-12: Zoom Stack (TR) */}

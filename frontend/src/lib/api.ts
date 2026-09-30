@@ -1,33 +1,20 @@
 /**
- * Centralized, typed API client for Chakshu.
+ * Centralized, typed API client for Chakshu (Axios + Fetch hybrid).
  *
  * Rules (PRD 5 §3 & §8):
- * 1. `fetch` appears in EXACTLY ONE FILE: this file.
- * 2. Every response is validated or returns typed fixture data in mock mode.
+ * 1. `fetch` / `axios` appear in EXACTLY ONE FILE: this file.
+ * 2. Every response is validated or returns typed fixture data in mock/fallback mode.
  * 3. Returns typed results with discrimination: "ok" | "capability_notice" | "empty" | "error".
- * 4. Supports zero-lag 100% offline mock fixtures via VITE_MOCK.
+ * 4. Supports remote backend URLs via VITE_API_BASE / VITE_BACKEND_URL / VITE_API_URL.
  */
 
+import axios from 'axios';
 import { z } from 'zod';
 import type {
-  AdminOverviewResponse,
-  AdminSessionDetailResponse,
-  AdminSessionEventsResponse,
-  AdminSessionFilterParams,
-  AdminSessionsResponse,
-  AdminStatusResponse,
-  Answer,
-  Aoi,
-  AoiCreate,
-  ChangeSummary,
-  DetectionSet,
-  Evidence,
-  JobResponse,
-  Scene,
-  SemanticSearchResponse,
-  SemanticSearchResultItem,
-  Trace,
-  Upload,
+  AdminOverviewResponse, AdminSessionDetailResponse, AdminSessionEventsResponse,
+  AdminSessionFilterParams, AdminSessionsResponse, AdminStatusResponse,
+  Answer, Aoi, AoiCreate, ChangeSummary, DetectionSet, Evidence, JobResponse,
+  Scene, SemanticSearchResponse, SemanticSearchResultItem, Trace, Upload,
 } from './types';
 import { fixtures } from './apiFixtures';
 
@@ -39,13 +26,29 @@ export type ApiResult<T> =
   | { kind: 'empty'; message: string }
   | { kind: 'error'; code: string; message: string; traceId: string };
 
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || '/api/v1';
+function resolveApiBase(): string {
+  const env = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
+  const raw = (
+    env?.VITE_API_BASE || env?.VITE_API_URL || env?.VITE_BACKEND_URL || env?.NEXT_PUBLIC_API_URL || ''
+  ).trim().replace(/\/+$/, '');
+  if (!raw) return '/api/v1';
+  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+}
+
+export const API_BASE = resolveApiBase();
+
+export const apiClient = axios.create({
+  baseURL: API_BASE,
+  timeout: 30000,
+  withCredentials: false,
+  headers: { Accept: 'application/json' },
+});
 
 let mockOverride: boolean | null = null;
 
 export function isMockMode(): boolean {
   if (mockOverride !== null) return mockOverride;
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_MOCK !== undefined) {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK !== undefined) {
     return import.meta.env.VITE_MOCK === '1' || import.meta.env.VITE_MOCK === 'true';
   }
   return false;
@@ -64,27 +67,38 @@ const ErrorEnvelopeSchema = z.object({
   }),
 });
 
-async function safeFetch<T>(
-  endpoint: string,
-  options?: RequestInit,
-  fallbackData?: T
-): Promise<ApiResult<T>> {
-  if (isMockMode() && fallbackData !== undefined) {
-    return { kind: 'ok', data: fallbackData };
-  }
+async function safeFetch<T>(endpoint: string, options?: RequestInit, fallbackData?: T): Promise<ApiResult<T>> {
+  if (isMockMode() && fallbackData !== undefined) return { kind: 'ok', data: fallbackData };
 
   try {
-    const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    const res = await fetch(url, {
-      credentials: 'same-origin',
-      ...options,
-      headers: {
-        Accept: 'application/json',
-        ...options?.headers,
-      },
-    });
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const isRemote = API_BASE.startsWith('http://') || API_BASE.startsWith('https://');
+    let status = 200;
+    let statusText = 'OK';
+    let json: unknown;
 
-    const json: unknown = await res.json();
+    if (isRemote) {
+      const axiosRes = await apiClient.request({
+        url: path,
+        method: (options?.method as string) || 'GET',
+        data: options?.body,
+        headers: options?.headers as Record<string, string> | undefined,
+        validateStatus: () => true,
+      });
+      status = axiosRes.status;
+      statusText = axiosRes.statusText || 'Error';
+      json = axiosRes.data;
+    } else {
+      const res = await fetch(`${API_BASE}${path}`, {
+        credentials: 'same-origin',
+        ...options,
+        headers: { Accept: 'application/json', ...options?.headers },
+      });
+      status = res.status;
+      statusText = res.statusText;
+      json = await res.json();
+    }
+
     const parsedError = ErrorEnvelopeSchema.safeParse(json);
     if (parsedError.success) {
       const err = parsedError.data.error;
@@ -94,9 +108,9 @@ async function safeFetch<T>(
       return { kind: 'error', code: err.code, message: err.message, traceId: err.trace_id };
     }
 
-    if (!res.ok) {
+    if (status < 200 || status >= 300) {
       if (fallbackData !== undefined) return { kind: 'ok', data: fallbackData };
-      return { kind: 'error', code: 'HTTP_ERROR', message: `HTTP ${res.status}: ${res.statusText}`, traceId: 'trace_client' };
+      return { kind: 'error', code: 'HTTP_ERROR', message: `HTTP ${status}: ${statusText}`, traceId: 'trace_client' };
     }
 
     return { kind: 'ok', data: json as T };
@@ -148,14 +162,10 @@ export async function getScene(sceneId: string): Promise<ApiResult<Scene>> {
   return safeFetch(`/scenes/${sceneId}`, undefined, fallback);
 }
 
-// System Health
-export async function getHealth(): Promise<
-  ApiResult<{ ok: boolean; offline: boolean; gemini: boolean; db: boolean; clip_loaded: boolean }>
-> {
+export async function getHealth(): Promise<ApiResult<{ ok: boolean; offline: boolean; gemini: boolean; db: boolean; clip_loaded: boolean }>> {
   return safeFetch('/health', undefined, { ok: true, offline: isMockMode(), gemini: false, db: true, clip_loaded: true });
 }
 
-// Uploads & Single-Image Detections
 export async function getUpload(id: string): Promise<ApiResult<Upload>> {
   const fallback = id === 'visual_only' ? (fixtures.uploadVisualOnly.upload as unknown as Upload) : id === 'unknown_gsd' ? (fixtures.uploadUnknownGsd.upload as unknown as Upload) : (fixtures.uploadGeoreferenced.upload as unknown as Upload);
   return safeFetch(`/uploads/${id}`, undefined, fallback);
@@ -181,6 +191,16 @@ export async function uploadImageFile(
     if (acquired_at) formData.append('acquired_at', acquired_at);
     if (notes) formData.append('notes', notes);
 
+    const isRemote = API_BASE.startsWith('http://') || API_BASE.startsWith('https://');
+    if (isRemote) {
+      const axiosRes = await apiClient.post('/uploads', formData, { validateStatus: () => true });
+      if (axiosRes.status < 200 || axiosRes.status >= 300) {
+        const err = axiosRes.data?.error;
+        return { kind: 'error', code: err?.code || 'UPLOAD_FAILED', message: err?.message || `HTTP ${axiosRes.status}`, traceId: err?.trace_id || 'trace_client' };
+      }
+      return { kind: 'ok', data: axiosRes.data as Upload };
+    }
+
     const res = await fetch(`${API_BASE}/uploads`, { method: 'POST', body: formData });
     const json: unknown = await res.json();
     if (!res.ok) {
@@ -203,7 +223,6 @@ export function getAnnotatedUrl(uploadId: string): string {
   return `${API_BASE}/uploads/${uploadId}/annotated`;
 }
 
-// Changes & Evidence
 export async function getEvidence(changeObjectId: string): Promise<ApiResult<Evidence>> {
   return safeFetch(`/aoi/changes/${changeObjectId}`, undefined, fixtures.evidenceSingle as unknown as Evidence);
 }
@@ -249,12 +268,7 @@ export interface DecisionRecord {
   recorded_at: string;
 }
 
-export async function submitDecision(
-  entityType: string,
-  entityId: string,
-  action: 'confirm' | 'reject',
-  note?: string
-): Promise<ApiResult<DecisionRecord>> {
+export async function submitDecision(entityType: string, entityId: string, action: 'confirm' | 'reject', note?: string): Promise<ApiResult<DecisionRecord>> {
   return safeFetch('/decisions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -299,23 +313,11 @@ export async function askQuestion(
   const fallback = lower.includes('vehicle') || lower.includes('car') || lower.includes('weather')
     ? (fixtures.answerUnsupported as unknown as Answer)
     : (fixtures.answerPolished as unknown as Answer);
-  return safeFetch(
-    '/ask',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question,
-        aoi_id: aoiId,
-        upload_id: uploadId,
-        date_a: dateA,
-        date_b: dateB,
-        conversation_history: conversationHistory,
-        map_context: mapContext,
-      }),
-    },
-    fallback
-  );
+  return safeFetch('/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, aoi_id: aoiId, upload_id: uploadId, date_a: dateA, date_b: dateB, conversation_history: conversationHistory, map_context: mapContext }),
+  }, fallback);
 }
 
 export async function getAskTrace(answerId: string): Promise<ApiResult<Record<string, unknown>>> {

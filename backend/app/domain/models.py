@@ -87,6 +87,39 @@ class SegmentationResult:
 
         return building_mask
 
+    def get_road_footprints(
+        self,
+        min_area: int = 120,
+    ) -> np.ndarray:
+        """Extract elongated linear road and paved corridor networks from built mask."""
+        built_mask = self.get_mask("built")
+        if not np.any(built_mask):
+            return np.zeros(self.input_shape, dtype=bool)
+
+        labeled, num_features = ndimage.label(built_mask)
+        road_mask = np.zeros(self.input_shape, dtype=bool)
+
+        if num_features > 0:
+            component_sizes = ndimage.sum(built_mask, labeled, range(1, num_features + 1))
+            slices = ndimage.find_objects(labeled)
+            for idx in range(1, num_features + 1):
+                sl = slices[idx - 1]
+                if sl is None:
+                    continue
+                sz = float(component_sizes[idx - 1])
+                if sz < min_area:
+                    continue
+                h_box = sl[0].stop - sl[0].start
+                w_box = sl[1].stop - sl[1].start
+                aspect = max(h_box, w_box) / max(min(h_box, w_box), 1)
+                bbox_area = float(max(h_box * w_box, 1))
+                fill_ratio = sz / bbox_area
+                if aspect > 3.2 or (sz > 800 and fill_ratio < 0.32):
+                    sub_lbl = labeled[sl]
+                    road_mask[sl] |= sub_lbl == idx
+
+        return road_mask
+
 
 class SatelliteSegmentationModel:
     """Clean abstraction for authoritative satellite segmentation models (§4, §32)."""

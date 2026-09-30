@@ -26,6 +26,7 @@ from app.schemas.ask import (
     AnswerSource,
     AskRequest,
     IntentMatch,
+    MapActionItem,
     MeasurementsBundleSubObject,
 )
 from app.schemas.common import AnswerTier
@@ -310,6 +311,15 @@ async def ask_question(payload: AskRequest) -> Answer:
         )
 
     log.info("FINAL_RESPONSE answer='%s' evidence_ids=%s map_action='%s'", (final_text[:80] + "...") if len(final_text) > 80 else final_text, evidence_ids, highlights.map_action)
+
+    # Synthesize map_actions list from map_action string when empty
+    if highlights.map_action and not highlights.map_actions:
+        highlights.map_actions = [
+            MapActionItem(
+                action=highlights.map_action,
+                evidence_ids=highlights.change_object_ids,
+            )
+        ]
 
     ans = Answer(
         answer_id=answer_id,

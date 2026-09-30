@@ -8,24 +8,25 @@ const MODEL_BOM = [
 ];
 
 /**
- * W2.7 · OFFLINE / SOVEREIGNTY — two columns
- * Specs: PRD 13 §2 W2.7
- *
- * Left: checklist with green ticks
- * Right: MODEL BILL OF MATERIALS table
+ * W2.7 · OFFLINE / SOVEREIGNTY — Console Sovereignty & Model BOM
  */
 export const LandingOffline: React.FC = () => {
   return (
     <section
       id="offline"
-      className="px-6 py-16 md:py-24 border-b border-[var(--line)] grid grid-cols-1 md:grid-cols-2 gap-12 landing-container"
+      className="px-6 py-16 md:py-20 border-b border-[var(--line)] grid grid-cols-1 md:grid-cols-2 gap-12 landing-container"
     >
       {/* Left: Offline Checklist */}
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5 bg-[var(--panel)] p-6 rounded border border-[var(--line)]">
         <div>
           <span
-            className="font-mono text-[var(--signal)] block mb-2"
-            style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
+            className="font-mono block mb-2"
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--primary-cyan)',
+            }}
           >
             {LANDING_COPY.securityLabel}
           </span>
@@ -36,28 +37,51 @@ export const LandingOffline: React.FC = () => {
         <ul className="space-y-3 font-mono text-xs text-[var(--ink-2)]">
           {LANDING_COPY.offlineChecklist.map((item, i) => (
             <li key={i} className="flex items-start gap-2.5">
-              <span className="text-[var(--measured-text)] font-bold mt-0.5 flex-shrink-0">✓</span>
+              <span
+                className="font-bold mt-0.5 flex-shrink-0"
+                style={{ color: 'var(--verified-green)' }}
+              >
+                {'✓'}
+              </span>
               <span>{item}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-2">
+        <div className="mt-2 pt-3 border-t border-[var(--line)]">
           <a
-            href="#"
-            className="font-mono text-[var(--ion)] hover:text-[var(--ion-hot)] transition-colors"
-            style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
+            href="#offline"
+            className="font-mono transition-colors"
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--primary-cyan)',
+            }}
           >
-            {LANDING_COPY.depsLink} →
+            {`${LANDING_COPY.depsLink} →`}
           </a>
         </div>
       </div>
 
       {/* Right: Model Bill of Materials */}
       <div className="flex flex-col gap-4">
-        <h3 className="text-lg font-bold font-cond tracking-wide text-[var(--ink)]">
-          {LANDING_COPY.bomTitle}
-        </h3>
-        <div className="border border-[var(--line)] rounded-[var(--r-panel)] bg-[var(--panel)] overflow-hidden font-mono text-xs">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold font-cond tracking-wide text-[var(--ink)]">
+            {LANDING_COPY.bomTitle}
+          </h3>
+          <span
+            className="t-tag px-2 py-0.5 rounded font-bold"
+            style={{
+              background: 'rgba(16, 185, 129, 0.14)',
+              color: 'var(--verified-green)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              fontSize: 8.5,
+            }}
+          >
+            {'AIR-GAPPED READY'}
+          </span>
+        </div>
+        <div className="border border-[var(--line-strong)] rounded bg-[var(--panel)] overflow-hidden font-mono text-xs">
           <table className="w-full text-left">
             <thead>
               <tr
@@ -72,9 +96,9 @@ export const LandingOffline: React.FC = () => {
             </thead>
             <tbody style={{ fontSize: 11 }} className="divide-y divide-[var(--line)]">
               {MODEL_BOM.map((m) => (
-                <tr key={m.model}>
+                <tr key={m.model} className="hover:bg-[var(--panel-2)]">
                   <td className="p-3 text-[var(--ink)] font-semibold">{m.model}</td>
-                  <td className="p-3 text-[var(--signal)]">{m.licence}</td>
+                  <td className="p-3 font-bold" style={{ color: 'var(--primary-cyan)' }}>{m.licence}</td>
                   <td className="p-3 text-[var(--ink-3)]">{m.source}</td>
                   <td className="p-3 text-[var(--ink-3)]">{m.purpose}</td>
                 </tr>

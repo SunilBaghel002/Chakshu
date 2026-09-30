@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: chakshu-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENV
+        value: prod
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: GEMINI_ENABLED
+        value: "1"
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_API_KEY
+        sync: false

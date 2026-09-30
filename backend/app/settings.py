@@ -123,6 +123,10 @@ class Settings(BaseSettings):
         default="dev",
         description="Environment: 'dev' or 'prod'. Secure cookie enabled in prod.",
     )
+    CORS_ORIGINS: str = Field(
+        default="*",
+        description="Comma-separated list of allowed CORS origins, or '*' for all origins.",
+    )
     SERVER_SECRET: str = Field(
         default="dev-secret-key-chakshu-2026",
         description="Secret key used for HMAC-SHA256 IP address hashing.",
