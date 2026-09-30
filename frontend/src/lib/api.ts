@@ -29,13 +29,21 @@ export type ApiResult<T> =
 function resolveApiBase(): string {
   const env = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
   const raw = (
-    env?.VITE_API_BASE || env?.VITE_API_URL || env?.VITE_BACKEND_URL || env?.NEXT_PUBLIC_API_URL || ''
+    env?.VITE_BASE_URL || env?.VITE_API_BASE || env?.VITE_API_URL || env?.VITE_BACKEND_URL || env?.NEXT_PUBLIC_API_URL || ''
   ).trim().replace(/\/+$/, '');
   if (!raw) return '/api/v1';
   return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
 }
 
 export const API_BASE = resolveApiBase();
+
+function getStoredSid(): string | null {
+  try { return typeof localStorage !== 'undefined' ? localStorage.getItem('chk_sid') : null; } catch { return null; }
+}
+function setStoredSid(sid: string | null | undefined): void {
+  if (sid === undefined || sid === null) return;
+  try { if (typeof localStorage !== 'undefined') (sid ? localStorage.setItem('chk_sid', sid) : localStorage.removeItem('chk_sid')); } catch { /* ignore */ }
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE,
@@ -73,6 +81,8 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit, fallbackDat
   try {
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const isRemote = API_BASE.startsWith('http://') || API_BASE.startsWith('https://');
+    const sid = getStoredSid();
+    const sidHeader: Record<string, string> = sid ? { 'X-Chakshu-Sid': sid } : {};
     let status = 200;
     let statusText = 'OK';
     let json: unknown;
@@ -82,9 +92,10 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit, fallbackDat
         url: path,
         method: (options?.method as string) || 'GET',
         data: options?.body,
-        headers: options?.headers as Record<string, string> | undefined,
+        headers: { ...sidHeader, ...(options?.headers as Record<string, string> | undefined) },
         validateStatus: () => true,
       });
+      setStoredSid(axiosRes.headers?.['x-chakshu-sid']);
       status = axiosRes.status;
       statusText = axiosRes.statusText || 'Error';
       json = axiosRes.data;
@@ -92,11 +103,12 @@ async function safeFetch<T>(endpoint: string, options?: RequestInit, fallbackDat
       const res = await fetch(`${API_BASE}${path}`, {
         credentials: 'same-origin',
         ...options,
-        headers: { Accept: 'application/json', ...options?.headers },
+        headers: { Accept: 'application/json', ...sidHeader, ...(options?.headers as Record<string, string> | undefined) },
       });
+      setStoredSid(res.headers.get('x-chakshu-sid'));
       status = res.status;
       statusText = res.statusText;
-      json = await res.json();
+      json = status === 204 ? undefined : await res.json();
     }
 
     const parsedError = ErrorEnvelopeSchema.safeParse(json);

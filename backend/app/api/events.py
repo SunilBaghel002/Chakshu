@@ -78,7 +78,7 @@ async def ingest_events(request: Request) -> Response:
 
         if not session_id:
             # Missing cookie creates guest session automatically (PRD 15 §5 Rule 1)
-            sid_token = request.cookies.get("sid")
+            sid_token = request.cookies.get("sid") or request.headers.get("x-chakshu-sid")
             session = resolve_session_by_token(sid_token) if sid_token else None
             if not session:
                 _, session = create_guest_session(

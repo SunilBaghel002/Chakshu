@@ -123,6 +123,10 @@ class Settings(BaseSettings):
         default="dev",
         description="Environment: 'dev' or 'prod'. Secure cookie enabled in prod.",
     )
+    FRONTEND_URL: str = Field(
+        default="http://localhost:3000",
+        description="Primary frontend URL allowed by CORS policy (e.g. Vercel deployment URL).",
+    )
     CORS_ORIGINS: str = Field(
         default="*",
         description="Comma-separated list of allowed CORS origins, or '*' for all origins.",

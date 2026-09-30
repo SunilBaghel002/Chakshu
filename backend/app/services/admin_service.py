@@ -37,10 +37,9 @@ STATE_FILE = Path(settings.ROOT_DIR) / "data" / "admin_state.json"
 
 
 def _clean_db_url() -> str | None:
-    url = getattr(settings, "DATABASE_URL", None)
-    if not url:
-        return None
-    return url.replace("postgresql+psycopg://", "postgresql://")
+    from app.services.telemetry_storage import normalize_db_url
+
+    return normalize_db_url()
 
 
 def _load_persisted_state() -> None:

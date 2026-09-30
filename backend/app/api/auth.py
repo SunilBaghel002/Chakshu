@@ -49,7 +49,7 @@ async def login(req: LoginRequest, request: Request, response: Response) -> dict
         )
 
     # Resolve or create the current caller session
-    sid_token = request.cookies.get("sid")
+    sid_token = request.cookies.get("sid") or request.headers.get("x-chakshu-sid")
     session = resolve_session_by_token(sid_token) if sid_token else None
     if not session:
         sid_token, session = create_guest_session(
@@ -61,7 +61,7 @@ async def login(req: LoginRequest, request: Request, response: Response) -> dict
     # Rotate token and link session
     new_token, updated_session = login_session_as_user(session, user, sid_token)
 
-    # Set hardened HttpOnly cookie per PRD 14 §2
+    # Set hardened HttpOnly cookie per PRD 14 §2 + X-Chakshu-Sid header for cross-origin SPA
     is_prod = getattr(settings, "ENV", "dev") == "prod"
     response.set_cookie(
         key="sid",
@@ -72,6 +72,7 @@ async def login(req: LoginRequest, request: Request, response: Response) -> dict
         secure=is_prod,
         path="/",
     )
+    response.headers["X-Chakshu-Sid"] = new_token
 
     # Ingest auth.login event
     try:
@@ -100,7 +101,7 @@ async def login(req: LoginRequest, request: Request, response: Response) -> dict
 @router.post("/logout", status_code=204)
 async def logout(request: Request) -> Response:
     """Revoke session and clear authentication cookie."""
-    sid_token = request.cookies.get("sid")
+    sid_token = request.cookies.get("sid") or request.headers.get("x-chakshu-sid")
     session = resolve_session_by_token(sid_token) if sid_token else None
 
     logout_session(session, sid_token)
@@ -114,6 +115,7 @@ async def logout(request: Request) -> Response:
         samesite="lax",
         secure=is_prod,
     )
+    res.headers["X-Chakshu-Sid"] = ""
 
     if session:
         try:

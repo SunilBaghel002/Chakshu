@@ -75,6 +75,7 @@ function isTelemetryEnabled(): boolean {
   if (import.meta.env.VITEST) return false;
   if (import.meta.env.NEXT_PUBLIC_TELEMETRY === 'off' || import.meta.env.VITE_TELEMETRY === 'off') return false;
   return (
+    Boolean(import.meta.env.PROD) ||
     import.meta.env.NEXT_PUBLIC_TELEMETRY === 'on' ||
     import.meta.env.VITE_TELEMETRY === 'on' ||
     import.meta.env.VITE_TELEMETRY === '1'
@@ -131,12 +132,21 @@ export function flushQueue(): void {
   try {
     const jsonStr = JSON.stringify(payload);
     const blob = new Blob([jsonStr], { type: 'application/json' });
-    const rawBase = (import.meta.env?.VITE_API_BASE || import.meta.env?.VITE_API_URL || import.meta.env?.VITE_BACKEND_URL || '').trim().replace(/\/+$/, '');
+    const rawBase = (
+      import.meta.env?.VITE_BASE_URL ||
+      import.meta.env?.VITE_API_BASE ||
+      import.meta.env?.VITE_API_URL ||
+      import.meta.env?.VITE_BACKEND_URL ||
+      ''
+    ).trim().replace(/\/+$/, '');
     const apiBase = !rawBase ? '/api/v1' : rawBase.endsWith('/api/v1') ? rawBase : `${rawBase}/api/v1`;
     const url = `${apiBase}/events`;
+    const isRemote = url.startsWith('http://') || url.startsWith('https://');
+    let sid: string | null = null;
+    try { sid = typeof localStorage !== 'undefined' ? localStorage.getItem('chk_sid') : null; } catch { sid = null; }
 
     let beaconSent = false;
-    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+    if (!isRemote && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
       try {
         beaconSent = navigator.sendBeacon(url, blob);
       } catch {
@@ -147,15 +157,22 @@ export function flushQueue(): void {
     if (beaconSent) {
       if (includeCtx && ctx) contextSent = true;
     } else {
-      // Fallback to fetch with keepalive: true (PRD 15 §6)
+      // Fetch with keepalive: true (supports custom X-Chakshu-Sid header across origins)
       fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(sid ? { 'X-Chakshu-Sid': sid } : {}),
+        },
         body: jsonStr,
         keepalive: true,
-        credentials: 'same-origin',
+        credentials: isRemote ? 'omit' : 'same-origin',
       })
         .then((res) => {
+          const newSid = res.headers.get('x-chakshu-sid');
+          if (newSid) {
+            try { localStorage.setItem('chk_sid', newSid); } catch { /* ignore */ }
+          }
           if (res.status === 204) {
             if (includeCtx && ctx) contextSent = true;
           } else if (res.status === 429) {

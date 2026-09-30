@@ -54,7 +54,7 @@ class GuestSessionMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         client_ip = _extract_client_ip(request)
-        sid_token = request.cookies.get(SID_COOKIE_NAME)
+        sid_token = request.cookies.get(SID_COOKIE_NAME) or request.headers.get("x-chakshu-sid")
         session = None
         new_session = False
         reissue_cookie = False
@@ -105,5 +105,7 @@ class GuestSessionMiddleware(BaseHTTPMiddleware):
                 samesite="lax",
                 path="/",
             )
+        if sid_token and "X-Chakshu-Sid" not in response.headers:
+            response.headers["X-Chakshu-Sid"] = sid_token
 
         return response

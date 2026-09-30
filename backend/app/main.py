@@ -76,7 +76,10 @@ def create_app() -> FastAPI:
 
     # CORS configuration (outermost middleware so all responses & preflights include CORS headers)
     raw_origins = getattr(settings, "CORS_ORIGINS", "*")
-    cors_origins = [o.strip() for o in raw_origins.split(",") if o.strip()] if raw_origins else ["*"]
+    fe_url = getattr(settings, "FRONTEND_URL", "").strip().rstrip("/")
+    cors_origins = [o.strip().rstrip("/") for o in raw_origins.split(",") if o.strip()] if raw_origins else ["*"]
+    if fe_url and fe_url not in cors_origins and "*" not in cors_origins:
+        cors_origins.append(fe_url)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
@@ -84,7 +87,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=["*"],
+        expose_headers=["*", "X-Chakshu-Sid"],
     )
 
     # Exception Handling Middleware

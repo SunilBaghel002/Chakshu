@@ -38,7 +38,7 @@ async def require_admin(request: Request) -> dict[str, Any]:
     # 2. Extract session attached by middleware or from request headers/cookies
     session = getattr(request.state, "session", None)
     if not session:
-        sid = request.cookies.get("sid")
+        sid = request.cookies.get("sid") or request.headers.get("x-chakshu-sid")
         if not sid:
             auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
             if auth_header and auth_header.lower().startswith("bearer "):

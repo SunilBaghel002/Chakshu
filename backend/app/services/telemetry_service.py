@@ -22,6 +22,7 @@ from typing import Any
 from app.services.telemetry_storage import (
     is_db_available,
     load_telemetry_state,
+    normalize_db_url,
     save_telemetry_state,
 )
 from app.services.ua_service import BOT_PATTERN
@@ -181,8 +182,8 @@ def get_or_create_visit(
         try:
             import psycopg
 
-            db_url = getattr(settings, "DATABASE_URL", "").replace("postgresql+psycopg://", "postgresql://")
-            with psycopg.connect(db_url, connect_timeout=1) as conn, conn.cursor() as cur:
+            db_url = normalize_db_url() or ""
+            with psycopg.connect(db_url, connect_timeout=4) as conn, conn.cursor() as cur:
                 cur.execute(
                     """
                     INSERT INTO visit (
@@ -333,8 +334,8 @@ def ingest_batch(
         try:
             import psycopg
 
-            db_url = getattr(settings, "DATABASE_URL", "").replace("postgresql+psycopg://", "postgresql://")
-            with psycopg.connect(db_url, connect_timeout=1) as conn, conn.cursor() as cur:
+            db_url = normalize_db_url() or ""
+            with psycopg.connect(db_url, connect_timeout=4) as conn, conn.cursor() as cur:
                 # Update visit
                 cur.execute(
                     """

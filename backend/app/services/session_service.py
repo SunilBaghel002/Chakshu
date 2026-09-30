@@ -27,6 +27,7 @@ from app.services.geo_service import resolve_ip_location
 from app.services.telemetry_storage import (
     is_db_available,
     load_sessions_cache,
+    normalize_db_url,
     save_sessions_cache,
 )
 from app.services.ua_service import parse_user_agent
@@ -138,8 +139,8 @@ def create_guest_session(
         try:
             import psycopg
 
-            db_url = getattr(settings, "DATABASE_URL", "").replace("postgresql+psycopg://", "postgresql://")
-            with psycopg.connect(db_url, connect_timeout=1) as conn, conn.cursor() as cur:
+            db_url = normalize_db_url() or ""
+            with psycopg.connect(db_url, connect_timeout=4) as conn, conn.cursor() as cur:
                 cur.execute(
                     """
                     INSERT INTO session (
@@ -211,8 +212,8 @@ def resolve_session_by_token(token: str | None) -> dict[str, Any] | None:
         try:
             import psycopg
 
-            db_url = getattr(settings, "DATABASE_URL", "").replace("postgresql+psycopg://", "postgresql://")
-            with psycopg.connect(db_url, connect_timeout=1) as conn, conn.cursor() as cur:
+            db_url = normalize_db_url() or ""
+            with psycopg.connect(db_url, connect_timeout=4) as conn, conn.cursor() as cur:
                 cur.execute(
                     """
                     SELECT id, token_hash, user_id, role, label, created_at,
